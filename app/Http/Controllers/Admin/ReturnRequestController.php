@@ -49,15 +49,14 @@ class ReturnRequestController extends Controller
 
 
         $query =
-            ReturnRequest::query()
-                ->with([
-                    'order',
-                    'user',
-                ])
-                ->withCount(
-                    'items'
-                )
-                ->latest('id');
+    ReturnRequest::query()
+        ->with([
+            'order:id,order_code,user_id,total_amount,payment_method,payment_status,order_status,created_at',
+        ])
+        ->withCount(
+            'items'
+        )
+        ->latest('id');
 
 
         /*
@@ -90,55 +89,58 @@ class ReturnRequestController extends Controller
         */
 
         if (
-            $keyword !== ''
+    $keyword !== ''
+) {
+
+    $query->where(
+        function ($query) use (
+            $keyword
         ) {
 
+            /*
+             * Tìm theo mã yêu cầu trả hàng.
+             */
             $query->where(
-                function ($query) use (
+                'return_code',
+                'like',
+                '%' . $keyword . '%'
+            );
+
+
+            /*
+             * Tìm theo mã đơn hàng.
+             */
+            $query->orWhereHas(
+                'order',
+                function ($orderQuery) use (
                     $keyword
                 ) {
 
-                    $query
-                        ->where(
-                            'return_code',
-                            'like',
-                            '%'
-                            . $keyword
-                            . '%'
-                        )
-                        ->orWhereHas(
-                            'order',
-                            function ($orderQuery) use (
-                                $keyword
-                            ) {
-
-                                $orderQuery
-                                    ->where(
-                                        'order_code',
-                                        'like',
-                                        '%'
-                                        . $keyword
-                                        . '%'
-                                    )
-                                    ->orWhere(
-                                        'customer_name',
-                                        'like',
-                                        '%'
-                                        . $keyword
-                                        . '%'
-                                    )
-                                    ->orWhere(
-                                        'phone',
-                                        'like',
-                                        '%'
-                                        . $keyword
-                                        . '%'
-                                    );
-                            }
-                        );
+                    $orderQuery->where(
+                        'order_code',
+                        'like',
+                        '%' . $keyword . '%'
+                    );
                 }
             );
+
+
+            /*
+             * Nếu nhập số nguyên thì cho phép
+             * tìm chính xác theo Customer ID.
+             */
+            if (
+                ctype_digit($keyword)
+            ) {
+
+                $query->orWhere(
+                    'user_id',
+                    (int) $keyword
+                );
+            }
         }
+    );
+}
 
 
         $returnRequests =
@@ -166,16 +168,26 @@ class ReturnRequestController extends Controller
     ): View {
 
         $returnRequest->load([
-            'order',
+    'order' => function ($query) {
 
-            'order.payments',
-
-            'user',
-
-            'processor',
-
-            'items.orderDetail.product.images',
+        $query->select([
+            'id',
+            'order_code',
+            'user_id',
+            'total_amount',
+            'payment_method',
+            'payment_status',
+            'order_status',
+            'created_at',
         ]);
+    },
+
+    'order.payments',
+
+    'processor:id,name,email',
+
+    'items.orderDetail.product.images',
+]);
 
 
         return view(

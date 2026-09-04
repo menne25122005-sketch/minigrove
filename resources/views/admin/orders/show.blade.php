@@ -1072,21 +1072,13 @@
 
 
             {{-- =============================================
-                 QR PAYMENT ACTION
+                 QR PAYMENT STATUS
             ============================================== --}}
 
             @if (
                 $order
                     ->payment_method
                     === 'QR'
-                &&
-                $order
-                    ->payment_status
-                    === 'pending'
-                &&
-                $order
-                    ->order_status
-                    !== 'cancelled'
             )
 
                 <section class="card admin-order-action-card">
@@ -1094,81 +1086,45 @@
                     <div class="admin-action-heading">
 
                         <h2>
-                            Xác nhận QR
+                            Thanh toán QR tự động
                         </h2>
 
-                        <p>
-                            Chỉ xác nhận sau khi đã kiểm tra tiền thực tế.
-                        </p>
+                        @if (
+                            $order
+                                ->payment_status
+                            === 'paid'
+                        )
+
+                            <p>
+                                Giao dịch đã được hệ thống xác nhận
+                                tự động qua Casso Webhook.
+                                Admin chỉ theo dõi trạng thái thanh toán,
+                                không cần xác nhận thủ công.
+                            </p>
+
+                        @elseif (
+                            $order
+                                ->order_status
+                            === 'cancelled'
+                        )
+
+                            <p>
+                                Đơn hàng đã bị hủy.
+                                Admin không thực hiện xác nhận
+                                thanh toán QR thủ công.
+                            </p>
+
+                        @else
+
+                            <p>
+                                Đang chờ Casso Webhook xác nhận giao dịch.
+                                Admin không cần và không thể xác nhận
+                                thanh toán thủ công.
+                            </p>
+
+                        @endif
 
                     </div>
-
-
-                    <form
-                        action="{{
-                            route(
-                                'admin.orders.payment.confirm-qr',
-                                $order
-                            )
-                        }}"
-                        method="POST"
-                        onsubmit="
-                            return confirm(
-                                'Xác nhận MiniGrove đã nhận được tiền QR?'
-                            );
-                        "
-                    >
-
-                        @csrf
-                        @method('PATCH')
-
-
-                        <div class="admin-action-field">
-
-                            <label for="transaction_code">
-                                Mã giao dịch
-                            </label>
-
-                            <input
-                                id="transaction_code"
-                                type="text"
-                                name="transaction_code"
-                                maxlength="100"
-                                placeholder="Có thể để trống"
-                            >
-
-                        </div>
-
-
-                        <div class="admin-action-field">
-
-                            <label for="payment_note">
-                                Ghi chú
-                            </label>
-
-                            <textarea
-                                id="payment_note"
-                                name="payment_note"
-                                maxlength="500"
-                                rows="3"
-                                placeholder="Ghi chú xác nhận thanh toán..."
-                            ></textarea>
-
-                        </div>
-
-
-                        <button
-                            type="submit"
-                            class="
-                                btn
-                                btn-primary
-                                admin-action-full-button
-                            "
-                        >
-                            Xác nhận đã nhận tiền
-                        </button>
-
-                    </form>
 
                 </section>
 
@@ -1184,7 +1140,7 @@
                 @php
 
                     /*
-                     * QR chưa Paid thì nút Confirm
+                     * QR chưa Paid thì nút xử lý đơn
                      * sẽ bị vô hiệu hóa.
                      */
 
@@ -1232,8 +1188,8 @@
 
                         <div class="admin-action-warning">
 
-                            Đơn QR cần được xác nhận
-                            thanh toán trước khi xác nhận đơn.
+                            Đơn QR đang chờ Casso Webhook
+                            xác nhận thanh toán trước khi xử lý đơn.
 
                         </div>
 

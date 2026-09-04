@@ -46,40 +46,6 @@
 
             <div class="customer-profile-avatar">
 
-                @if ($customer->avatar)
-
-                    <img
-                        src="{{ asset('storage/' . $customer->avatar) }}"
-                        alt="{{ $customer->name }}"
-                    >
-
-                @else
-
-                    <span>
-                        {{
-                            mb_strtoupper(
-                                mb_substr(
-                                    $customer->name,
-                                    0,
-                                    1
-                                )
-                            )
-                        }}
-                    </span>
-
-                @endif
-
-            </div>
-
-
-            <div>
-
-                <div class="customer-profile-name-row">
-
-                    <h1>
-                        {{ $customer->name }}
-                    </h1>
-
 
                     @if ($customer->is_active)
 
@@ -310,17 +276,7 @@
             </div>
 
 
-            <div class="customer-detail-row">
-
-                <span>
-                    Tên tài khoản
-                </span>
-
-                <strong>
-                    {{ $customer->name }}
-                </strong>
-
-            </div>
+           
 
 
             <div class="customer-detail-row">

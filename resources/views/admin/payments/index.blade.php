@@ -607,7 +607,7 @@
                 type="text"
                 name="keyword"
                 value="{{ $keyword }}"
-                placeholder="Mã đơn, tên hoặc email Customer..."
+                placeholder="Mã đơn hoặc Customer ID..."
             >
 
 
@@ -824,46 +824,38 @@
 
 
                             {{-- =================================
-                                 CUSTOMER
-                            ================================== --}}
-                            <td>
+     CUSTOMER
+================================== --}}
+<td>
 
 
-                                @if ($payment->order)
+    @if ($payment->order)
 
 
-                                    <strong>
+        <strong>
 
-                                        {{
-                                            $payment
-                                                ->order
-                                                ->customer_name
-                                        }}
+            Customer #{{ $payment->order->user_id }}
 
-                                    </strong>
+        </strong>
 
 
-                                    <small
-                                        class="payment-table-sub"
-                                    >
+        <small
+            class="payment-table-sub"
+        >
 
-                                        {{
-                                            $payment
-                                                ->order
-                                                ->email
-                                        }}
+            ID #{{ $payment->order->user_id }}
 
-                                    </small>
+        </small>
 
 
-                                @else
+    @else
 
-                                    —
+        —
 
-                                @endif
+    @endif
 
 
-                            </td>
+</td>
 
 
 

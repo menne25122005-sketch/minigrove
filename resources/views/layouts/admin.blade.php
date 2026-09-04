@@ -234,13 +234,19 @@
 
 
             {{-- NHÂN VIÊN --}}
-            <span class="sidebar-link sidebar-link-disabled">
+<a
+    href="{{ route('admin.staff.index') }}"
+    class="sidebar-link
+    {{
+        request()->routeIs('admin.staff.*')
+            ? 'active'
+            : ''
+    }}"
+>
+    <span class="sidebar-icon">◎</span>
 
-                <span class="sidebar-icon">◎</span>
-
-                Nhân viên
-
-            </span>
+    Nhân viên
+</a>
 
 
             {{-- GROVE CỦA KHÁCH HÀNG --}}

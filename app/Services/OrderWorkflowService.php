@@ -81,13 +81,19 @@ class OrderWorkflowService
                 |--------------------------------------------------------------------------
                 */
 
-                $lockedOrder =
-                    Order::query()
-                        ->whereKey(
-                            $order->id
-                        )
-                        ->lockForUpdate()
-                        ->firstOrFail();
+               $lockedOrder =
+    Order::query()
+        ->select([
+            'id',
+            'order_status',
+            'payment_method',
+            'payment_status',
+        ])
+        ->whereKey(
+            $order->id
+        )
+        ->lockForUpdate()
+        ->firstOrFail();
 
 
                 $currentStatus =
@@ -346,12 +352,13 @@ class OrderWorkflowService
                 ]);
 
 
-                return $lockedOrder
-                    ->fresh([
-                        'details',
-                        'payments',
-                        'statusHistories',
-                    ]);
+                $lockedOrder->load([
+    'details',
+    'payments',
+    'statusHistories',
+]);
+
+return $lockedOrder;
             }
         );
     }

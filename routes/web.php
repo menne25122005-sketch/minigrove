@@ -22,10 +22,16 @@ use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\StaffController;
 
+
+
+use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
+use App\Http\Controllers\Staff\OrderController as StaffOrderController;
 
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Customer\ReturnRequestController as CustomerReturnRequestController;
+
 
 
 /*
@@ -431,7 +437,21 @@ Route::middleware([
         )->name(
             'checkout.qr'
         );
+/*
+ * ---------------------------------------------------------------
+ * Kiểm tra trạng thái thanh toán QR
+ * ---------------------------------------------------------------
+ */
 
+Route::get(
+    '/checkout/qr/{order}/status',
+    [
+        CheckoutController::class,
+        'qrStatus',
+    ]
+)->name(
+    'checkout.qr.status'
+);
     });
 
 
@@ -670,6 +690,47 @@ Route::prefix('admin')
         )->name(
             'dashboard'
         );
+
+        /*
+|--------------------------------------------------------------------------
+| Staff - Nhân viên
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/staff',
+    [StaffController::class, 'index']
+)->name('staff.index');
+
+
+Route::get(
+    '/staff/create',
+    [StaffController::class, 'create']
+)->name('staff.create');
+
+
+Route::post(
+    '/staff',
+    [StaffController::class, 'store']
+)->name('staff.store');
+
+
+Route::get(
+    '/staff/{staff}/edit',
+    [StaffController::class, 'edit']
+)->name('staff.edit');
+
+
+Route::put(
+    '/staff/{staff}',
+    [StaffController::class, 'update']
+)->name('staff.update');
+
+
+Route::patch(
+    '/staff/{staff}/toggle-status',
+    [StaffController::class, 'toggleStatus']
+)->name('staff.toggle-status');
 
         /*
 |--------------------------------------------------------------------------
@@ -916,21 +977,7 @@ Route::patch(
 )->name(
     'returns.refund'
 );
-/*
- * Admin xác nhận đã nhận tiền QR
- *
- * Payment:
- * pending → paid
- */
-Route::patch(
-    '/orders/{order}/confirm-qr-payment',
-    [
-        AdminOrderController::class,
-        'confirmQrPayment',
-    ]
-)->name(
-    'orders.payment.confirm-qr'
-);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -1108,6 +1155,80 @@ Route::patch(
                 'compatibility-rules'
                     => 'compatibilityRule',
             ]);
+
+    });
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Staff
+|--------------------------------------------------------------------------
+|
+| Điều kiện:
+|
+| 1. Đã đăng nhập.
+| 2. Role phải là staff.
+|
+| Admin / Customer truy cập /staff/*
+| sẽ nhận 403 Forbidden.
+|
+*/
+
+Route::prefix('staff')
+    ->name('staff.')
+    ->middleware([
+        'auth',
+        'role:staff',
+    ])
+    ->group(function () {
+
+        /*
+         * ---------------------------------------------------------------
+         * Dashboard
+         * ---------------------------------------------------------------
+         */
+
+        Route::get(
+            '/dashboard',
+            [StaffDashboardController::class, 'index']
+        )->name(
+            'dashboard'
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Order Management - Staff
+        |--------------------------------------------------------------------------
+        |
+        | Staff chỉ xử lý dữ liệu nghiệp vụ Order.
+        | Không truy cập thông tin cá nhân Customer.
+        |
+        */
+
+        Route::get(
+            '/orders',
+            [StaffOrderController::class, 'index']
+        )->name(
+            'orders.index'
+        );
+
+
+        Route::get(
+            '/orders/{order}',
+            [StaffOrderController::class, 'show']
+        )->name(
+            'orders.show'
+        );
+
+
+        Route::patch(
+            '/orders/{order}/status',
+            [StaffOrderController::class, 'updateStatus']
+        )->name(
+            'orders.status.update'
+        );
 
     });
 

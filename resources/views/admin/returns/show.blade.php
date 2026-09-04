@@ -251,41 +251,18 @@
 
                     <div>
 
-                        <span>
-                            Customer
-                        </span>
+    <span>
+        Customer
+    </span>
 
-                        <strong>
-                            {{
-                                $order
-                                    ?->customer_name
-                                ??
-                                $returnRequest
-                                    ->user
-                                    ?->name
-                                ??
-                                '—'
-                            }}
-                        </strong>
+    <strong>
+        Customer #{{ $returnRequest->user_id }}
+    </strong>
 
-                    </div>
+</div>
 
 
-                    <div>
-
-                        <span>
-                            Số điện thoại
-                        </span>
-
-                        <strong>
-                            {{
-                                $order
-                                    ?->phone
-                                ?? '—'
-                            }}
-                        </strong>
-
-                    </div>
+                    
 
 
                     <div>

@@ -1437,3 +1437,48 @@
     }
 
 }
+/* =========================================================
+   REAL PAYMENT QR
+========================================================= */
+
+.checkout-qr-real {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 14px;
+}
+
+.checkout-qr-real-image {
+    width: 300px;
+    max-width: 100%;
+    height: auto;
+
+    display: block;
+
+    border-radius: 16px;
+
+    background: #ffffff;
+
+    border: 1px solid #dfe7e1;
+
+    padding: 10px;
+}
+
+.checkout-qr-real-label {
+    text-align: center;
+
+    color: #6d786f;
+
+    font-size: 14px;
+}
+
+.checkout-qr-real-label strong {
+    display: block;
+
+    margin-top: 6px;
+
+    color: #22583a;
+
+    font-size: 20px;
+}
