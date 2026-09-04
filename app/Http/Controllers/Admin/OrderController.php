@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 
 use App\Services\OrderWorkflowService;
-use App\Services\QrPaymentService;
+
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -421,75 +421,5 @@ class OrderController extends Controller
     }
 
 
-    /**
-     * Admin xác nhận thanh toán QR.
-     */
-    public function confirmQrPayment(
-        Request $request,
-        Order $order,
-        QrPaymentService $service
-    ): RedirectResponse {
 
-        $validated =
-            $request->validate(
-                [
-                    'transaction_code' => [
-                        'nullable',
-                        'string',
-                        'max:100',
-                    ],
-
-                    'payment_note' => [
-                        'nullable',
-                        'string',
-                        'max:500',
-                    ],
-                ]
-            );
-
-
-        try {
-
-            $service->confirm(
-                $request->user(),
-                $order,
-                $validated[
-                    'transaction_code'
-                ]
-                ?? null,
-                $validated[
-                    'payment_note'
-                ]
-                ?? null
-            );
-
-        } catch (
-            ValidationException $e
-        ) {
-
-            return redirect()
-                ->route(
-                    'admin.orders.show',
-                    $order->id
-                )
-                ->with(
-                    'error',
-                    $e
-                        ->validator
-                        ->errors()
-                        ->first()
-                );
-        }
-
-
-        return redirect()
-            ->route(
-                'admin.orders.show',
-                $order->id
-            )
-            ->with(
-                'success',
-                'Thanh toán QR đã được xác nhận.'
-            );
-    }
 }

@@ -15,6 +15,7 @@ class Payment extends Model
         'amount',
         'status',
         'transaction_code',
+        'casso_transaction_id',
         'bank_name',
         'account_name',
         'account_number',

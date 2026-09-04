@@ -30,5 +30,8 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+    'casso' => [
+    'webhook_secret' => env('CASSO_WEBHOOK_SECRET'),
+],
 
 ];

@@ -25,12 +25,12 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\StaffController;
 
 
+
 use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
 use App\Http\Controllers\Staff\OrderController as StaffOrderController;
 
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Customer\ReturnRequestController as CustomerReturnRequestController;
-
 
 
 
@@ -437,7 +437,21 @@ Route::middleware([
         )->name(
             'checkout.qr'
         );
+/*
+ * ---------------------------------------------------------------
+ * Kiểm tra trạng thái thanh toán QR
+ * ---------------------------------------------------------------
+ */
 
+Route::get(
+    '/checkout/qr/{order}/status',
+    [
+        CheckoutController::class,
+        'qrStatus',
+    ]
+)->name(
+    'checkout.qr.status'
+);
     });
 
 
@@ -963,21 +977,7 @@ Route::patch(
 )->name(
     'returns.refund'
 );
-/*
- * Admin xác nhận đã nhận tiền QR
- *
- * Payment:
- * pending → paid
- */
-Route::patch(
-    '/orders/{order}/confirm-qr-payment',
-    [
-        AdminOrderController::class,
-        'confirmQrPayment',
-    ]
-)->name(
-    'orders.payment.confirm-qr'
-);
+
 
 /*
 |--------------------------------------------------------------------------

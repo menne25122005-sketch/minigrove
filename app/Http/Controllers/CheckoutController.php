@@ -11,6 +11,7 @@ use App\Services\CheckoutService;
 use App\Services\VoucherService;
 use App\Services\OrderService;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -866,7 +867,7 @@ if (
 public function success(
     Request $request,
     Order $order
-): View {
+): View|RedirectResponse {
 
     /*
      * Customer chỉ được xem Order
@@ -877,6 +878,25 @@ public function success(
             === $request->user()->id,
         403
     );
+
+
+    /*
+     * Với QR:
+     * chỉ được vào trang thành công
+     * sau khi Casso đã xác nhận Paid.
+     */
+    if (
+        $order->payment_method === 'QR'
+        &&
+        $order->payment_status !== 'paid'
+    ) {
+
+        return redirect()
+            ->route(
+                'checkout.qr',
+                $order
+            );
+    }
 
 
     $order->load([
@@ -892,8 +912,6 @@ public function success(
         compact('order')
     );
 }
-
-
 /**
  * Trang thanh toán QR mô phỏng.
  */
@@ -935,6 +953,56 @@ public function qr(
             'payment'
         )
     );
+}
+/**
+ * Kiểm tra trạng thái thanh toán QR.
+ *
+ * Được trang QR gọi định kỳ để biết
+ * Casso Webhook đã xác nhận thanh toán hay chưa.
+ */
+public function qrStatus(
+    Request $request,
+    Order $order
+): JsonResponse {
+
+    /*
+     * Customer chỉ được kiểm tra
+     * Order của chính mình.
+     */
+    abort_unless(
+        $order->user_id
+            === $request->user()->id,
+        403
+    );
+
+
+    /*
+     * Chỉ áp dụng cho QR.
+     */
+    abort_unless(
+        $order->payment_method === 'QR',
+        404
+    );
+
+
+    /*
+     * Chỉ trả dữ liệu tối thiểu.
+     */
+    return response()->json([
+        'success' => true,
+
+        'payment_status' =>
+            $order->payment_status,
+
+        'paid' =>
+            $order->payment_status === 'paid',
+
+        'success_url' =>
+            route(
+                'checkout.success',
+                $order
+            ),
+    ]);
 }
 
 }

@@ -395,4 +395,4 @@ class OrderController extends Controller
                 'Trạng thái đơn hàng đã được cập nhật.'
             );
     }
-}routes\web.php
+}
