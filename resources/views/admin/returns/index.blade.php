@@ -192,7 +192,7 @@
             type="text"
             name="keyword"
             value="{{ $keyword }}"
-            placeholder="Mã yêu cầu, mã đơn, tên khách, SĐT..."
+            placeholder="Mã yêu cầu, mã đơn hoặc Customer ID..."
         >
 
 
@@ -408,44 +408,22 @@
 
                         {{-- CUSTOMER --}}
 
-                        <td>
+<td>
 
-                            <strong class="admin-return-customer">
+    <strong class="admin-return-customer">
 
-                                {{
-                                    $returnRequest
-                                        ->order
-                                        ?->customer_name
-                                    ??
-                                    $returnRequest
-                                        ->user
-                                        ?->name
-                                    ??
-                                    '—'
-                                }}
+        Customer #{{ $returnRequest->user_id }}
 
-                            </strong>
+    </strong>
 
 
-                            @if (
-                                $returnRequest
-                                    ->order
-                                    ?->phone
-                            )
+    <span class="admin-return-customer-info">
 
-                                <span class="admin-return-customer-info">
+        ID #{{ $returnRequest->user_id }}
 
-                                    {{
-                                        $returnRequest
-                                            ->order
-                                            ->phone
-                                    }}
+    </span>
 
-                                </span>
-
-                            @endif
-
-                        </td>
+</td>
 
 
                         {{-- ITEM COUNT --}}

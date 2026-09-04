@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\PaymentSetting;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
     /**
      * Trang quản lý Thanh toán.
+     *
+     * Privacy:
+     * - Không lấy tên Customer.
+     * - Không lấy email Customer.
+     * - Không lấy số điện thoại / địa chỉ Customer.
+     * - Admin chỉ nhận diện khách hàng bằng Customer ID.
      */
     public function index(Request $request)
     {
@@ -28,10 +33,18 @@ class PaymentController extends Controller
         );
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Danh sách thanh toán
+        |--------------------------------------------------------------------------
+        |
+        | Chỉ lấy dữ liệu nghiệp vụ cần thiết của Order.
+        | Tuyệt đối không eager load User Customer.
+        |
+        */
         $query = Payment::query()
             ->with([
-                'order:id,order_code,user_id,customer_name,email,total_amount,order_status,payment_status',
-                'order.user:id,name,email',
+                'order:id,order_code,user_id,total_amount,order_status,payment_status',
                 'confirmer:id,name,email',
             ])
             ->latest('id');
@@ -39,31 +52,39 @@ class PaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Tìm theo mã Order / Customer
+        | Tìm kiếm
         |--------------------------------------------------------------------------
+        |
+        | Cho phép:
+        | - Mã đơn hàng
+        | - Customer ID
+        |
+        | Không cho phép:
+        | - Tên Customer
+        | - Email Customer
+        | - Số điện thoại Customer
+        |
         */
         if ($keyword !== '') {
-
             $query->whereHas(
                 'order',
                 function ($orderQuery) use ($keyword) {
+                    $orderQuery->where(
+                        function ($searchQuery) use ($keyword) {
+                            $searchQuery->where(
+                                'order_code',
+                                'like',
+                                '%' . $keyword . '%'
+                            );
 
-                    $orderQuery
-                        ->where(
-                            'order_code',
-                            'like',
-                            '%' . $keyword . '%'
-                        )
-                        ->orWhere(
-                            'customer_name',
-                            'like',
-                            '%' . $keyword . '%'
-                        )
-                        ->orWhere(
-                            'email',
-                            'like',
-                            '%' . $keyword . '%'
-                        );
+                            if (ctype_digit($keyword)) {
+                                $searchQuery->orWhere(
+                                    'user_id',
+                                    (int) $keyword
+                                );
+                            }
+                        }
+                    );
                 }
             );
         }
@@ -148,7 +169,7 @@ class PaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Cấu hình phương thức
+        | Cấu hình phương thức thanh toán
         |--------------------------------------------------------------------------
         */
         $paymentSettings =
