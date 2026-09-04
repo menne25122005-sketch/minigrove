@@ -1,0 +1,309 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Address;
+use App\Models\CartItem;
+use App\Models\Product;
+use App\Models\User;
+use Illuminate\Validation\ValidationException;
+
+class CheckoutService
+{
+    /**
+     * Lấy lại toàn bộ dữ liệu Checkout
+     * từ Session và Database.
+     */
+    public function getCheckoutData(
+        User $user
+    ): array {
+
+        $mode = session('checkout.mode');
+
+        $checkoutItems = collect();
+
+        $subtotal = 0;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CHECKOUT TỪ CART
+        |--------------------------------------------------------------------------
+        */
+
+        if ($mode === 'cart') {
+
+            $ids = session(
+                'checkout.cart_item_ids',
+                []
+            );
+
+
+            if (empty($ids)) {
+
+                throw ValidationException::withMessages([
+                    'checkout' =>
+                        'Vui lòng chọn sản phẩm cần thanh toán.',
+                ]);
+            }
+
+
+            $items = CartItem::query()
+                ->whereIn('id', $ids)
+
+                /*
+                 * Bắt buộc CartItem phải thuộc
+                 * Customer đang đăng nhập.
+                 */
+                ->whereHas(
+                    'cart',
+                    function ($query) use ($user) {
+
+                        $query->where(
+                            'user_id',
+                            $user->id
+                        );
+                    }
+                )
+
+                ->where(
+                    'item_type',
+                    'PRODUCT'
+                )
+
+                ->with([
+                    'product.category',
+
+                    'product.images' => function ($query) {
+
+                        $query
+                            ->orderByDesc('is_primary')
+                            ->orderBy('sort_order')
+                            ->orderBy('id');
+                    },
+                ])
+
+                ->get();
+
+
+            if ($items->isEmpty()) {
+
+                throw ValidationException::withMessages([
+                    'checkout' =>
+                        'Không tìm thấy sản phẩm cần thanh toán.',
+                ]);
+            }
+
+
+            foreach ($items as $item) {
+
+                $product = $item->product;
+
+
+                /*
+                 * Kiểm tra lại Product từ DB.
+                 */
+                if (
+                    !$product ||
+                    !$product->is_active
+                ) {
+
+                    throw ValidationException::withMessages([
+                        'checkout' =>
+                            'Có sản phẩm không còn được bán.',
+                    ]);
+                }
+
+
+                /*
+                 * Kiểm tra lại Stock.
+                 */
+                if (
+                    $item->quantity < 1 ||
+                    $item->quantity >
+                    $product->stock_quantity
+                ) {
+
+                    throw ValidationException::withMessages([
+                        'checkout' =>
+                            'Số lượng sản phẩm không còn phù hợp với tồn kho.',
+                    ]);
+                }
+
+
+                /*
+                 * Giá luôn lấy lại từ DB.
+                 */
+                $unitPrice =
+                    $product->sale_price !== null
+                        ? (float) $product->sale_price
+                        : (float) $product->list_price;
+
+
+                $lineTotal =
+                    $unitPrice
+                    * $item->quantity;
+
+
+                $checkoutItems->push(
+                    (object) [
+                        'cart_item_id' =>
+                            $item->id,
+
+                        'product' =>
+                            $product,
+
+                        'quantity' =>
+                            $item->quantity,
+
+                        'unit_price' =>
+                            $unitPrice,
+
+                        'subtotal' =>
+                            $lineTotal,
+                    ]
+                );
+
+
+                $subtotal += $lineTotal;
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | MUA NGAY
+        |--------------------------------------------------------------------------
+        */
+
+        elseif ($mode === 'buy_now') {
+
+            $productId =
+                session(
+                    'checkout.product_id'
+                );
+
+
+            $quantity =
+                (int) session(
+                    'checkout.quantity',
+                    1
+                );
+
+
+            $product = Product::query()
+                ->with([
+                    'category',
+
+                    'images' => function ($query) {
+
+                        $query
+                            ->orderByDesc('is_primary')
+                            ->orderBy('sort_order')
+                            ->orderBy('id');
+                    },
+                ])
+                ->find($productId);
+
+
+            if (
+                !$product ||
+                !$product->is_active
+            ) {
+
+                throw ValidationException::withMessages([
+                    'checkout' =>
+                        'Sản phẩm hiện không còn được bán.',
+                ]);
+            }
+
+
+            if (
+                $quantity < 1 ||
+                $quantity >
+                $product->stock_quantity
+            ) {
+
+                throw ValidationException::withMessages([
+                    'checkout' =>
+                        'Số lượng mua không còn phù hợp với tồn kho.',
+                ]);
+            }
+
+
+            $unitPrice =
+                $product->sale_price !== null
+                    ? (float) $product->sale_price
+                    : (float) $product->list_price;
+
+
+            $lineTotal =
+                $unitPrice * $quantity;
+
+
+            $checkoutItems->push(
+                (object) [
+                    'cart_item_id' =>
+                        null,
+
+                    'product' =>
+                        $product,
+
+                    'quantity' =>
+                        $quantity,
+
+                    'unit_price' =>
+                        $unitPrice,
+
+                    'subtotal' =>
+                        $lineTotal,
+                ]
+            );
+
+
+            $subtotal =
+                $lineTotal;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | KHÔNG CÓ CHECKOUT SESSION
+        |--------------------------------------------------------------------------
+        */
+
+        else {
+
+            throw ValidationException::withMessages([
+                'checkout' =>
+                    'Chưa có sản phẩm để thanh toán.',
+            ]);
+        }
+
+
+        return [
+            'mode' =>
+                $mode,
+
+            'checkoutItems' =>
+                $checkoutItems,
+
+            'subtotal' =>
+                $subtotal,
+        ];
+    }
+
+
+    /**
+     * Phí vận chuyển.
+     *
+     * Hiện đặc tả chưa quy định công thức cụ thể.
+     * Bản demo MiniGrove đang để 0đ.
+     */
+    public function calculateShippingFee(
+        ?Address $address
+    ): float {
+
+        return 0;
+    }
+}
