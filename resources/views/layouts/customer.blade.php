@@ -108,16 +108,16 @@
 
         {{-- Search --}}
         <form
-    class="customer-search"
-    action="{{ route('products.index') }}"
-    method="GET"
->
+            class="customer-search"
+            action="{{ route('products.index') }}"
+            method="GET"
+        >
             <input
-    type="text"
-    name="keyword"
-    value="{{ request('keyword') }}"
-    placeholder="Tìm Terrarium, tên sản phẩm, SKU..."
->
+                type="text"
+                name="keyword"
+                value="{{ request('keyword') }}"
+                placeholder="Tìm Terrarium, tên sản phẩm, SKU..."
+            >
 
             <button
                 type="submit"
@@ -202,83 +202,82 @@
 
             @guest
 
-    <a
-        href="{{ route('login') }}"
-        class="header-action"
-        title="Đăng nhập để xem giỏ hàng"
-    >
-        🛒
-    </a>
+                <a
+                    href="{{ route('login') }}"
+                    class="header-action"
+                    title="Đăng nhập để xem giỏ hàng"
+                >
+                    🛒
+                </a>
 
-@else
+            @else
 
-    @if (
-        auth()->user()->role?->name
-        === 'customer'
-    )
-
-       @php
-
-    $headerCartQuantity = 0;
-
-
-    if (
-        auth()->check()
-        && auth()->user()->role?->name
-            === 'customer'
-    ) {
-
-        $headerCartQuantity =
-            \App\Models\CartItem::query()
-                ->whereHas(
-                    'cart',
-                    function ($query) {
-
-                        $query->where(
-                            'user_id',
-                            auth()->id()
-                        );
-                    }
+                @if (
+                    auth()->user()->role?->name
+                    === 'customer'
                 )
-                ->sum('quantity');
-    }
 
-@endphp
+                    @php
+
+                        $headerCartQuantity = 0;
+
+                        if (
+                            auth()->check()
+                            && auth()->user()->role?->name
+                                === 'customer'
+                        ) {
+
+                            $headerCartQuantity =
+                                \App\Models\CartItem::query()
+                                    ->whereHas(
+                                        'cart',
+                                        function ($query) {
+
+                                            $query->where(
+                                                'user_id',
+                                                auth()->id()
+                                            );
+                                        }
+                                    )
+                                    ->sum('quantity');
+                        }
+
+                    @endphp
 
 
-<a
-    href="{{ route('cart.index') }}"
-    class="
-        header-action
-        header-cart-link
-    "
-    title="Giỏ hàng"
->
+                    <a
+                        href="{{ route('cart.index') }}"
+                        class="
+                            header-action
+                            header-cart-link
+                        "
+                        title="Giỏ hàng"
+                    >
 
-    <span>
-        🛒
-    </span>
+                        <span>
+                            🛒
+                        </span>
 
 
-    @if ($headerCartQuantity > 0)
+                        @if ($headerCartQuantity > 0)
 
-        <span class="header-cart-badge">
+                            <span class="header-cart-badge">
 
-            {{
-                $headerCartQuantity > 99
-                    ? '99+'
-                    : $headerCartQuantity
-            }}
+                                {{
+                                    $headerCartQuantity > 99
+                                        ? '99+'
+                                        : $headerCartQuantity
+                                }}
 
-        </span>
+                            </span>
 
-    @endif
+                        @endif
 
-</a>
+                    </a>
 
-    @endif
+                @endif
 
-@endguest
+            @endguest
 
         </div>
 
@@ -324,6 +323,26 @@
         >
             MiniGrove Studio
         </a>
+
+
+        @auth
+
+            @if (
+                auth()->user()->role?->name
+                === 'customer'
+            )
+
+                <a
+                    href="{{ route('groves.index') }}"
+                    class="nav-link"
+                >
+                    My Grove
+                </a>
+
+            @endif
+
+        @endauth
+
 
         <a
             href="#"
@@ -429,11 +448,11 @@
             </div>
 
             <a
-    href="{{ route('products.index') }}"
-    class="nav-link"
->
-    Sản phẩm
-</a>
+                href="{{ route('products.index') }}"
+                class="footer-link"
+            >
+                Sản phẩm
+            </a>
 
             <a
                 href="{{ route('studio.index') }}"
@@ -441,6 +460,26 @@
             >
                 MiniGrove Studio
             </a>
+
+
+            @auth
+
+                @if (
+                    auth()->user()->role?->name
+                    === 'customer'
+                )
+
+                    <a
+                        href="{{ route('groves.index') }}"
+                        class="footer-link"
+                    >
+                        My Grove
+                    </a>
+
+                @endif
+
+            @endauth
+
 
             <a
                 href="#"

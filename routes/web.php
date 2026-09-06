@@ -31,6 +31,7 @@ use App\Http\Controllers\Staff\OrderController as StaffOrderController;
 
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Customer\ReturnRequestController as CustomerReturnRequestController;
+use App\Http\Controllers\Customer\GroveController as CustomerGroveController;
 
 
 
@@ -477,6 +478,40 @@ Route::middleware([
     'role:customer',
 ])
     ->group(function () {
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | My Grove
+        |--------------------------------------------------------------------------
+        |
+        | Customer chỉ được xem Grove thuộc chính tài khoản của mình.
+        |
+        */
+
+        Route::get(
+            '/groves',
+            [
+                CustomerGroveController::class,
+                'index',
+            ]
+        )->name(
+            'groves.index'
+        );
+
+
+        Route::get(
+            '/groves/{grove}',
+            [
+                CustomerGroveController::class,
+                'show',
+            ]
+        )->whereNumber(
+            'grove'
+        )->name(
+            'groves.show'
+        );
+
 
 
         /*

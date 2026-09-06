@@ -12,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class OrderWorkflowService
 {
+        public function __construct(
+        private GroveService $groveService
+    ) {
+    }
     /**
      * Chuyển trạng thái Order theo đúng luồng nghiệp vụ.
      */
@@ -85,6 +89,7 @@ class OrderWorkflowService
     Order::query()
         ->select([
             'id',
+            'user_id',
             'order_status',
             'payment_method',
             'payment_status',
@@ -350,6 +355,30 @@ class OrderWorkflowService
                     'updated_by' =>
                         $actor->id,
                 ]);
+                /*
+|--------------------------------------------------------------------------
+| TẠO GROVE KHI GIAO HÀNG HOÀN TẤT
+|--------------------------------------------------------------------------
+|
+| Chỉ khi Order chuyển sang completed mới sinh Grove.
+|
+| GroveService tự:
+| - kiểm tra Product có is_grove_eligible hay không;
+| - xử lý Custom Design;
+| - tạo theo quantity;
+| - tránh tạo trùng.
+|
+*/
+
+if (
+    $newStatus === 'completed'
+) {
+    $this
+        ->groveService
+        ->createForCompletedOrder(
+            $lockedOrder
+        );
+}
 
 
                 $lockedOrder->load([
