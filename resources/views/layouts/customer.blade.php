@@ -339,6 +339,13 @@
                     My Grove
                 </a>
 
+                <a
+                    href="{{ route('chat.index') }}"
+                    class="nav-link"
+                >
+                    Chat
+                </a>
+
             @endif
 
         @endauth
@@ -474,6 +481,13 @@
                         class="footer-link"
                     >
                         My Grove
+                    </a>
+
+                    <a
+                        href="{{ route('chat.index') }}"
+                        class="footer-link"
+                    >
+                        Chat hỗ trợ
                     </a>
 
                 @endif

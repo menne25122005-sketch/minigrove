@@ -28,10 +28,12 @@ use App\Http\Controllers\Admin\StaffController;
 
 use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
 use App\Http\Controllers\Staff\OrderController as StaffOrderController;
+use App\Http\Controllers\Staff\ChatController as StaffChatController;
 
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Customer\ReturnRequestController as CustomerReturnRequestController;
 use App\Http\Controllers\Customer\GroveController as CustomerGroveController;
+use App\Http\Controllers\Customer\ChatController as CustomerChatController;
 
 
 
@@ -512,6 +514,37 @@ Route::middleware([
             'groves.show'
         );
 
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Customer Chat
+        |--------------------------------------------------------------------------
+        |
+        | Customer chỉ được truy cập hội thoại của chính mình.
+        |
+        */
+
+        Route::get(
+            '/chat',
+            [
+                CustomerChatController::class,
+                'index',
+            ]
+        )->name(
+            'chat.index'
+        );
+
+
+        Route::post(
+            '/chat',
+            [
+                CustomerChatController::class,
+                'store',
+            ]
+        )->name(
+            'chat.store'
+        );
 
 
         /*
@@ -1264,6 +1297,80 @@ Route::prefix('staff')
         )->name(
             'orders.status.update'
         );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Chat Support - Staff
+        |--------------------------------------------------------------------------
+        |
+        | Staff chỉ làm việc với Customer #ID.
+        | Không hiển thị thông tin cá nhân Customer.
+        |
+        */
+
+        Route::get(
+            '/chat',
+            [
+                StaffChatController::class,
+                'index',
+            ]
+        )->name(
+            'chat.index'
+        );
+
+
+        Route::get(
+            '/chat/{conversation}',
+            [
+                StaffChatController::class,
+                'show',
+            ]
+        )->whereNumber(
+            'conversation'
+        )->name(
+            'chat.show'
+        );
+
+
+        Route::post(
+            '/chat/{conversation}/accept',
+            [
+                StaffChatController::class,
+                'accept',
+            ]
+        )->whereNumber(
+            'conversation'
+        )->name(
+            'chat.accept'
+        );
+
+
+        Route::post(
+            '/chat/{conversation}/reply',
+            [
+                StaffChatController::class,
+                'reply',
+            ]
+        )->whereNumber(
+            'conversation'
+        )->name(
+            'chat.reply'
+        );
+
+
+        Route::patch(
+            '/chat/{conversation}/close',
+            [
+                StaffChatController::class,
+                'close',
+            ]
+        )->whereNumber(
+            'conversation'
+        )->name(
+            'chat.close'
+        );
+
 
     });
 

@@ -115,7 +115,11 @@
 
 
             {{-- CHAT --}}
-            <span class="staff-nav-link disabled">
+            <a
+                href="{{ route('staff.chat.index') }}"
+                class="staff-nav-link
+                    {{ request()->routeIs('staff.chat.*') ? 'active' : '' }}"
+            >
 
                 <span class="staff-nav-icon">
                     ◌
@@ -123,7 +127,7 @@
 
                 Chat
 
-            </span>
+            </a>
 
 
 
