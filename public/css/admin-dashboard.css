@@ -1,0 +1,464 @@
+/* =========================================================
+   MINIGROVE ADMIN - DASHBOARD
+========================================================= */
+
+
+/* =========================
+   PAGE
+========================= */
+
+.dashboard-page {
+
+    width: 100%;
+
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+
+.dashboard-header {
+
+    margin-bottom: 28px;
+
+}
+
+
+.dashboard-header h1 {
+
+    margin:0;
+
+    font-size:28px;
+
+    color:#173f2d;
+
+}
+
+
+.dashboard-header p {
+
+    margin-top:8px;
+
+    color:var(--mg-muted);
+
+    font-size:14px;
+
+}
+
+
+
+/* =========================
+   STATISTICS
+========================= */
+
+
+.dashboard-stats {
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(6,minmax(0,1fr));
+
+    gap:18px;
+
+    margin-bottom:30px;
+
+}
+
+
+
+.dashboard-stat-card {
+
+
+    background:white;
+
+    border:1px solid var(--mg-border);
+
+    border-radius:16px;
+
+    padding:20px;
+    min-height:130px;
+
+
+    box-shadow:
+        0 8px 25px rgba(29,68,48,.05);
+
+}
+
+
+
+.dashboard-stat-label {
+
+
+    color:var(--mg-muted);
+
+    font-size:13px;
+
+    margin-bottom:10px;
+
+
+}
+
+
+
+.dashboard-stat-value {
+
+
+    white-space: nowrap;
+    font-size:24px;
+
+    font-weight:800;
+
+    color:#173f2d;
+
+
+}
+
+
+
+
+
+/* =========================
+   SECTION
+========================= */
+
+
+.dashboard-section {
+
+
+    background:white;
+
+    border:
+
+        1px solid var(--mg-border);
+
+
+    border-radius:16px;
+
+
+    padding:24px;
+
+
+    margin-bottom:25px;
+
+
+    box-shadow:
+
+        0 8px 25px rgba(29,68,48,.05);
+
+
+}
+
+
+
+.dashboard-section h2 {
+
+
+    margin:
+
+        0 0 20px;
+
+
+    font-size:20px;
+
+
+    color:#173f2d;
+
+
+}
+
+
+
+
+
+/* =========================
+   TABLE
+========================= */
+
+
+.dashboard-table-wrapper {
+
+    width:100%;
+
+    overflow-x:auto;
+
+}
+
+
+
+.dashboard-table {
+
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+
+
+.dashboard-table th {
+
+
+    padding:14px;
+
+
+    background:#f3f8f4;
+
+
+    color:#173f2d;
+
+
+    font-size:14px;
+
+
+    text-align:left;
+
+
+}
+
+
+
+.dashboard-table td {
+
+
+    padding:14px;
+
+
+    border-bottom:
+
+        1px solid #edf1ed;
+
+
+    color:#33443b;
+
+
+    font-size:14px;
+
+
+}
+
+
+
+.dashboard-table tr:hover {
+
+
+    background:#fafcf9;
+
+
+}
+
+
+
+
+
+/* =========================
+   STATUS
+========================= */
+
+
+.dashboard-status {
+
+
+    display:inline-flex;
+
+
+    padding:
+
+        5px 12px;
+
+
+    border-radius:
+
+        999px;
+
+
+    background:#e9f3ec;
+
+
+    color:#276749;
+
+
+    font-size:12px;
+
+
+    font-weight:700;
+
+
+}
+
+
+
+
+
+
+/* =========================
+   TWO COLUMN
+========================= */
+
+
+.dashboard-two-column {
+
+
+    display:grid;
+
+
+    grid-template-columns:
+
+        repeat(2,minmax(0,1fr));
+
+
+    gap:25px;
+
+
+}
+
+
+
+
+
+/* =========================
+   QUICK LINKS
+========================= */
+
+
+.dashboard-links {
+
+
+    display:flex;
+
+
+    flex-wrap:wrap;
+
+
+    gap:12px;
+
+
+}
+
+
+
+.dashboard-links a {
+
+
+    display:inline-flex;
+
+
+    align-items:center;
+
+
+    justify-content:center;
+
+
+    padding:
+
+        11px 18px;
+
+
+    border-radius:10px;
+
+
+    background:#173f2d;
+
+
+    color:white;
+
+
+    text-decoration:none;
+
+
+    font-size:14px;
+
+
+    font-weight:600;
+
+
+    transition:.2s;
+
+
+}
+
+
+
+.dashboard-links a:hover {
+
+
+    background:#276749;
+
+
+    color:white;
+
+
+}
+
+
+
+
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+
+@media(max-width:1400px){
+
+
+    .dashboard-stats {
+
+
+        grid-template-columns:
+
+            repeat(3,minmax(0,1fr));
+
+
+    }
+
+
+}
+
+
+
+@media(max-width:900px){
+
+
+    .dashboard-two-column {
+
+
+        grid-template-columns:1fr;
+
+
+    }
+
+
+
+    .dashboard-stats {
+
+
+        grid-template-columns:
+
+            repeat(2,minmax(0,1fr));
+
+
+    }
+
+
+}
+
+
+
+@media(max-width:600px){
+
+
+    .dashboard-stats {
+
+
+        grid-template-columns:1fr;
+
+
+    }
+
+
+}

@@ -103,20 +103,7 @@
             </a>
 
 
-            {{-- THÀNH PHẦN --}}
-            <a
-                href="{{ route('admin.components.index') }}"
-                class="sidebar-link
-                    {{
-                        request()->routeIs('admin.components.*')
-                            ? 'active'
-                            : ''
-                    }}"
-            >
-                <span class="sidebar-icon">◇</span>
-
-                Thành phần
-            </a>
+           
 
 
             {{-- QUY TẮC TƯƠNG THÍCH --}}
@@ -250,13 +237,26 @@
 
 
             {{-- GROVE CỦA KHÁCH HÀNG --}}
-            <span class="sidebar-link sidebar-link-disabled">
 
-                <span class="sidebar-icon">♧</span>
+<a
+    href="{{ route('admin.groves.index') }}"
+    class="
+        sidebar-link
+        {{
+            request()->routeIs('admin.groves.*')
+                ? 'active'
+                : ''
+        }}
+    "
+>
 
-                Grove của khách hàng
+    <span class="sidebar-icon">
+        ♧
+    </span>
 
-            </span>
+    Grove của khách hàng
+
+</a>
 
 
             {{-- CHAT --}}

@@ -157,56 +157,153 @@
 /* =========================================================
    TABLE
 ========================================================= */
+/* =========================================================
+   RETURN TABLE - FIX FULL WIDTH
+========================================================= */
+
 
 .admin-return-table {
-    min-width: 1180px;
+
+    width:100%;
+
+    table-layout:fixed;
+
+    border-collapse:collapse;
+
 }
+
+
+
+.admin-return-table th,
+.admin-return-table td {
+
+    padding:12px 10px;
+
+    vertical-align:middle;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+
+}
+
 
 
 .admin-return-table th {
-    color: #415147;
 
-    font-size: 12px;
+    font-size:12px;
+
+    color:#415147;
+
 }
+
 
 
 .admin-return-table td {
-    font-size: 12px;
+
+    font-size:12px;
+
 }
+
 
 
 /* =========================================================
-   RETURN CODE
+   COLUMN WIDTH
 ========================================================= */
 
-.admin-return-code {
-    display: block;
 
-    color: #285f3b;
+/* Mã yêu cầu */
 
-    font-weight: 700;
+.admin-return-table th:nth-child(1),
+.admin-return-table td:nth-child(1){
 
-    text-decoration: none;
+    width:15%;
 
-    white-space: nowrap;
 }
 
 
-.admin-return-code:hover {
-    text-decoration: underline;
+/* Đơn hàng */
+
+.admin-return-table th:nth-child(2),
+.admin-return-table td:nth-child(2){
+
+    width:15%;
+
 }
 
 
-.admin-return-id {
-    display: block;
+/* Customer */
 
-    margin-top: 4px;
+.admin-return-table th:nth-child(3),
+.admin-return-table td:nth-child(3){
 
-    color: #929d96;
+    width:13%;
 
-    font-size: 10px;
 }
 
+
+/* Sản phẩm trả */
+
+.admin-return-table th:nth-child(4),
+.admin-return-table td:nth-child(4){
+
+    width:12%;
+
+}
+
+
+/* Lý do */
+
+.admin-return-table th:nth-child(5),
+.admin-return-table td:nth-child(5){
+
+    width:15%;
+
+}
+
+
+/* Dự kiến hoàn */
+
+.admin-return-table th:nth-child(6),
+.admin-return-table td:nth-child(6){
+
+    width:12%;
+
+}
+
+
+/* Trạng thái */
+
+.admin-return-table th:nth-child(7),
+.admin-return-table td:nth-child(7){
+
+    width:10%;
+
+}
+
+
+/* Ngày gửi */
+
+.admin-return-table th:nth-child(8),
+.admin-return-table td:nth-child(8){
+
+    width:10%;
+
+}
+
+
+/* Thao tác */
+
+.admin-return-table th:nth-child(9),
+.admin-return-table td:nth-child(9){
+
+    width:8%;
+
+    text-align:center;
+
+}
 
 /* =========================================================
    ORDER
@@ -1205,6 +1302,20 @@
 
     .admin-return-full {
         grid-column: auto;
+    }
+
+}
+/* =========================================================
+   RETURN RESPONSIVE
+========================================================= */
+
+
+@media(max-width:1000px){
+
+    .admin-return-table {
+
+        min-width:900px;
+
     }
 
 }

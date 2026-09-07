@@ -71,21 +71,7 @@ class Product extends Model
         return $this->hasMany(ProductImage::class);
     }
 
-    /**
-     * Product và Component có quan hệ N-N.
-     */
-    public function components()
-    {
-        return $this->belongsToMany(
-            Component::class,
-            'product_components'
-        )
-            ->withPivot([
-                'quantity',
-                'is_required',
-            ])
-            ->withTimestamps();
-    }
+
 
     /**
      * Product có thể xuất hiện trong nhiều Wishlist Item.

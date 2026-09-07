@@ -14,8 +14,6 @@ use App\Http\Controllers\Shop\ProductController as ShopProductController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\ComponentController;
-use App\Http\Controllers\Admin\ComponentCompatibilityRuleController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ReturnRequestController as AdminReturnRequestController;
 use App\Http\Controllers\Admin\StockController;
@@ -23,6 +21,7 @@ use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\GroveController;
 
 
 
@@ -814,8 +813,8 @@ Route::get(
 );
 
 
-Route::patch(
-    '/stocks/{stockType}/{itemId}',
+Route::post(
+    '/stocks/{stockType}/{itemId}/change',
     [StockController::class, 'change']
 )->name(
     'stocks.change'
@@ -1047,6 +1046,45 @@ Route::patch(
 );
 
 
+
+
+/*
+|--------------------------------------------------------------------------
+| Grove Management
+|--------------------------------------------------------------------------
+|
+| Quản lý Grove của khách hàng.
+|
+| Privacy:
+| - Chỉ hiển thị Customer ID.
+| - Không hiển thị thông tin cá nhân Customer.
+|
+*/
+
+
+Route::get(
+    '/groves',
+    [
+        GroveController::class,
+        'index',
+    ]
+)->name(
+    'groves.index'
+);
+
+
+Route::get(
+    '/groves/{grove}',
+    [
+        GroveController::class,
+        'show',
+    ]
+)->whereNumber(
+    'grove'
+)->name(
+    'groves.show'
+);
+
 /*
 |--------------------------------------------------------------------------
 | Customer Management
@@ -1148,52 +1186,7 @@ Route::patch(
         );
 
 
-        /*
-         * ---------------------------------------------------------------
-         * Component
-         * ---------------------------------------------------------------
-         */
-
-        Route::patch(
-            '/components/{component}/toggle-status',
-            [
-                ComponentController::class,
-                'toggleStatus',
-            ]
-        )->name(
-            'components.toggle-status'
-        );
-
-
-        Route::patch(
-            '/components/{component}/images/{image}/primary',
-            [
-                ComponentController::class,
-                'setPrimaryImage',
-            ]
-        )->name(
-            'components.images.primary'
-        );
-
-
-        Route::delete(
-            '/components/{component}/images/{image}',
-            [
-                ComponentController::class,
-                'deleteImage',
-            ]
-        )->name(
-            'components.images.destroy'
-        );
-
-
-        Route::resource(
-            'components',
-            ComponentController::class
-        )->except(
-            'show'
-        );
-
+        
 
         /*
          * ---------------------------------------------------------------

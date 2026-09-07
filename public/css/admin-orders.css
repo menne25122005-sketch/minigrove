@@ -156,25 +156,149 @@
 
 
 /* =========================================================
-   TABLE
+   TABLE - FIX FULL WIDTH
 ========================================================= */
 
+
 .admin-order-table {
-    min-width: 1120px;
+
+    width:100%;
+
+    table-layout:fixed;
+
+    border-collapse:collapse;
+
 }
+
+
+
+.admin-order-table th,
+.admin-order-table td {
+
+    padding:12px 10px;
+
+    vertical-align:middle;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+
+}
+
 
 
 .admin-order-table th {
-    font-size: 12px;
 
-    color: #415147;
+    font-size:12px;
+
+    color:#415147;
+
 }
+
 
 
 .admin-order-table td {
-    font-size: 12px;
+
+    font-size:12px;
+
 }
 
+
+
+/* =========================================================
+   COLUMN WIDTH
+========================================================= */
+
+
+/* Mã đơn */
+
+.admin-order-table th:nth-child(1),
+.admin-order-table td:nth-child(1){
+
+    width:18%;
+
+}
+
+
+
+/* Customer */
+
+.admin-order-table th:nth-child(2),
+.admin-order-table td:nth-child(2){
+
+    width:14%;
+
+}
+
+
+
+/* Sản phẩm */
+
+.admin-order-table th:nth-child(3),
+.admin-order-table td:nth-child(3){
+
+    width:10%;
+
+}
+
+
+
+/* Tổng tiền */
+
+.admin-order-table th:nth-child(4),
+.admin-order-table td:nth-child(4){
+
+    width:12%;
+
+}
+
+
+
+/* Thanh toán */
+
+.admin-order-table th:nth-child(5),
+.admin-order-table td:nth-child(5){
+
+    width:14%;
+
+}
+
+
+
+/* Trạng thái đơn */
+
+.admin-order-table th:nth-child(6),
+.admin-order-table td:nth-child(6){
+
+    width:14%;
+
+}
+
+
+
+/* Ngày đặt */
+
+.admin-order-table th:nth-child(7),
+.admin-order-table td:nth-child(7){
+
+    width:10%;
+
+}
+
+
+
+/* Thao tác */
+
+.admin-order-table th:nth-child(8),
+.admin-order-table td:nth-child(8){
+
+    width:8%;
+
+    text-align:center;
+
+}
 
 /* =========================================================
    ORDER CODE
@@ -1223,6 +1347,20 @@
 
     .admin-detail-full {
         grid-column: auto;
+    }
+
+}
+/* =========================================================
+   RESPONSIVE TABLE
+========================================================= */
+
+
+@media(max-width:1000px){
+
+    .admin-order-table {
+
+        min-width:900px;
+
     }
 
 }

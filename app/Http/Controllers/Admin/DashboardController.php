@@ -2,49 +2,254 @@
 
 namespace App\Http\Controllers\Admin;
 
+
 use App\Http\Controllers\Controller;
+
 use App\Models\Category;
-use App\Models\Component;
 use App\Models\ComponentCompatibilityRule;
 use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\Product;
+use App\Models\ReturnRequest;
 use App\Models\User;
+
+use Illuminate\Support\Facades\DB;
+
 
 class DashboardController extends Controller
 {
+
     public function index()
     {
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | THỐNG KÊ CƠ BẢN
+        |--------------------------------------------------------------------------
+        */
+
+
         $productCount = Product::count();
+
 
         $categoryCount = Category::count();
 
-        $componentCount = Component::count();
+
 
         $compatibilityRuleCount =
             ComponentCompatibilityRule::count();
 
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CUSTOMER
+        |--------------------------------------------------------------------------
+        */
+
+
         $customerCount = User::whereHas(
             'role',
             function ($query) {
+
                 $query->where(
                     'name',
                     'customer'
                 );
+
             }
         )->count();
 
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | STAFF
+        |--------------------------------------------------------------------------
+        */
+
+
+        $staffCount = User::whereHas(
+            'role',
+            function ($query) {
+
+                $query->where(
+                    'name',
+                    'staff'
+                );
+
+            }
+        )->count();
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ORDER
+        |--------------------------------------------------------------------------
+        */
+
+
         $orderCount = Order::count();
 
-        return view(
-            'admin.dashboard',
-            compact(
-                'productCount',
-                'categoryCount',
-                'componentCount',
-                'compatibilityRuleCount',
-                'customerCount',
-                'orderCount'
-            )
+
+
+        $processingOrderCount = Order::whereIn(
+            'order_status',
+            [
+                'pending',
+                'confirmed',
+                'preparing',
+                'shipping',
+            ]
+        )->count();
+
+
+
+        $completedRevenue = Order::where(
+            'order_status',
+            'completed'
+        )
+        ->sum(
+            'total_amount'
         );
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | RETURN REQUEST
+        |--------------------------------------------------------------------------
+        */
+
+
+        $pendingReturnCount = ReturnRequest::where(
+            'status',
+            'pending'
+        )
+        ->count();
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ORDER RECENT
+        |--------------------------------------------------------------------------
+        */
+
+
+        $recentOrders = Order::query()
+
+            ->latest()
+
+            ->limit(5)
+
+            ->get();
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | TOP PRODUCT
+        |--------------------------------------------------------------------------
+        */
+
+
+        $topProducts = OrderDetail::query()
+
+            ->select(
+                'item_name',
+
+                DB::raw(
+                    'SUM(quantity) as total_sold'
+                ),
+
+                DB::raw(
+                    'SUM(subtotal) as total_revenue'
+                )
+            )
+
+            ->groupBy(
+                'item_name'
+            )
+
+            ->orderByDesc(
+                'total_sold'
+            )
+
+            ->limit(5)
+
+            ->get();
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOW STOCK
+        |--------------------------------------------------------------------------
+        */
+
+
+        $lowStockProducts = Product::query()
+
+            ->whereColumn(
+                'stock_quantity',
+                '<=',
+                'low_stock_threshold'
+            )
+
+            ->limit(5)
+
+            ->get();
+
+
+
+        return view(
+
+            'admin.dashboard',
+
+            compact(
+
+                /*
+                 * Old data
+                 */
+
+                'productCount',
+
+                'categoryCount',
+
+                'compatibilityRuleCount',
+
+                'customerCount',
+
+                'orderCount',
+
+
+
+                /*
+                 * New dashboard data
+                 */
+
+                'staffCount',
+
+                'processingOrderCount',
+
+                'completedRevenue',
+
+                'pendingReturnCount',
+
+                'recentOrders',
+
+                'topProducts',
+
+                'lowStockProducts'
+
+            )
+
+        );
+
+
     }
+
 }

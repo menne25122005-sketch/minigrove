@@ -465,3 +465,139 @@
         width: 100%;
     }
 }
+
+/* =========================================================
+   STAFF TABLE ALIGNMENT
+========================================================= */
+
+
+/* Table layout */
+
+.staff-table {
+
+    width:100%;
+
+    table-layout: fixed;
+
+}
+
+
+
+/* ID */
+
+.staff-table th:nth-child(1),
+.staff-table td:nth-child(1){
+
+    width:7%;
+
+}
+
+
+
+/* Nhân viên */
+
+.staff-table th:nth-child(2),
+.staff-table td:nth-child(2){
+
+    width:18%;
+
+}
+
+
+
+/* Liên hệ */
+
+.staff-table th:nth-child(3),
+.staff-table td:nth-child(3){
+
+    width:18%;
+
+}
+
+
+
+/* Chức vụ */
+
+.staff-table th:nth-child(4),
+.staff-table td:nth-child(4){
+
+    width:22%;
+
+}
+
+
+
+/* Ngày tạo */
+
+.staff-table th:nth-child(5),
+.staff-table td:nth-child(5){
+
+    width:15%;
+
+}
+
+
+
+/* Trạng thái */
+
+.staff-table th:nth-child(6),
+.staff-table td:nth-child(6){
+
+    width:10%;
+
+}
+
+
+
+/* Thao tác */
+
+.staff-table th:nth-child(7),
+.staff-table td:nth-child(7){
+
+    width:10%;
+
+    text-align:center;
+
+}
+
+
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+
+.staff-actions {
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:8px;
+
+    flex-wrap:nowrap;
+
+}
+
+
+
+.staff-actions form {
+
+    margin:0;
+
+}
+
+
+
+.staff-actions .btn {
+
+    white-space:nowrap;
+
+    padding:8px 12px;
+
+    font-size:12px;
+
+}

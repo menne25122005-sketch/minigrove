@@ -34,17 +34,11 @@
     {{-- THÔNG TIN ITEM --}}
     <div class="card stock-history-info">
 
-        <div>
+        <div class="stock-history-type">
 
-            <div class="stock-history-type">
+    Sản phẩm
 
-                {{
-                    $stockType === 'PRODUCT'
-                        ? 'Sản phẩm'
-                        : 'Thành phần'
-                }}
-
-            </div>
+</div>
 
             <h1>
                 {{ $item->name }}
@@ -62,7 +56,7 @@
             <div>
 
                 <span>
-                    Tồn hiện tại
+                    Tồn kho
                 </span>
 
                 <strong>
