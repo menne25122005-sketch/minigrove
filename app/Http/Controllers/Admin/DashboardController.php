@@ -5,15 +5,17 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 
+
 use App\Models\Category;
-use App\Models\ComponentCompatibilityRule;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ReturnRequest;
 use App\Models\User;
 
+
 use Illuminate\Support\Facades\DB;
+
 
 
 class DashboardController extends Controller
@@ -34,11 +36,6 @@ class DashboardController extends Controller
 
 
         $categoryCount = Category::count();
-
-
-
-        $compatibilityRuleCount =
-            ComponentCompatibilityRule::count();
 
 
 
@@ -63,6 +60,7 @@ class DashboardController extends Controller
 
 
 
+
         /*
         |--------------------------------------------------------------------------
         | STAFF
@@ -81,6 +79,8 @@ class DashboardController extends Controller
 
             }
         )->count();
+
+
 
 
 
@@ -117,6 +117,8 @@ class DashboardController extends Controller
 
 
 
+
+
         /*
         |--------------------------------------------------------------------------
         | RETURN REQUEST
@@ -129,6 +131,8 @@ class DashboardController extends Controller
             'pending'
         )
         ->count();
+
+
 
 
 
@@ -146,6 +150,8 @@ class DashboardController extends Controller
             ->limit(5)
 
             ->get();
+
+
 
 
 
@@ -184,6 +190,8 @@ class DashboardController extends Controller
 
 
 
+
+
         /*
         |--------------------------------------------------------------------------
         | LOW STOCK
@@ -205,31 +213,24 @@ class DashboardController extends Controller
 
 
 
+
+
         return view(
 
             'admin.dashboard',
 
             compact(
 
-                /*
-                 * Old data
-                 */
 
                 'productCount',
 
                 'categoryCount',
-
-                'compatibilityRuleCount',
 
                 'customerCount',
 
                 'orderCount',
 
 
-
-                /*
-                 * New dashboard data
-                 */
 
                 'staffCount',
 
@@ -244,6 +245,7 @@ class DashboardController extends Controller
                 'topProducts',
 
                 'lowStockProducts'
+
 
             )
 

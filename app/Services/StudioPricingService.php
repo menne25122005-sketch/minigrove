@@ -2,191 +2,228 @@
 
 namespace App\Services;
 
-use App\Models\Component;
+use App\Models\Product;
 use Illuminate\Validation\ValidationException;
+
 
 class StudioPricingService
 {
+
+
     /**
-     * Kiểm tra Component + tồn kho
-     * và tính giá hoàn toàn từ Database.
+     * Kiểm tra Product + tồn kho
+     * và tính giá từ Database.
      *
-     * $selectedItems dạng:
+     * Dữ liệu:
      *
      * [
      *     [
-     *         'component_id' => 1,
+     *         'product_id' => 1,
      *         'quantity' => 1,
-     *     ],
-     *     ...
+     *     ]
      * ]
      */
     public function calculate(array $selectedItems): array
     {
+
+
         if (empty($selectedItems)) {
+
             throw ValidationException::withMessages([
-                'components' =>
-                    'Thiết kế phải có ít nhất một thành phần.',
+                'products' =>
+                    'Thiết kế phải có ít nhất một sản phẩm.',
             ]);
+
         }
+
+
 
         $resultItems = [];
 
         $estimatedPrice = 0;
 
-        /*
-         * Không cho cùng một Component
-         * xuất hiện nhiều dòng.
-         */
-        $usedComponentIds = [];
+
+        $usedProductIds = [];
+
+
 
         foreach ($selectedItems as $item) {
 
-            $componentId =
-                (int) ($item['component_id'] ?? 0);
+
+            $productId =
+                (int) ($item['product_id'] ?? 0);
+
 
             $quantity =
                 (int) ($item['quantity'] ?? 0);
 
 
-            /*
-             * Component ID phải hợp lệ.
-             */
-            if ($componentId <= 0) {
+
+
+            if ($productId <= 0) {
+
                 throw ValidationException::withMessages([
-                    'components' =>
-                        'Có thành phần không hợp lệ.',
+                    'products' =>
+                        'Có sản phẩm không hợp lệ.',
                 ]);
+
             }
 
 
-            /*
-             * Quantity phải >= 1.
-             */
+
             if ($quantity < 1) {
+
                 throw ValidationException::withMessages([
-                    'components' =>
-                        'Số lượng thành phần phải lớn hơn hoặc bằng 1.',
+                    'products' =>
+                        'Số lượng sản phẩm phải lớn hơn hoặc bằng 1.',
                 ]);
+
             }
 
 
-            /*
-             * Không tin dữ liệu tên/giá từ Client.
-             * Lấy lại Component từ Database.
-             */
-            $component = Component::find($componentId);
 
-            if (!$component) {
+
+            $product = Product::find($productId);
+
+
+
+            if (!$product) {
+
                 throw ValidationException::withMessages([
-                    'components' =>
-                        'Có thành phần không còn tồn tại.',
+                    'products' =>
+                        'Có sản phẩm không còn tồn tại.',
                 ]);
+
             }
 
 
-            /*
-             * Component phải Active.
-             */
-            if (!$component->is_active) {
+
+
+            if (!$product->is_active) {
+
                 throw ValidationException::withMessages([
-                    'components' =>
-                        "Thành phần \"{$component->name}\" đang Inactive.",
+                    'products' =>
+                        "Sản phẩm \"{$product->name}\" đang Inactive.",
                 ]);
+
             }
 
 
-            /*
-             * Không được chọn Component hết hàng.
-             */
-            if ($component->stock_quantity <= 0) {
+
+
+            if ($product->stock_quantity <= 0) {
+
                 throw ValidationException::withMessages([
-                    'components' =>
-                        "Thành phần \"{$component->name}\" đã hết hàng.",
+                    'products' =>
+                        "Sản phẩm \"{$product->name}\" đã hết hàng.",
                 ]);
+
             }
 
 
-            /*
-             * Số lượng chọn không vượt Stock.
-             */
-            if ($quantity > $component->stock_quantity) {
+
+
+            if ($quantity > $product->stock_quantity) {
+
                 throw ValidationException::withMessages([
-                    'components' =>
-                        "Thành phần \"{$component->name}\" chỉ còn {$component->stock_quantity} {$component->unit}.",
+                    'products' =>
+                        "Sản phẩm \"{$product->name}\" chỉ còn {$product->stock_quantity}.",
                 ]);
+
             }
 
 
-            /*
-             * Không cho cùng một Component
-             * xuất hiện hai lần.
-             */
-            if (in_array(
-                $component->id,
-                $usedComponentIds,
-                true
-            )) {
+
+
+            if (
+                in_array(
+                    $product->id,
+                    $usedProductIds,
+                    true
+                )
+            ) {
+
                 throw ValidationException::withMessages([
-                    'components' =>
-                        "Thành phần \"{$component->name}\" bị chọn trùng.",
+                    'products' =>
+                        "Sản phẩm \"{$product->name}\" bị chọn trùng.",
                 ]);
+
             }
 
-            $usedComponentIds[] = $component->id;
 
 
-            /*
-             * Giá luôn lấy từ Database.
-             */
-            $unitPrice = (float) $component->price;
-
-            $subtotal = $unitPrice * $quantity;
-
-            $estimatedPrice += $subtotal;
+            $usedProductIds[] =
+                $product->id;
 
 
-            /*
-             * Dữ liệu chuẩn để lưu
-             * CustomDesignItem sau này.
-             */
+
+
+            $unitPrice =
+                (float) (
+                    $product->sale_price
+                    ?? $product->list_price
+                );
+
+
+
+            $subtotal =
+                $unitPrice * $quantity;
+
+
+
+            $estimatedPrice +=
+                $subtotal;
+
+
+
+
             $resultItems[] = [
-                'component_id' =>
-                    $component->id,
 
-                'component_type' =>
-                    $component->component_type,
+                'product_id' =>
+                    $product->id,
 
-                'component_name' =>
-                    $component->name,
+
+                'product_name' =>
+                    $product->name,
+
+
+                'ecosystem_type' =>
+                    $product->ecosystem_type,
+
 
                 'unit_price' =>
                     $unitPrice,
 
+
                 'quantity' =>
                     $quantity,
+
 
                 'subtotal' =>
                     $subtotal,
 
+
                 'sku' =>
-                    $component->sku,
+                    $product->sku,
 
-                'unit' =>
-                    $component->unit,
-
-                'compatible_ecosystem_type' =>
-                    $component
-                        ->compatible_ecosystem_type,
             ];
+
         }
 
 
+
+
         return [
-            'items' => $resultItems,
+
+            'items' =>
+                $resultItems,
+
 
             'estimated_price' =>
                 $estimatedPrice,
+
         ];
+
     }
+
 }

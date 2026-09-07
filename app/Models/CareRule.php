@@ -9,35 +9,59 @@ class CareRule extends Model
 {
     use HasFactory;
 
+
     protected $fillable = [
+
         'name',
+
         'source_type',
+
         'ecosystem_type',
+
         'product_id',
-        'component_id',
+
         'task_type',
+
         'interval_days',
+
         'instructions',
+
         'is_active',
+
     ];
+
+
 
     protected $casts = [
+
         'interval_days' => 'integer',
+
         'is_active' => 'boolean',
+
     ];
 
+
+
+    /**
+     * Care Rule thuộc về một Product.
+     */
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(
+            Product::class
+        );
     }
 
-    public function component()
-    {
-        return $this->belongsTo(Component::class);
-    }
 
+
+    /**
+     * Care Rule có nhiều lịch chăm sóc.
+     */
     public function schedules()
     {
-        return $this->hasMany(CareSchedule::class);
+        return $this->hasMany(
+            CareSchedule::class
+        );
     }
+
 }

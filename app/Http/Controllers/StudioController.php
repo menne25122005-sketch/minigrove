@@ -2,19 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Component;
+
+use App\Models\Product;
+
 use App\Services\StudioCompatibilityService;
 use App\Services\StudioPricingService;
+
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
+
+
 class StudioController extends Controller
 {
+
     public function __construct(
         private StudioPricingService $pricingService,
+
         private StudioCompatibilityService $compatibilityService
     ) {
+
     }
+
+
+
 
 
     /**
@@ -22,55 +33,81 @@ class StudioController extends Controller
      */
     public function index()
     {
-        $components = Component::with([
-        'images' => function ($query) {
-            $query->orderByDesc('is_primary')
-                ->orderBy('sort_order');
-        },
-    ])
-    ->where(
-        'is_active',
-        true
-    )
-            ->where(
-                'stock_quantity',
-                '>',
-                0
-            )
-            ->orderBy('component_type')
-            ->orderBy('name')
-            ->get();
+
+        $products = Product::with([
+
+            'images' => function ($query) {
+
+                $query
+                    ->orderByDesc('is_primary')
+                    ->orderBy('sort_order');
+
+            },
+
+        ])
+
+        ->where(
+            'is_active',
+            true
+        )
+
+        ->where(
+            'stock_quantity',
+            '>',
+            0
+        )
+
+        ->orderBy(
+            'ecosystem_type'
+        )
+
+        ->orderBy(
+            'name'
+        )
+
+        ->get();
 
 
-        $containers = $components->where(
-            'component_type',
+
+
+
+        $containers = $products->where(
+            'ecosystem_type',
             'container'
         );
 
-        $plants = $components->where(
-            'component_type',
+
+        $plants = $products->where(
+            'ecosystem_type',
             'plant'
         );
 
-        $mosses = $components->where(
-            'component_type',
+
+        $mosses = $products->where(
+            'ecosystem_type',
             'moss'
         );
 
-        $substrates = $components->where(
-            'component_type',
+
+        $substrates = $products->where(
+            'ecosystem_type',
             'substrate'
         );
 
-        $stones = $components->where(
-            'component_type',
+
+        $stones = $products->where(
+            'ecosystem_type',
             'stone'
         );
 
-        $accessories = $components->where(
-            'component_type',
+
+        $accessories = $products->where(
+            'ecosystem_type',
             'accessory'
         );
+
+
+
 
 
         return view(
@@ -84,185 +121,359 @@ class StudioController extends Controller
                 'accessories'
             )
         );
+
     }
+
+
+
 
 
     /**
      * Kiểm tra cấu hình và tạo Preview.
-     *
-     * Chưa lưu CustomDesign vì Auth Customer
-     * sẽ được tích hợp ở bước sau.
      */
     public function preview(Request $request)
     {
+
         $validated = $request->validate(
+
             [
+
                 'container_id' => [
+
                     'required',
+
                     'integer',
-                    'exists:components,id',
+
+                    'exists:products,id',
+
                 ],
+
+
 
                 'plant_id' => [
+
                     'nullable',
+
                     'integer',
-                    'exists:components,id',
+
+                    'exists:products,id',
+
                 ],
+
+
 
                 'moss_id' => [
+
                     'nullable',
+
                     'integer',
-                    'exists:components,id',
+
+                    'exists:products,id',
+
                 ],
+
+
 
                 'substrate_id' => [
+
                     'required',
+
                     'integer',
-                    'exists:components,id',
+
+                    'exists:products,id',
+
                 ],
+
+
 
                 'stone_id' => [
+
                     'nullable',
+
                     'integer',
-                    'exists:components,id',
+
+                    'exists:products,id',
+
                 ],
+
+
 
                 'accessory_id' => [
+
                     'nullable',
+
                     'integer',
-                    'exists:components,id',
+
+                    'exists:products,id',
+
                 ],
 
+
+
                 'style' => [
+
                     'required',
 
                     Rule::in([
+
                         'natural',
+
                         'forest',
+
                         'zen',
+
                         'fairy',
+
                         'tropical',
+
                         'minimal',
+
                     ]),
+
                 ],
+
+
             ],
+
+
             [
+
                 'container_id.required' =>
+
                     'Bạn phải chọn bình.',
 
+
+
                 'substrate_id.required' =>
+
                     'Bạn phải chọn nền / giá thể.',
 
+
+
                 'style.required' =>
+
                     'Bạn phải chọn phong cách.',
 
+
+
                 'style.in' =>
+
                     'Phong cách không hợp lệ.',
+
             ]
+
         );
 
 
+
+
+
         /*
-         * Phải chọn ít nhất Cây hoặc Rêu.
-         */
+        |--------------------------------------------------------------------------
+        | Phải chọn ít nhất Cây hoặc Rêu
+        |--------------------------------------------------------------------------
+        */
+
         if (
-            empty($validated['plant_id']) &&
+
+            empty($validated['plant_id'])
+
+            &&
+
             empty($validated['moss_id'])
+
         ) {
+
+
             return back()
+
                 ->withErrors([
-                    'components' =>
+
+                    'products' =>
+
                         'Bạn phải chọn ít nhất một Cây hoặc Rêu.',
+
                 ])
+
                 ->withInput();
+
+
         }
 
 
-        /*
-         * ---------------------------------------------------------------
-         * Gom các Component đã chọn
-         * ---------------------------------------------------------------
-         */
 
-        $componentIds = [
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Gom các Product đã chọn
+        |--------------------------------------------------------------------------
+        */
+
+
+        $productIds = [
+
             $validated['container_id'],
+
             $validated['substrate_id'],
+
         ];
 
 
-        foreach ([
-            'plant_id',
-            'moss_id',
-            'stone_id',
-            'accessory_id',
-        ] as $field) {
 
-            if (!empty($validated[$field])) {
-                $componentIds[] =
+
+
+        foreach (
+
+            [
+
+                'plant_id',
+
+                'moss_id',
+
+                'stone_id',
+
+                'accessory_id',
+
+            ]
+
+            as $field
+
+        ) {
+
+
+            if (
+
+                !empty($validated[$field])
+
+            ) {
+
+
+                $productIds[] =
+
                     $validated[$field];
+
+
             }
+
         }
 
 
+
+
+
+
+
         /*
-         * ---------------------------------------------------------------
-         * Kiểm tra tương thích
-         * ---------------------------------------------------------------
-         */
+        |--------------------------------------------------------------------------
+        | Kiểm tra tương thích
+        |--------------------------------------------------------------------------
+        */
+
+
         $compatibility =
+
             $this->compatibilityService
-                ->validate($componentIds);
+
+                ->validate($productIds);
+
+
+
+
+
 
 
         /*
-         * ---------------------------------------------------------------
-         * Chuẩn bị dữ liệu tính giá.
-         *
-         * Phiên bản đầu: mỗi Component Quantity = 1.
-         * ---------------------------------------------------------------
-         */
+        |--------------------------------------------------------------------------
+        | Chuẩn bị dữ liệu tính giá
+        |--------------------------------------------------------------------------
+        */
+
+
         $pricingItems = [];
 
-        foreach ($componentIds as $componentId) {
-            $pricingItems[] = [
-                'component_id' =>
-                    $componentId,
 
-                'quantity' => 1,
+
+
+
+        foreach ($productIds as $productId) {
+
+
+            $pricingItems[] = [
+
+                'product_id' =>
+
+                    $productId,
+
+
+                'quantity' =>
+
+                    1,
+
             ];
+
         }
 
 
+
+
+
+
+
         /*
-         * ---------------------------------------------------------------
-         * Tính giá từ Database
-         * ---------------------------------------------------------------
-         */
+        |--------------------------------------------------------------------------
+        | Tính giá
+        |--------------------------------------------------------------------------
+        */
+
+
         $pricing =
+
             $this->pricingService
+
                 ->calculate($pricingItems);
 
 
-        /*
-         * ---------------------------------------------------------------
-         * Preview
-         * ---------------------------------------------------------------
-         */
+
+
+
+
+
         return view(
+
             'studio.preview',
+
             [
+
                 'style' =>
+
                     $validated['style'],
 
+
+
                 'items' =>
+
                     $pricing['items'],
 
+
+
                 'estimatedPrice' =>
+
                     $pricing['estimated_price'],
 
+
+
                 'compatibility' =>
+
                     $compatibility,
+
             ]
+
         );
+
     }
+
+
 }

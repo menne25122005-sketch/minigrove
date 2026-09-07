@@ -1188,34 +1188,6 @@ Route::patch(
 
         
 
-        /*
-         * ---------------------------------------------------------------
-         * Component Compatibility Rule
-         * ---------------------------------------------------------------
-         */
-
-        Route::patch(
-            '/compatibility-rules/{compatibilityRule}/toggle-status',
-            [
-                ComponentCompatibilityRuleController::class,
-                'toggleStatus',
-            ]
-        )->name(
-            'compatibility-rules.toggle-status'
-        );
-
-
-        Route::resource(
-            'compatibility-rules',
-            ComponentCompatibilityRuleController::class
-        )
-            ->except(
-                'show'
-            )
-            ->parameters([
-                'compatibility-rules'
-                    => 'compatibilityRule',
-            ]);
 
     });
 

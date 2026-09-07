@@ -1,86 +1,178 @@
 @php
+
     $image =
-        $component->images
+
+        $product->images
+
             ->firstWhere(
+
                 'is_primary',
+
                 true
+
             )
-        ?? $component->images->first();
+
+        ??
+
+        $product->images->first();
+
+
 
     $inputId =
-        $prefix . '_' . $component->id;
+
+        $prefix . '_' . $product->id;
+
 @endphp
 
 
-<div class="component-option">
+
+
+<div class="product-option">
+
 
     <input
+
         type="radio"
+
         name="{{ $field }}"
+
         id="{{ $inputId }}"
-        value="{{ $component->id }}"
+
+        value="{{ $product->id }}"
+
         @checked(
-            old($field) == $component->id
+
+            old($field) == $product->id
+
         )
+
     >
 
+
+
+
     <label
-        class="component-card"
+
+        class="product-card"
+
         for="{{ $inputId }}"
+
     >
+
+
 
         @if ($image)
 
+
             <img
-                class="component-image"
+
+                class="product-image"
+
                 src="{{ asset(
+
                     'storage/' .
+
                     $image->image_path
+
                 ) }}"
-                alt="{{ $component->name }}"
+
+                alt="{{ $product->name }}"
+
             >
+
+
 
         @else
 
+
             <div class="no-image">
+
                 Không ảnh
+
             </div>
+
 
         @endif
 
 
-        <div class="component-info">
 
-            <div class="component-name">
-                {{ $component->name }}
+
+
+        <div class="product-info">
+
+
+
+            <div class="product-name">
+
+                {{ $product->name }}
+
             </div>
 
-            <div class="component-sku">
-                {{ $component->sku }}
+
+
+
+            <div class="product-sku">
+
+                {{ $product->sku }}
+
             </div>
 
-            <div class="component-bottom">
+
+
+
+            <div class="product-bottom">
+
+
 
                 <span class="price">
 
+
                     {{ number_format(
-                        (float) $component->price,
+
+                        (float)(
+
+                            $product->sale_price
+
+                            ??
+
+                            $product->list_price
+
+                        ),
+
                         0,
+
                         ',',
+
                         '.'
+
                     ) }}đ
 
+
+
                 </span>
 
+
+
+
                 <span class="stock">
+
                     Còn
-                    {{ $component->stock_quantity }}
+
+                    {{ $product->stock_quantity }}
+
                 </span>
+
+
 
             </div>
 
+
+
         </div>
 
+
+
     </label>
+
 
 </div>
