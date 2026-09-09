@@ -1,4 +1,5 @@
 @php
+
     $editingRule = $compatibilityRule ?? null;
 
     $typeLabels = [
@@ -9,94 +10,117 @@
         'stone' => 'Đá',
         'accessory' => 'Phụ kiện',
     ];
+
 @endphp
 
 
 <div class="compatibility-form-grid">
 
-    {{-- Thành phần nguồn --}}
+    {{-- Sản phẩm nguồn --}}
     <div class="form-group">
 
-        <label for="source_component_id">
-            Thành phần nguồn *
+        <label for="source_product_id">
+            Sản phẩm nguồn *
         </label>
 
         <select
-            id="source_component_id"
-            name="source_component_id"
+            id="source_product_id"
+            name="source_product_id"
         >
+
             <option value="">
-                -- Chọn thành phần nguồn --
+                -- Chọn sản phẩm nguồn --
             </option>
 
-            @foreach ($components as $component)
+            @foreach ($products as $product)
 
                 <option
-                    value="{{ $component->id }}"
+                    value="{{ $product->id }}"
                     @selected(
                         old(
-                            'source_component_id',
-                            $editingRule?->source_component_id
-                        ) == $component->id
+                            'source_product_id',
+                            $editingRule?->source_product_id
+                        ) == $product->id
                     )
                 >
-                    [{{ $typeLabels[$component->component_type] ?? $component->component_type }}]
-                    {{ $component->name }}
-                    - {{ $component->sku }}
+
+                    [
+                    {{ $typeLabels[$product->ecosystem_type] ?? $product->ecosystem_type }}
+                    ]
+
+                    {{ $product->name }}
+
+                    @if ($product->sku)
+                        - {{ $product->sku }}
+                    @endif
+
                 </option>
 
             @endforeach
 
         </select>
 
-        @error('source_component_id')
+        @error('source_product_id')
+
             <div class="error">
                 {{ $message }}
             </div>
+
         @enderror
 
     </div>
 
 
-    {{-- Thành phần đích --}}
+    {{-- Sản phẩm đích --}}
     <div class="form-group">
 
-        <label for="target_component_id">
-            Thành phần đích *
+        <label for="target_product_id">
+            Sản phẩm đích *
         </label>
 
         <select
-            id="target_component_id"
-            name="target_component_id"
+            id="target_product_id"
+            name="target_product_id"
         >
+
             <option value="">
-                -- Chọn thành phần đích --
+                -- Chọn sản phẩm đích --
             </option>
 
-            @foreach ($components as $component)
+            @foreach ($products as $product)
 
                 <option
-                    value="{{ $component->id }}"
+                    value="{{ $product->id }}"
                     @selected(
                         old(
-                            'target_component_id',
-                            $editingRule?->target_component_id
-                        ) == $component->id
+                            'target_product_id',
+                            $editingRule?->target_product_id
+                        ) == $product->id
                     )
                 >
-                    [{{ $typeLabels[$component->component_type] ?? $component->component_type }}]
-                    {{ $component->name }}
-                    - {{ $component->sku }}
+
+                    [
+                    {{ $typeLabels[$product->ecosystem_type] ?? $product->ecosystem_type }}
+                    ]
+
+                    {{ $product->name }}
+
+                    @if ($product->sku)
+                        - {{ $product->sku }}
+                    @endif
+
                 </option>
 
             @endforeach
 
         </select>
 
-        @error('target_component_id')
+        @error('target_product_id')
+
             <div class="error">
                 {{ $message }}
             </div>
+
         @enderror
 
     </div>
@@ -113,6 +137,7 @@
             id="is_compatible"
             name="is_compatible"
         >
+
             <option value="">
                 -- Chọn kết quả --
             </option>
@@ -122,7 +147,7 @@
                 @selected(
                     (string) old(
                         'is_compatible',
-                        isset($editingRule)
+                        $editingRule
                             ? (int) $editingRule->is_compatible
                             : ''
                     ) === '1'
@@ -136,7 +161,7 @@
                 @selected(
                     (string) old(
                         'is_compatible',
-                        isset($editingRule)
+                        $editingRule
                             ? (int) $editingRule->is_compatible
                             : ''
                     ) === '0'
@@ -148,9 +173,11 @@
         </select>
 
         @error('is_compatible')
+
             <div class="error">
                 {{ $message }}
             </div>
+
         @enderror
 
     </div>
@@ -172,13 +199,15 @@
     >{{ old('reason', $editingRule?->reason) }}</textarea>
 
     <small class="help-text">
-        Nếu chọn “Không tương thích” thì bắt buộc nhập lý do.
+        Nếu chọn “Không tương thích” thì nên nhập lý do để giải thích.
     </small>
 
     @error('reason')
+
         <div class="error">
             {{ $message }}
         </div>
+
     @enderror
 
 </div>
@@ -188,6 +217,13 @@
 <div class="compatibility-options">
 
     <div class="checkbox-row">
+
+        {{-- Giá trị mặc định khi checkbox không được tick --}}
+        <input
+            type="hidden"
+            name="is_active"
+            value="0"
+        >
 
         <input
             type="checkbox"
@@ -218,38 +254,64 @@
 <style>
 
     .compatibility-form-grid {
+
         display: grid;
+
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
+
         gap: 0 22px;
+
     }
+
 
     .compatibility-form-grid select {
+
         width: 100%;
+
         border: 1px solid #ccd5cf;
+
         border-radius: 7px;
+
         padding: 11px;
+
         font-size: 14px;
+
         background: white;
+
     }
+
 
     .compatibility-options {
+
         padding: 18px;
+
         margin: 20px 0;
+
         background: #f4f7f5;
+
         border-radius: 9px;
+
     }
 
+
     .help-text {
+
         display: block;
+
         margin-top: 6px;
+
         color: #6b746e;
+
     }
+
 
     @media (max-width: 750px) {
 
         .compatibility-form-grid {
+
             grid-template-columns: 1fr;
+
         }
 
     }

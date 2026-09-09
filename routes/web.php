@@ -22,6 +22,9 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\GroveController;
+use App\Http\Controllers\Admin\CompatibilityRuleController;
+
+
 
 
 
@@ -758,6 +761,7 @@ Route::prefix('admin')
             'dashboard'
         );
 
+        
         /*
 |--------------------------------------------------------------------------
 | Staff - Nhân viên
@@ -1185,7 +1189,25 @@ Route::patch(
             'show'
         );
 
-
+        /*
+|--------------------------------------------------------------------------
+| Product Compatibility Rules
+|--------------------------------------------------------------------------
+*/
+Route::patch(
+    'compatibility-rules/{compatibilityRule}/toggle-status',
+    [CompatibilityRuleController::class, 'toggleStatus']
+)->name(
+    'compatibility-rules.toggle-status'
+);
+Route::resource(
+    'compatibility-rules',
+    CompatibilityRuleController::class
+)
+    ->except('show')
+    ->parameters([
+        'compatibility-rules' => 'compatibilityRule',
+    ]);
         
 
 
