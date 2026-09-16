@@ -13,24 +13,15 @@ return new class extends Migration
 
             /*
              * PRODUCT
-             * COMPONENT
              */
             $table->string('stock_type', 30);
 
             /*
-             * Dùng khi stock_type = PRODUCT
+             * Sản phẩm liên quan đến biến động kho.
              */
             $table->foreignId('product_id')
                 ->nullable()
                 ->constrained('products')
-                ->restrictOnDelete();
-
-            /*
-             * Dùng khi stock_type = COMPONENT
-             */
-            $table->foreignId('component_id')
-                ->nullable()
-                ->constrained('components')
                 ->restrictOnDelete();
 
             /*
@@ -51,8 +42,8 @@ return new class extends Migration
              *
              * Ví dụ:
              * nhập +10
-             * bán  -2
-             * hoàn +2
+             * bán   -2
+             * hoàn  +2
              */
             $table->integer('quantity_change');
 

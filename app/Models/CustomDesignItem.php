@@ -9,39 +9,23 @@ class CustomDesignItem extends Model
 {
     use HasFactory;
 
-
     protected $fillable = [
-
         'custom_design_id',
-
-        'component_type',
-
-        'component_name',
-
+        'product_id',
+        'product_name',
         'unit_price',
-
         'quantity',
-
         'subtotal',
-
     ];
-
-
 
     protected $casts = [
-
         'unit_price' => 'decimal:2',
-
         'quantity' => 'integer',
-
         'subtotal' => 'decimal:2',
-
     ];
 
-
-
     /**
-     * Item thuộc một Custom Design.
+     * Item thuộc về một Custom Design.
      */
     public function customDesign()
     {
@@ -50,4 +34,13 @@ class CustomDesignItem extends Model
         );
     }
 
+    /**
+     * Item thuộc về một Product.
+     */
+    public function product()
+    {
+        return $this->belongsTo(
+            Product::class
+        );
+    }
 }

@@ -210,13 +210,10 @@ class OrderCancellationService
                             'PRODUCT',
 
                         'product_id' =>
-                            $product->id,
+    $product->id,
 
-                        'component_id' =>
-                            null,
-
-                        'transaction_type' =>
-                            'ORDER_CANCEL',
+'transaction_type' =>
+    'ORDER_CANCEL',
 
                         'quantity_before' =>
                             $quantityBefore,

@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -11,30 +9,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('component_compatibility_rules', function (Blueprint $table) {
-            $table->id();
-
-            $table->foreignId('source_component_id')
-                ->constrained('components')
-                ->cascadeOnDelete();
-
-            $table->foreignId('target_component_id')
-                ->constrained('components')
-                ->cascadeOnDelete();
-
-            $table->boolean('is_compatible');
-
-            $table->text('reason')->nullable();
-
-            $table->boolean('is_active')->default(true);
-
-            $table->timestamps();
-
-            $table->unique(
-                ['source_component_id', 'target_component_id'],
-                'ccr_source_target_unique'
-            );
-        });
+        // Component compatibility feature was removed.
+        // Product compatibility is handled by
+        // 2026_09_09_133431_create_product_compatibility_rules_table.php
     }
 
     /**
@@ -42,6 +19,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('component_compatibility_rules');
+        // Nothing to rollback because the old component
+        // compatibility table is no longer created.
     }
 };

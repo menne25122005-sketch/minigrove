@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('custom_design_items', function (Blueprint $table) {
@@ -18,21 +15,19 @@ return new class extends Migration
                 ->constrained('custom_designs')
                 ->cascadeOnDelete();
 
-            $table->foreignId('component_id')
-                ->constrained('components')
+            /*
+             * Product được sử dụng trong Custom Design.
+             */
+            $table->foreignId('product_id')
+                ->constrained('products')
                 ->restrictOnDelete();
 
             /*
-             * Snapshot loại Component.
-             * container / plant / moss /
-             * substrate / stone / accessory
+             * Snapshot thông tin Product
+             * tại thời điểm thiết kế được lưu.
              */
-            $table->string('component_type', 30);
+            $table->string('product_name', 150);
 
-            // Snapshot tên tại thời điểm thiết kế
-            $table->string('component_name', 150);
-
-            // Snapshot giá tại thời điểm thiết kế
             $table->decimal('unit_price', 15, 2);
 
             $table->unsignedInteger('quantity')->default(1);
@@ -42,19 +37,16 @@ return new class extends Migration
             $table->timestamps();
 
             /*
-             * Một Component chỉ xuất hiện một dòng
+             * Một Product chỉ xuất hiện một lần
              * trong cùng một Custom Design.
              */
             $table->unique(
-                ['custom_design_id', 'component_id'],
-                'cdi_design_component_unique'
+                ['custom_design_id', 'product_id'],
+                'cdi_design_product_unique'
             );
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('custom_design_items');

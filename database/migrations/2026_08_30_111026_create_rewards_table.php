@@ -18,7 +18,7 @@ return new class extends Migration
 
             /*
              * VOUCHER
-             * COMPONENT
+             * PRODUCT
              * BENEFIT
              */
             $table->string('reward_type', 30);
@@ -32,11 +32,11 @@ return new class extends Migration
                 ->restrictOnDelete();
 
             /*
-             * Phụ kiện liên quan nếu reward_type = COMPONENT.
+             * Product liên quan nếu reward_type = PRODUCT.
              */
-            $table->foreignId('component_id')
+            $table->foreignId('product_id')
                 ->nullable()
-                ->constrained('components')
+                ->constrained('products')
                 ->restrictOnDelete();
 
             /*

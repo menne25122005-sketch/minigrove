@@ -298,8 +298,6 @@ class ReturnProcessingService
                         'product_id' =>
                             $product->id,
 
-                        'component_id' =>
-                            null,
 
                         'transaction_type' =>
                             'RETURN_RECEIVED',

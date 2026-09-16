@@ -16,7 +16,6 @@ return new class extends Migration
             /*
              * ECOSYSTEM
              * PRODUCT
-             * COMPONENT
              */
             $table->string('source_type', 30);
 
@@ -37,14 +36,6 @@ return new class extends Migration
             $table->foreignId('product_id')
                 ->nullable()
                 ->constrained('products')
-                ->restrictOnDelete();
-
-            /*
-             * Dùng khi source_type = COMPONENT.
-             */
-            $table->foreignId('component_id')
-                ->nullable()
-                ->constrained('components')
                 ->restrictOnDelete();
 
             /*

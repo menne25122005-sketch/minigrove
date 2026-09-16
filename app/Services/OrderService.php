@@ -704,13 +704,10 @@ class OrderService
                                 'PRODUCT',
 
                             'product_id' =>
-                                $product->id,
+    $product->id,
 
-                            'component_id' =>
-                                null,
-
-                            'transaction_type' =>
-                                'ORDER',
+'transaction_type' =>
+    'ORDER',
 
                             'quantity_before' =>
                                 $quantityBefore,

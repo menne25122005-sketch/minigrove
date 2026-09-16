@@ -16,7 +16,6 @@ class CustomDesignService
     ) {
     }
 
-
     /**
      * Tạo và lưu Custom Design cho một Customer.
      */
@@ -34,22 +33,17 @@ class CustomDesignService
         $pricing = $this->pricingService
             ->calculate($selectedItems);
 
-
         /*
          * ---------------------------------------------------------------
-         * 2. Kiểm tra tương thích
+         * 2. Kiểm tra tương thích Product
          * ---------------------------------------------------------------
          */
-        $componentIds = collect(
-            $pricing['items']
-        )
-            ->pluck('component_id')
+        $productIds = collect($pricing['items'])
+            ->pluck('product_id')
             ->all();
 
-
         $compatibility = $this->compatibilityService
-            ->validate($componentIds);
-
+            ->validate($productIds);
 
         /*
          * ---------------------------------------------------------------
@@ -64,38 +58,29 @@ class CustomDesignService
                 $pricing,
                 $compatibility
             ) {
-
                 /*
                  * Sinh mã thiết kế duy nhất.
                  */
                 $designCode = $this->generateDesignCode();
 
-
                 /*
-                 * Snapshot toàn cấu hình.
+                 * Snapshot toàn bộ cấu hình.
                  */
                 $snapshot = [
                     'style' => $style,
 
                     'ecosystem_type' =>
-                        $compatibility[
-                            'ecosystem_type'
-                        ],
+                        $compatibility['ecosystem_type'],
 
                     'container' =>
-                        $compatibility[
-                            'container'
-                        ],
+                        $compatibility['container'],
 
-                    'components' =>
+                    'products' =>
                         $pricing['items'],
 
                     'estimated_price' =>
-                        $pricing[
-                            'estimated_price'
-                        ],
+                        $pricing['estimated_price'],
                 ];
-
 
                 /*
                  * Tạo Custom Design.
@@ -114,9 +99,7 @@ class CustomDesignService
                         $style,
 
                     'estimated_price' =>
-                        $pricing[
-                            'estimated_price'
-                        ],
+                        $pricing['estimated_price'],
 
                     'configuration_snapshot' =>
                         $snapshot,
@@ -125,47 +108,27 @@ class CustomDesignService
                         'saved',
                 ]);
 
-
                 /*
                  * Tạo từng CustomDesignItem.
                  */
-                foreach (
-                    $pricing['items']
-                    as $item
-                ) {
+                foreach ($pricing['items'] as $item) {
                     $design->items()->create([
-                        'component_id' =>
-                            $item[
-                                'component_id'
-                            ],
+                        'product_id' =>
+                            $item['product_id'],
 
-                        'component_type' =>
-                            $item[
-                                'component_type'
-                            ],
-
-                        'component_name' =>
-                            $item[
-                                'component_name'
-                            ],
+                        'product_name' =>
+                            $item['product_name'],
 
                         'unit_price' =>
-                            $item[
-                                'unit_price'
-                            ],
+                            $item['unit_price'],
 
                         'quantity' =>
-                            $item[
-                                'quantity'
-                            ],
+                            $item['quantity'],
 
                         'subtotal' =>
-                            $item[
-                                'subtotal'
-                            ],
+                            $item['subtotal'],
                     ]);
                 }
-
 
                 return $design->load(
                     'items'
@@ -173,7 +136,6 @@ class CustomDesignService
             }
         );
     }
-
 
     /**
      * Tính lại giá hiện hành của
@@ -186,13 +148,12 @@ class CustomDesignService
     ): array {
         $design->load('items');
 
-
         $selectedItems = $design->items
             ->map(
                 function ($item) {
                     return [
-                        'component_id' =>
-                            $item->component_id,
+                        'product_id' =>
+                            $item->product_id,
 
                         'quantity' =>
                             $item->quantity,
@@ -202,7 +163,6 @@ class CustomDesignService
             ->values()
             ->all();
 
-
         /*
          * Lấy lại giá và stock
          * từ Database hiện tại.
@@ -210,21 +170,16 @@ class CustomDesignService
         $pricing = $this->pricingService
             ->calculate($selectedItems);
 
-
         /*
-         * Kiểm tra lại compatibility.
+         * Kiểm tra lại compatibility Product.
          */
-        $componentIds = collect(
-            $pricing['items']
-        )
-            ->pluck('component_id')
+        $productIds = collect($pricing['items'])
+            ->pluck('product_id')
             ->all();
-
 
         $compatibility =
             $this->compatibilityService
-                ->validate($componentIds);
-
+                ->validate($productIds);
 
         return [
             'pricing' =>
@@ -234,7 +189,6 @@ class CustomDesignService
                 $compatibility,
         ];
     }
-
 
     /**
      * Xóa hoặc lưu trữ thiết kế.
@@ -257,7 +211,6 @@ class CustomDesignService
             ]);
         }
 
-
         /*
          * Nếu đã xuất hiện trong Order
          * thì không được xóa cứng.
@@ -273,7 +226,6 @@ class CustomDesignService
             return 'archived';
         }
 
-
         /*
          * Chưa phát sinh Order:
          * có thể xóa.
@@ -283,14 +235,12 @@ class CustomDesignService
         return 'deleted';
     }
 
-
     /**
      * Sinh Design Code.
      */
     private function generateDesignCode(): string
     {
         do {
-
             $code =
                 'MGD-' .
                 now()->format('Ymd') .
@@ -298,14 +248,12 @@ class CustomDesignService
                 strtoupper(
                     Str::random(6)
                 );
-
         } while (
             CustomDesign::where(
                 'design_code',
                 $code
             )->exists()
         );
-
 
         return $code;
     }

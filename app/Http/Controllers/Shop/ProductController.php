@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\OrderDetail;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
@@ -237,16 +238,26 @@ class ProductController extends Controller
 
 
         $product->load([
-            'category',
+    'category',
 
-            'images' => function ($query) {
+    'images' => function ($query) {
+        $query
+            ->orderByDesc('is_primary')
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    },
 
-                $query
-                    ->orderByDesc('is_primary')
-                    ->orderBy('sort_order')
-                    ->orderBy('id');
-            },
-        ]);
+    'reviews' => function ($query) {
+        $query
+            ->where('is_visible', true)
+            ->with([
+                'user',
+                'images',
+                'replies.user',
+            ])
+            ->latest();
+    },
+]);
 
 
         /*
@@ -275,14 +286,49 @@ class ProductController extends Controller
             )
             ->take(4)
             ->get();
+            $reviewableOrderDetails = collect();
+
+if (
+    auth()->check()
+    && auth()->user()->role?->name === 'customer'
+) {
+    $reviewedOrderDetailIds = $product->reviews
+        ->where('user_id', auth()->id())
+        ->pluck('order_detail_id')
+        ->filter()
+        ->values();
+
+    $reviewableOrderDetails = OrderDetail::query()
+        ->where('product_id', $product->id)
+        ->whereHas('order', function ($query) {
+            $query
+                ->where('user_id', auth()->id())
+                ->where('order_status', 'completed');
+        })
+        ->whereNotIn(
+            'id',
+            $reviewedOrderDetailIds
+        )
+        ->orderByDesc('id')
+        ->get();
+}
+
+        $reviewCount = $product->reviews->count();
+
+        $averageRating = $reviewCount > 0
+            ? round($product->reviews->avg('rating'), 1)
+            : 0;
 
 
-        return view(
-            'products.show',
-            compact(
-                'product',
-                'relatedProducts'
-            )
-        );
+                return view(
+    'products.show',
+    compact(
+        'product',
+        'relatedProducts',
+        'reviewCount',
+        'averageRating',
+        'reviewableOrderDetails'
+    )
+);
     }
 }

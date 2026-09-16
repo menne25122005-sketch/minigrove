@@ -36,7 +36,7 @@ use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Customer\ReturnRequestController as CustomerReturnRequestController;
 use App\Http\Controllers\Customer\GroveController as CustomerGroveController;
 use App\Http\Controllers\Customer\ChatController as CustomerChatController;
-
+use App\Http\Controllers\Customer\ReviewController as CustomerReviewController;
 
 
 /*
@@ -546,6 +546,27 @@ Route::middleware([
             ]
         )->name(
             'chat.store'
+        );
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Customer Reviews
+        |--------------------------------------------------------------------------
+        |
+        | Customer chỉ được đánh giá Product đã mua.
+        |
+        */
+
+        Route::post(
+            '/products/{product}/reviews',
+            [
+                CustomerReviewController::class,
+                'store',
+            ]
+        )->name(
+            'customer.reviews.store'
         );
 
 

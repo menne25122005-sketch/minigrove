@@ -9,14 +9,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-    RoleSeeder::class,
-    CategorySeeder::class,
-    ProductSeeder::class,
-    ComponentSeeder::class,
-    ProductComponentSeeder::class,
-    ComponentCompatibilityRuleSeeder::class,
-    VoucherSeeder::class,
-    CareRuleSeeder::class,
-]);
+            RoleSeeder::class,
+            CategorySeeder::class,
+            ProductSeeder::class,
+            VoucherSeeder::class,
+            CareRuleSeeder::class,
+        ]);
     }
 }

@@ -524,6 +524,356 @@
         </div>
 
 
+
+{{-- REVIEWS --}}
+<section class="product-reviews" id="product-reviews">
+
+    <div class="section-heading">
+        <div>
+            <div class="section-eyebrow">
+                ĐÁNH GIÁ KHÁCH HÀNG
+            </div>
+
+            <h2>
+                Đánh giá sản phẩm
+            </h2>
+        </div>
+    </div>
+
+
+    {{-- REVIEW SUMMARY --}}
+    <div class="product-review-summary">
+
+        <div class="product-review-score">
+            <strong>
+                {{ number_format((float) $averageRating, 1) }}
+            </strong>
+
+            <span>/ 5</span>
+        </div>
+
+        <div
+            class="product-review-stars"
+            aria-label="Điểm trung bình {{ $averageRating }} trên 5"
+        >
+            @for ($star = 1; $star <= 5; $star++)
+                <span>
+                    {{ $star <= round($averageRating) ? '★' : '☆' }}
+                </span>
+            @endfor
+        </div>
+
+        <div class="product-review-count">
+            {{ $reviewCount }} đánh giá
+        </div>
+
+    </div>
+
+
+    {{-- REVIEW FORM --}}
+    @auth
+
+        @if (auth()->user()->role?->name === 'customer')
+
+            @if ($reviewableOrderDetails->isNotEmpty())
+
+                <div class="product-review-form">
+
+                    <h3>
+                        Viết đánh giá của bạn
+                    </h3>
+
+                    <form
+                        method="POST"
+                        action="{{ route('customer.reviews.store', $product) }}"
+                    >
+                        @csrf
+
+
+                        {{-- ORDER DETAIL --}}
+                        <div class="review-form-field">
+
+                            <label for="review-order-detail">
+                                Sản phẩm bạn đã mua
+                            </label>
+
+                            <select
+                                id="review-order-detail"
+                                name="order_detail_id"
+                                required
+                            >
+
+                                <option value="">
+                                    Chọn lần mua hàng
+                                </option>
+
+                                @foreach ($reviewableOrderDetails as $orderDetail)
+
+                                    <option
+                                        value="{{ $orderDetail->id }}"
+                                        {{ old('order_detail_id') == $orderDetail->id ? 'selected' : '' }}
+                                    >
+                                        Đơn hàng #{{ $orderDetail->order_id }}
+                                        -
+                                        {{ $product->name }}
+                                    </option>
+
+                                @endforeach
+
+                            </select>
+
+                        </div>
+
+
+                        {{-- RATING --}}
+                        <div class="review-form-field">
+
+                            <label for="review-rating">
+                                Đánh giá
+                            </label>
+
+                            <select
+                                id="review-rating"
+                                name="rating"
+                                required
+                            >
+
+                                <option value="">
+                                    Chọn số sao
+                                </option>
+
+                                <option
+                                    value="5"
+                                    {{ old('rating') == 5 ? 'selected' : '' }}
+                                >
+                                    5 sao - Rất hài lòng
+                                </option>
+
+                                <option
+                                    value="4"
+                                    {{ old('rating') == 4 ? 'selected' : '' }}
+                                >
+                                    4 sao - Hài lòng
+                                </option>
+
+                                <option
+                                    value="3"
+                                    {{ old('rating') == 3 ? 'selected' : '' }}
+                                >
+                                    3 sao - Bình thường
+                                </option>
+
+                                <option
+                                    value="2"
+                                    {{ old('rating') == 2 ? 'selected' : '' }}
+                                >
+                                    2 sao - Chưa hài lòng
+                                </option>
+
+                                <option
+                                    value="1"
+                                    {{ old('rating') == 1 ? 'selected' : '' }}
+                                >
+                                    1 sao - Rất không hài lòng
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        {{-- COMMENT --}}
+                        <div class="review-form-field">
+
+                            <label for="review-comment">
+                                Nội dung đánh giá
+                            </label>
+
+                            <textarea
+                                id="review-comment"
+                                name="comment"
+                                rows="5"
+                                maxlength="2000"
+                                placeholder="Chia sẻ trải nghiệm của bạn..."
+                            >{{ old('comment') }}</textarea>
+
+                        </div>
+
+
+                        {{-- VALIDATION ERROR --}}
+                        @if ($errors->has('review'))
+                            <div class="product-review-error">
+                                {{ $errors->first('review') }}
+                            </div>
+                        @endif
+
+
+                        @if ($errors->has('order_detail_id'))
+                            <div class="product-review-error">
+                                {{ $errors->first('order_detail_id') }}
+                            </div>
+                        @endif
+
+
+                        @if ($errors->has('rating'))
+                            <div class="product-review-error">
+                                {{ $errors->first('rating') }}
+                            </div>
+                        @endif
+
+
+                        @if ($errors->has('comment'))
+                            <div class="product-review-error">
+                                {{ $errors->first('comment') }}
+                            </div>
+                        @endif
+
+
+                        <button
+                            type="submit"
+                            class="product-buy-button"
+                        >
+                            Gửi đánh giá
+                        </button>
+
+                    </form>
+
+                </div>
+
+            @else
+
+                <div class="product-review-notice">
+                    Bạn cần có đơn hàng đã hoàn thành và chưa đánh giá sản phẩm này để viết Review.
+                </div>
+
+            @endif
+
+        @endif
+
+    @endauth
+
+
+    {{-- REVIEW LIST --}}
+    <div class="product-review-list">
+
+        @forelse ($product->reviews as $review)
+
+            <article class="product-review-item">
+
+                <div class="product-review-item-header">
+
+                    <div class="product-review-author">
+
+                        <strong>
+                            {{ $review->user?->name ?? 'Khách hàng' }}
+                        </strong>
+
+                        <div class="product-review-item-stars">
+
+                            @for ($star = 1; $star <= 5; $star++)
+
+                                <span>
+                                    {{ $star <= $review->rating ? '★' : '☆' }}
+                                </span>
+
+                            @endfor
+
+                        </div>
+
+                    </div>
+
+
+                    <time
+                        datetime="{{ $review->created_at?->toIso8601String() }}"
+                    >
+                        {{ $review->created_at?->format('d/m/Y') }}
+                    </time>
+
+                </div>
+
+
+                @if ($review->comment)
+
+                    <p class="product-review-comment">
+                        {{ $review->comment }}
+                    </p>
+
+                @endif
+
+
+                {{-- REVIEW IMAGES --}}
+                @if ($review->images->isNotEmpty())
+
+                    <div class="product-review-images">
+
+                        @foreach ($review->images as $reviewImage)
+
+                            <img
+                                src="{{ asset('storage/' . $reviewImage->image_path) }}"
+                                alt="Ảnh đánh giá của khách hàng"
+                            >
+
+                        @endforeach
+
+                    </div>
+
+                @endif
+
+
+                {{-- STAFF / ADMIN REPLIES --}}
+                @if ($review->replies->isNotEmpty())
+
+                    <div class="product-review-replies">
+
+                        @foreach ($review->replies as $reply)
+
+                            @if ($reply->is_visible)
+
+                                <div class="product-review-reply">
+
+                                    <strong>
+                                        {{ $reply->user?->name ?? 'MiniGrove' }}
+                                    </strong>
+
+                                    <p>
+                                        {{ $reply->content }}
+                                    </p>
+
+                                </div>
+
+                            @endif
+
+                        @endforeach
+
+                    </div>
+
+                @endif
+
+            </article>
+
+        @empty
+
+            <div class="product-review-empty">
+
+                <p>
+                    Sản phẩm chưa có đánh giá nào.
+                </p>
+
+                <p>
+                    Hãy là người đầu tiên chia sẻ trải nghiệm của bạn.
+                </p>
+
+            </div>
+
+        @endforelse
+
+    </div>
+
+</section>
+
+
+{{-- RELATED --}}
+
         {{-- RELATED --}}
         @if ($relatedProducts->isNotEmpty())
 

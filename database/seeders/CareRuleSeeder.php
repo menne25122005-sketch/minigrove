@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\CareRule;
-use App\Models\Component;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 
@@ -94,14 +93,12 @@ class CareRuleSeeder extends Seeder
         ];
 
         foreach ($ecosystemRules as $rule) {
-
             CareRule::updateOrCreate(
                 [
                     'source_type' => $rule['source_type'],
                     'ecosystem_type' => $rule['ecosystem_type'],
                     'task_type' => $rule['task_type'],
                     'product_id' => null,
-                    'component_id' => null,
                 ],
                 [
                     'name' => $rule['name'],
@@ -114,80 +111,7 @@ class CareRuleSeeder extends Seeder
 
         /*
         |--------------------------------------------------------------------------
-        | 2. RULE THEO COMPONENT
-        |--------------------------------------------------------------------------
-        */
-
-        $componentRules = [
-
-            [
-                'sku' => 'CP-PLANT-001',
-                'name' => 'Kiểm tra lá Fittonia',
-                'task_type' => 'LEAF_CHECK',
-                'interval_days' => 5,
-                'instructions' =>
-                    'Quan sát lá Fittonia, loại bỏ lá vàng hoặc hư hỏng.',
-            ],
-
-            [
-                'sku' => 'CP-PLANT-002',
-                'name' => 'Kiểm tra độ ẩm cho dương xỉ',
-                'task_type' => 'HUMIDITY_CHECK',
-                'interval_days' => 3,
-                'instructions' =>
-                    'Dương xỉ cần môi trường đủ ẩm nhưng không để nền úng nước.',
-            ],
-
-            [
-                'sku' => 'CP-PLANT-003',
-                'name' => 'Kiểm tra tưới nước cho sen đá',
-                'task_type' => 'WATERING',
-                'interval_days' => 10,
-                'instructions' =>
-                    'Chỉ tưới sen đá khi giá thể đã khô, tránh đọng nước.',
-            ],
-
-            [
-                'sku' => 'CP-MOSS-001',
-                'name' => 'Kiểm tra độ ẩm của rêu',
-                'task_type' => 'HUMIDITY_CHECK',
-                'interval_days' => 3,
-                'instructions' =>
-                    'Quan sát màu sắc và độ ẩm của rêu, bổ sung ẩm khi cần.',
-            ],
-        ];
-
-        foreach ($componentRules as $rule) {
-
-            $component = Component::where(
-                'sku',
-                $rule['sku']
-            )->first();
-
-            if (!$component) {
-                continue;
-            }
-
-            CareRule::updateOrCreate(
-                [
-                    'source_type' => 'COMPONENT',
-                    'ecosystem_type' => null,
-                    'product_id' => null,
-                    'component_id' => $component->id,
-                    'task_type' => $rule['task_type'],
-                ],
-                [
-                    'name' => $rule['name'],
-                    'interval_days' => $rule['interval_days'],
-                    'instructions' => $rule['instructions'],
-                    'is_active' => true,
-                ]
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 3. RULE RIÊNG CHO PRODUCT
+        | 2. RULE RIÊNG CHO PRODUCT
         |--------------------------------------------------------------------------
         */
 
@@ -213,7 +137,6 @@ class CareRuleSeeder extends Seeder
         ];
 
         foreach ($productRules as $rule) {
-
             $product = Product::where(
                 'sku',
                 $rule['sku']
@@ -228,7 +151,6 @@ class CareRuleSeeder extends Seeder
                     'source_type' => 'PRODUCT',
                     'ecosystem_type' => null,
                     'product_id' => $product->id,
-                    'component_id' => null,
                     'task_type' => $rule['task_type'],
                 ],
                 [
