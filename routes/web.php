@@ -12,6 +12,7 @@ use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Shop\ProductController as ShopProductController;
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
@@ -23,7 +24,7 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\GroveController;
 use App\Http\Controllers\Admin\CompatibilityRuleController;
-
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 
 
 
@@ -37,6 +38,18 @@ use App\Http\Controllers\Customer\ReturnRequestController as CustomerReturnReque
 use App\Http\Controllers\Customer\GroveController as CustomerGroveController;
 use App\Http\Controllers\Customer\ChatController as CustomerChatController;
 use App\Http\Controllers\Customer\ReviewController as CustomerReviewController;
+use App\Models\Review;
+
+
+/*
+|--------------------------------------------------------------------------
+| Explicit Route Model Binding
+|--------------------------------------------------------------------------
+|
+| Đảm bảo {review} luôn được resolve thành App\Models\Review.
+|
+*/
+Route::model('review', Review::class);
 
 
 /*
@@ -551,23 +564,67 @@ Route::middleware([
 
 
         /*
-        |--------------------------------------------------------------------------
-        | Customer Reviews
-        |--------------------------------------------------------------------------
-        |
-        | Customer chỉ được đánh giá Product đã mua.
-        |
-        */
+|--------------------------------------------------------------------------
+| Customer Reviews
+|--------------------------------------------------------------------------
+|
+| Customer chỉ được đánh giá Product đã mua.
+|
+*/
 
-        Route::post(
-            '/products/{product}/reviews',
-            [
-                CustomerReviewController::class,
-                'store',
-            ]
-        )->name(
-            'customer.reviews.store'
-        );
+Route::post(
+    '/products/{product}/reviews',
+    [
+        CustomerReviewController::class,
+        'store',
+    ]
+)->name(
+    'customer.reviews.store'
+);
+
+
+/*
+ * ---------------------------------------------------------------
+ * Sửa Review
+ * ---------------------------------------------------------------
+ *
+ * Customer chỉ được sửa Review của chính mình.
+ */
+
+Route::patch(
+    '/products/{product}/reviews/{review}',
+    [
+        CustomerReviewController::class,
+        'update',
+    ]
+)->whereNumber(
+    'review'
+)->name(
+    'customer.reviews.update'
+);
+
+
+/*
+ * ---------------------------------------------------------------
+ * Xóa Review
+ * ---------------------------------------------------------------
+ *
+ * Customer chỉ được xóa Review của chính mình.
+ */
+
+Route::delete(
+    '/products/{product}/reviews/{review}',
+    [
+        CustomerReviewController::class,
+        'destroy',
+    ]
+)->whereNumber(
+    'review'
+)->name(
+    'customer.reviews.destroy'
+);
+
+
 
 
         /*
@@ -782,7 +839,56 @@ Route::prefix('admin')
             'dashboard'
         );
 
-        
+    /*
+ * ---------------------------------------------------------------
+ * Reports
+ * ---------------------------------------------------------------
+ *
+ * Báo cáo & thống kê dành cho Admin.
+ * Phạm vi TV3.
+ */
+
+Route::get(
+    '/reports',
+    [ReportController::class, 'index']
+)->name(
+    'reports.index'
+);
+
+        /*
+         * ---------------------------------------------------------------
+         * Review Management
+         * ---------------------------------------------------------------
+         *
+         * Admin quản lý đánh giá sản phẩm.
+         *
+         * Privacy:
+         * - Chỉ hiển thị Customer #ID.
+         * - Không hiển thị PII của Customer.
+         * - Cho phép ẩn / hiện Review.
+         */
+
+        Route::get(
+            '/reviews',
+            [AdminReviewController::class, 'index']
+        )->name(
+            'reviews.index'
+        );
+
+
+        Route::patch(
+            '/reviews/{review}/toggle-visibility',
+            [AdminReviewController::class, 'toggleVisibility']
+        )->name(
+            'reviews.toggle-visibility'
+        );
+        Route::post(
+    '/reviews/{review}/reply',
+    [AdminReviewController::class, 'reply']
+)->name(
+    'reviews.reply'
+);
+
         /*
 |--------------------------------------------------------------------------
 | Staff - Nhân viên
@@ -1229,7 +1335,7 @@ Route::resource(
     ->parameters([
         'compatibility-rules' => 'compatibilityRule',
     ]);
-        
+
 
 
     });

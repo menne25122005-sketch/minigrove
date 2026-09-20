@@ -274,6 +274,16 @@ class OrderController extends Controller
 
 
         $order->load([
+
+            /*
+             * REVIEW CỦA TỪNG ORDER DETAIL
+             *
+             * Dùng để xác định:
+             * - Sản phẩm chưa đánh giá
+             * - Sản phẩm đã đánh giá
+             */
+            'details.review',
+
             'details.product.images' =>
                 function ($query) {
 
@@ -287,12 +297,14 @@ class OrderController extends Controller
                         ->orderBy('id');
                 },
 
+
             'payments' =>
                 function ($query) {
 
                     $query
                         ->latest('id');
                 },
+
 
             'statusHistories' =>
                 function ($query) {
@@ -304,7 +316,9 @@ class OrderController extends Controller
                         ->orderBy('id');
                 },
 
+
             'voucherUsage.voucher',
+
 
             'returnRequests' =>
                 function ($query) {

@@ -65,9 +65,11 @@
                             : ''
                     }}"
             >
+
                 <span class="sidebar-icon">⌂</span>
 
                 Dashboard
+
             </a>
 
 
@@ -81,9 +83,11 @@
                             : ''
                     }}"
             >
+
                 <span class="sidebar-icon">▦</span>
 
                 Danh mục
+
             </a>
 
 
@@ -97,13 +101,13 @@
                             : ''
                     }}"
             >
+
                 <span class="sidebar-icon">□</span>
 
                 Sản phẩm
+
             </a>
 
-
-           
 
 
             {{-- QUY TẮC TƯƠNG THÍCH --}}
@@ -118,9 +122,11 @@
                             : ''
                     }}"
             >
+
                 <span class="sidebar-icon">⇄</span>
 
                 Quy tắc tương thích
+
             </a>
 
 
@@ -134,9 +140,11 @@
                             : ''
                     }}"
             >
+
                 <span class="sidebar-icon">▤</span>
 
                 Tồn kho
+
             </a>
 
 
@@ -150,9 +158,11 @@
                             : ''
                     }}"
             >
+
                 <span class="sidebar-icon">%</span>
 
                 Voucher
+
             </a>
 
 
@@ -166,9 +176,11 @@
                             : ''
                     }}"
             >
+
                 <span class="sidebar-icon">▧</span>
 
                 Đơn hàng
+
             </a>
 
 
@@ -182,9 +194,11 @@
                             : ''
                     }}"
             >
+
                 <span class="sidebar-icon">💳</span>
 
                 Thanh toán
+
             </a>
 
 
@@ -198,65 +212,70 @@
                             : ''
                     }}"
             >
+
                 <span class="sidebar-icon">↩</span>
 
                 Trả hàng / Hoàn tiền
+
             </a>
 
 
             {{-- KHÁCH HÀNG --}}
-<a
-    href="{{ route('admin.customers.index') }}"
-    class="sidebar-link
-        {{
-            request()->routeIs('admin.customers.*')
-                ? 'active'
-                : ''
-        }}"
->
-    <span class="sidebar-icon">○</span>
+            <a
+                href="{{ route('admin.customers.index') }}"
+                class="sidebar-link
+                    {{
+                        request()->routeIs('admin.customers.*')
+                            ? 'active'
+                            : ''
+                    }}"
+            >
 
-    Khách hàng
-</a>
+                <span class="sidebar-icon">○</span>
+
+                Khách hàng
+
+            </a>
 
 
             {{-- NHÂN VIÊN --}}
-<a
-    href="{{ route('admin.staff.index') }}"
-    class="sidebar-link
-    {{
-        request()->routeIs('admin.staff.*')
-            ? 'active'
-            : ''
-    }}"
->
-    <span class="sidebar-icon">◎</span>
+            <a
+                href="{{ route('admin.staff.index') }}"
+                class="sidebar-link
+                    {{
+                        request()->routeIs('admin.staff.*')
+                            ? 'active'
+                            : ''
+                    }}"
+            >
 
-    Nhân viên
-</a>
+                <span class="sidebar-icon">◎</span>
+
+                Nhân viên
+
+            </a>
 
 
             {{-- GROVE CỦA KHÁCH HÀNG --}}
+            <a
+                href="{{ route('admin.groves.index') }}"
+                class="
+                    sidebar-link
+                    {{
+                        request()->routeIs('admin.groves.*')
+                            ? 'active'
+                            : ''
+                    }}
+                "
+            >
 
-<a
-    href="{{ route('admin.groves.index') }}"
-    class="
-        sidebar-link
-        {{
-            request()->routeIs('admin.groves.*')
-                ? 'active'
-                : ''
-        }}
-    "
->
+                <span class="sidebar-icon">
+                    ♧
+                </span>
 
-    <span class="sidebar-icon">
-        ♧
-    </span>
+                Grove của khách hàng
 
-    Grove của khách hàng
-
-</a>
+            </a>
 
 
             {{-- CHAT --}}
@@ -270,36 +289,39 @@
 
 
             {{-- ĐÁNH GIÁ SẢN PHẨM --}}
-            <span class="sidebar-link sidebar-link-disabled">
+            <a
+                href="{{ route('admin.reviews.index') }}"
+                class="sidebar-link
+                    {{
+                        request()->routeIs('admin.reviews.*')
+                            ? 'active'
+                            : ''
+                    }}"
+            >
 
                 <span class="sidebar-icon">☆</span>
 
                 Đánh giá sản phẩm
 
-            </span>
+            </a>
 
 
-            {{-- GROVE POINTS --}}
-            <span class="sidebar-link sidebar-link-disabled">
-
-                <span class="sidebar-icon">◆</span>
-
-                Grove Points
-
-            </span>
-
-
-            {{-- BÁO CÁO & THỐNG KÊ --}}
-            <span class="sidebar-link sidebar-link-disabled">
+                        {{-- BÁO CÁO & THỐNG KÊ --}}
+            <a
+                href="{{ route('admin.reports.index') }}"
+                class="sidebar-link
+                    {{
+                        request()->routeIs('admin.reports.*')
+                            ? 'active'
+                            : ''
+                    }}"
+            >
 
                 <span class="sidebar-icon">▥</span>
 
                 Báo cáo & thống kê
 
-            </span>
-
-
-        </nav>
+            </a>
 
 
         {{-- =====================================================
@@ -313,9 +335,11 @@
                 href="{{ route('home') }}"
                 class="sidebar-link"
             >
+
                 <span class="sidebar-icon">🌿</span>
 
                 Về trang chủ
+
             </a>
 
 
@@ -346,9 +370,11 @@
                     type="submit"
                     class="sidebar-link sidebar-logout"
                 >
+
                     <span class="sidebar-icon">↪</span>
 
                     Đăng xuất
+
                 </button>
 
             </form>
@@ -370,14 +396,18 @@
         <header class="admin-topbar">
 
             <div class="admin-topbar-title">
+
                 @yield(
                     'page-title',
                     'Quản trị MiniGrove'
                 )
+
             </div>
 
             <div class="admin-topbar-text">
+
                 Nhỏ một khu rừng, lớn một thế giới.
+
             </div>
 
         </header>
