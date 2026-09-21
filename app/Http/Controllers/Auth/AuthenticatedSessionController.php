@@ -55,10 +55,6 @@ class AuthenticatedSessionController extends Controller
                     '/admin/dashboard'
                 ),
 
-            'staff' =>
-                redirect()->intended(
-                    '/staff/dashboard'
-                ),
 
             'customer' =>
     $this->customerRedirect($request),

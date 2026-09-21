@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
-
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,10 +15,8 @@ class ChatController extends Controller
     /**
      * Trang Chat của Customer.
      */
-    public function index(
-        Request $request
-    ): View {
-
+    public function index(Request $request): View
+    {
         /*
         |--------------------------------------------------------------------------
         | CONVERSATION ĐANG HOẠT ĐỘNG
@@ -30,32 +27,30 @@ class ChatController extends Controller
         |
         */
 
-        $conversation =
-            Conversation::query()
-                ->where(
-                    'customer_id',
-                    $request->user()->id
-                )
-                ->whereIn(
-                    'status',
-                    [
-                        'open',
-                        'waiting',
-                    ]
-                )
-                ->select([
-                    'id',
-                    'customer_id',
-                    'assigned_staff_id',
-                    'topic',
-                    'subject',
-                    'status',
-                    'last_message_at',
-                    'created_at',
-                ])
-                ->latest('id')
-                ->first();
-
+        $conversation = Conversation::query()
+            ->where(
+                'customer_id',
+                $request->user()->id
+            )
+            ->whereIn(
+                'status',
+                [
+                    'open',
+                    'waiting',
+                ]
+            )
+            ->select([
+                'id',
+                'customer_id',
+                'assigned_admin_id',
+                'topic',
+                'subject',
+                'status',
+                'last_message_at',
+                'created_at',
+            ])
+            ->latest('id')
+            ->first();
 
         /*
         |--------------------------------------------------------------------------
@@ -63,35 +58,30 @@ class ChatController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $messages =
-            collect();
-
+        $messages = collect();
 
         if ($conversation) {
-
-            $messages =
-                Message::query()
-                    ->where(
-                        'conversation_id',
-                        $conversation->id
-                    )
-                    ->select([
-                        'id',
-                        'conversation_id',
-                        'sender_id',
-                        'content',
-                        'message_type',
-                        'sent_at',
-                        'read_at',
-                    ])
-                    ->orderBy('sent_at')
-                    ->orderBy('id')
-                    ->get();
-
+            $messages = Message::query()
+                ->where(
+                    'conversation_id',
+                    $conversation->id
+                )
+                ->select([
+                    'id',
+                    'conversation_id',
+                    'sender_id',
+                    'content',
+                    'message_type',
+                    'sent_at',
+                    'read_at',
+                ])
+                ->orderBy('sent_at')
+                ->orderBy('id')
+                ->get();
 
             /*
             |--------------------------------------------------------------------------
-            | ĐÁNH DẤU TIN NHẮN STAFF ĐÃ ĐỌC
+            | ĐÁNH DẤU TIN NHẮN ADMIN ĐÃ ĐỌC
             |--------------------------------------------------------------------------
             |
             | Chỉ đánh dấu những tin không phải Customer gửi.
@@ -112,11 +102,9 @@ class ChatController extends Controller
                     'read_at'
                 )
                 ->update([
-                    'read_at' =>
-                        now(),
+                    'read_at' => now(),
                 ]);
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -124,27 +112,25 @@ class ChatController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $closedConversations =
-            Conversation::query()
-                ->where(
-                    'customer_id',
-                    $request->user()->id
-                )
-                ->where(
-                    'status',
-                    'closed'
-                )
-                ->select([
-                    'id',
-                    'subject',
-                    'topic',
-                    'closed_at',
-                    'created_at',
-                ])
-                ->latest('id')
-                ->limit(10)
-                ->get();
-
+        $closedConversations = Conversation::query()
+            ->where(
+                'customer_id',
+                $request->user()->id
+            )
+            ->where(
+                'status',
+                'closed'
+            )
+            ->select([
+                'id',
+                'subject',
+                'topic',
+                'closed_at',
+                'created_at',
+            ])
+            ->latest('id')
+            ->limit(10)
+            ->get();
 
         return view(
             'chat.index',
@@ -156,59 +142,55 @@ class ChatController extends Controller
         );
     }
 
-
     /**
      * Customer gửi tin nhắn.
      */
     public function store(
         Request $request
     ): RedirectResponse {
-
-        $validated =
-            $request->validate([
+        $validated = $request->validate(
+            [
                 'content' => [
                     'required',
                     'string',
                     'max:5000',
                 ],
-            ], [
+            ],
+            [
                 'content.required' =>
                     'Vui lòng nhập nội dung tin nhắn.',
 
                 'content.max' =>
                     'Tin nhắn không được vượt quá 5000 ký tự.',
-            ]);
-
+            ]
+        );
 
         DB::transaction(
             function () use (
                 $request,
                 $validated
             ) {
-
                 /*
                 |--------------------------------------------------------------------------
                 | TÌM CONVERSATION ĐANG HOẠT ĐỘNG
                 |--------------------------------------------------------------------------
                 */
 
-                $conversation =
-                    Conversation::query()
-                        ->where(
-                            'customer_id',
-                            $request->user()->id
-                        )
-                        ->whereIn(
-                            'status',
-                            [
-                                'open',
-                                'waiting',
-                            ]
-                        )
-                        ->latest('id')
-                        ->lockForUpdate()
-                        ->first();
-
+                $conversation = Conversation::query()
+                    ->where(
+                        'customer_id',
+                        $request->user()->id
+                    )
+                    ->whereIn(
+                        'status',
+                        [
+                            'open',
+                            'waiting',
+                        ]
+                    )
+                    ->latest('id')
+                    ->lockForUpdate()
+                    ->first();
 
                 /*
                 |--------------------------------------------------------------------------
@@ -217,35 +199,32 @@ class ChatController extends Controller
                 */
 
                 if (!$conversation) {
+                    $conversation = Conversation::create([
+                        'customer_id' =>
+                            $request->user()->id,
 
-                    $conversation =
-                        Conversation::create([
-                            'customer_id' =>
-                                $request->user()->id,
+                        'assigned_admin_id' =>
+                            null,
 
-                            'assigned_staff_id' =>
-                                null,
+                        'topic' =>
+                            'GENERAL',
 
-                            'topic' =>
-                                'GENERAL',
+                        'subject' =>
+                            'Yêu cầu hỗ trợ',
 
-                            'subject' =>
-                                'Yêu cầu hỗ trợ',
+                        'status' =>
+                            'open',
 
-                            'status' =>
-                                'open',
+                        'last_message_at' =>
+                            now(),
 
-                            'last_message_at' =>
-                                now(),
+                        'closed_by' =>
+                            null,
 
-                            'closed_by' =>
-                                null,
-
-                            'closed_at' =>
-                                null,
-                        ]);
+                        'closed_at' =>
+                            null,
+                    ]);
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -275,7 +254,6 @@ class ChatController extends Controller
                         null,
                 ]);
 
-
                 /*
                 |--------------------------------------------------------------------------
                 | CẬP NHẬT CONVERSATION
@@ -291,7 +269,6 @@ class ChatController extends Controller
                 ]);
             }
         );
-
 
         return redirect()
             ->route('chat.index')

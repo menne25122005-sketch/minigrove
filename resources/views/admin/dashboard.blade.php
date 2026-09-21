@@ -103,25 +103,6 @@
         </div>
 
 
-
-
-        <div class="dashboard-stat-card">
-
-            <div class="dashboard-stat-label">
-                Nhân viên
-            </div>
-
-            <div class="dashboard-stat-value">
-
-                {{ $staffCount }}
-
-            </div>
-
-        </div>
-
-
-
-
         <div class="dashboard-stat-card">
 
             <div class="dashboard-stat-label">

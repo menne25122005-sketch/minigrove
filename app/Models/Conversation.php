@@ -11,7 +11,7 @@ class Conversation extends Model
 
     protected $fillable = [
         'customer_id',
-        'assigned_staff_id',
+        'assigned_admin_id',
         'topic',
         'subject',
         'status',
@@ -37,13 +37,13 @@ class Conversation extends Model
     }
 
     /**
-     * Staff được phân công tư vấn.
+     * Admin được phân công tư vấn.
      */
-    public function assignedStaff()
+    public function assignedAdmin()
     {
         return $this->belongsTo(
             User::class,
-            'assigned_staff_id'
+            'assigned_admin_id'
         );
     }
 

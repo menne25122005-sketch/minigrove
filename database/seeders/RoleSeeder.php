@@ -17,15 +17,7 @@ class RoleSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-
-        Role::updateOrCreate(
-            ['name' => 'staff'],
-            [
-                'display_name' => 'Nhân viên',
-                'description' => 'Nhân viên vận hành hệ thống MiniGrove',
-                'is_active' => true,
-            ]
-        );
+;
 
         Role::updateOrCreate(
             ['name' => 'admin'],
