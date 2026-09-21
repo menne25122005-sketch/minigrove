@@ -68,22 +68,6 @@ class DashboardController extends Controller
         */
 
 
-        $staffCount = User::whereHas(
-            'role',
-            function ($query) {
-
-                $query->where(
-                    'name',
-                    'staff'
-                );
-
-            }
-        )->count();
-
-
-
-
-
         /*
         |--------------------------------------------------------------------------
         | ORDER
@@ -231,8 +215,6 @@ class DashboardController extends Controller
                 'orderCount',
 
 
-
-                'staffCount',
 
                 'processingOrderCount',
 

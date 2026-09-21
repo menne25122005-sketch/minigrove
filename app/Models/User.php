@@ -365,13 +365,13 @@ public function customerConversations()
 }
 
 /**
- * Các Conversation Staff được phân công.
+ * Các Conversation Admin được phân công.
  */
 public function assignedConversations()
 {
     return $this->hasMany(
         Conversation::class,
-        'assigned_staff_id'
+        'assigned_admin_id'
     );
 }
 

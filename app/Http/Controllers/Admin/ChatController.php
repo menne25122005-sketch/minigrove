@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Staff;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
@@ -13,28 +13,36 @@ use Illuminate\View\View;
 class ChatController extends Controller
 {
     /**
-     * Danh sách hội thoại Staff có thể xử lý.
+     * Danh sách hội thoại Customer cần Admin xử lý.
      *
      * Privacy:
-     * - Không load quan hệ customer().
-     * - Không lấy name/email/phone/address của Customer.
-     * - Staff chỉ thấy Customer #ID.
+     * - Không load thông tin PII của Customer.
+     * - Admin chỉ sử dụng Customer #ID.
      */
     public function index(Request $request): View
     {
-        $staffId = $request->user()->id;
+        $adminId = $request->user()->id;
 
         $conversations = Conversation::query()
-            ->whereIn('status', ['open', 'waiting'])
-            ->where(function ($query) use ($staffId) {
+            ->whereIn(
+                'status',
+                [
+                    'open',
+                    'waiting',
+                ]
+            )
+            ->where(function ($query) use ($adminId) {
                 $query
-                    ->whereNull('assigned_staff_id')
-                    ->orWhere('assigned_staff_id', $staffId);
+                    ->whereNull('assigned_admin_id')
+                    ->orWhere(
+                        'assigned_admin_id',
+                        $adminId
+                    );
             })
             ->select([
                 'id',
                 'customer_id',
-                'assigned_staff_id',
+                'assigned_admin_id',
                 'topic',
                 'subject',
                 'status',
@@ -42,15 +50,15 @@ class ChatController extends Controller
                 'created_at',
             ])
             ->orderByRaw(
-                'CASE WHEN assigned_staff_id = ? THEN 0 ELSE 1 END',
-                [$staffId]
+                'CASE WHEN assigned_admin_id = ? THEN 0 ELSE 1 END',
+                [$adminId]
             )
             ->orderByDesc('last_message_at')
             ->orderByDesc('id')
             ->paginate(20);
 
         return view(
-            'staff.chat.index',
+            'admin.chat.index',
             compact('conversations')
         );
     }
@@ -58,28 +66,37 @@ class ChatController extends Controller
     /**
      * Chi tiết một hội thoại.
      *
-     * Staff chỉ được mở:
-     * - hội thoại chưa ai nhận; hoặc
-     * - hội thoại do chính Staff đó nhận.
+     * Admin chỉ được xem:
+     * - Hội thoại chưa được nhận;
+     * - Hoặc hội thoại do chính Admin đó nhận.
      */
     public function show(
         Request $request,
         int $conversation
     ): View {
-        $staffId = $request->user()->id;
+        $adminId = $request->user()->id;
 
         $conversation = Conversation::query()
             ->whereKey($conversation)
-            ->whereIn('status', ['open', 'waiting'])
-            ->where(function ($query) use ($staffId) {
+            ->whereIn(
+                'status',
+                [
+                    'open',
+                    'waiting',
+                ]
+            )
+            ->where(function ($query) use ($adminId) {
                 $query
-                    ->whereNull('assigned_staff_id')
-                    ->orWhere('assigned_staff_id', $staffId);
+                    ->whereNull('assigned_admin_id')
+                    ->orWhere(
+                        'assigned_admin_id',
+                        $adminId
+                    );
             })
             ->select([
                 'id',
                 'customer_id',
-                'assigned_staff_id',
+                'assigned_admin_id',
                 'topic',
                 'subject',
                 'status',
@@ -108,7 +125,7 @@ class ChatController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Đánh dấu tin nhắn Customer đã được Staff đọc
+        | Đánh dấu tin nhắn Customer đã đọc
         |--------------------------------------------------------------------------
         */
 
@@ -127,7 +144,7 @@ class ChatController extends Controller
             ]);
 
         return view(
-            'staff.chat.show',
+            'admin.chat.show',
             compact(
                 'conversation',
                 'messages'
@@ -136,18 +153,18 @@ class ChatController extends Controller
     }
 
     /**
-     * Staff nhận xử lý hội thoại.
+     * Admin nhận xử lý hội thoại.
      */
     public function accept(
         Request $request,
         int $conversation
     ): RedirectResponse {
-        $staffId = $request->user()->id;
+        $adminId = $request->user()->id;
 
         DB::transaction(
             function () use (
                 $conversation,
-                $staffId
+                $adminId
             ) {
                 $lockedConversation = Conversation::query()
                     ->whereKey($conversation)
@@ -160,15 +177,19 @@ class ChatController extends Controller
                 );
 
                 abort_if(
-                    $lockedConversation->assigned_staff_id !== null
-                    && (int) $lockedConversation->assigned_staff_id !== (int) $staffId,
+                    $lockedConversation->assigned_admin_id !== null
+                    && (int) $lockedConversation->assigned_admin_id
+                    !== (int) $adminId,
                     409,
-                    'Hội thoại đã được nhân viên khác nhận.'
+                    'Hội thoại đã được Admin khác nhận.'
                 );
 
-                if ($lockedConversation->assigned_staff_id === null) {
+                if (
+                    $lockedConversation->assigned_admin_id
+                    === null
+                ) {
                     $lockedConversation->update([
-                        'assigned_staff_id' => $staffId,
+                        'assigned_admin_id' => $adminId,
                     ]);
                 }
             }
@@ -176,7 +197,7 @@ class ChatController extends Controller
 
         return redirect()
             ->route(
-                'staff.chat.show',
+                'admin.chat.show',
                 $conversation
             )
             ->with(
@@ -186,34 +207,37 @@ class ChatController extends Controller
     }
 
     /**
-     * Staff trả lời Customer.
+     * Admin trả lời Customer.
      *
-     * Staff phải nhận hội thoại trước khi gửi tin.
+     * Admin phải nhận hội thoại trước khi trả lời.
      */
     public function reply(
         Request $request,
         int $conversation
     ): RedirectResponse {
-        $validated = $request->validate([
-            'content' => [
-                'required',
-                'string',
-                'max:5000',
+        $validated = $request->validate(
+            [
+                'content' => [
+                    'required',
+                    'string',
+                    'max:5000',
+                ],
             ],
-        ], [
-            'content.required' =>
-                'Vui lòng nhập nội dung phản hồi.',
+            [
+                'content.required' =>
+                    'Vui lòng nhập nội dung phản hồi.',
 
-            'content.max' =>
-                'Tin nhắn không được vượt quá 5000 ký tự.',
-        ]);
+                'content.max' =>
+                    'Tin nhắn không được vượt quá 5000 ký tự.',
+            ]
+        );
 
-        $staffId = $request->user()->id;
+        $adminId = $request->user()->id;
 
         DB::transaction(
             function () use (
                 $conversation,
-                $staffId,
+                $adminId,
                 $validated
             ) {
                 $lockedConversation = Conversation::query()
@@ -227,8 +251,8 @@ class ChatController extends Controller
                 );
 
                 abort_unless(
-                    (int) $lockedConversation->assigned_staff_id
-                    === (int) $staffId,
+                    (int) $lockedConversation->assigned_admin_id
+                    === (int) $adminId,
                     403,
                     'Bạn cần nhận hội thoại trước khi phản hồi.'
                 );
@@ -240,7 +264,7 @@ class ChatController extends Controller
                         $lockedConversation->id,
 
                     'sender_id' =>
-                        $staffId,
+                        $adminId,
 
                     'content' =>
                         trim($validated['content']),
@@ -257,7 +281,7 @@ class ChatController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | waiting = Staff đã phản hồi, đang chờ Customer
+                | waiting = Admin đã phản hồi, đang chờ Customer
                 |--------------------------------------------------------------------------
                 */
 
@@ -273,7 +297,7 @@ class ChatController extends Controller
 
         return redirect()
             ->route(
-                'staff.chat.show',
+                'admin.chat.show',
                 $conversation
             )
             ->with(
@@ -283,18 +307,18 @@ class ChatController extends Controller
     }
 
     /**
-     * Staff đóng hội thoại.
+     * Admin đóng hội thoại.
      */
     public function close(
         Request $request,
         int $conversation
     ): RedirectResponse {
-        $staffId = $request->user()->id;
+        $adminId = $request->user()->id;
 
         DB::transaction(
             function () use (
                 $conversation,
-                $staffId
+                $adminId
             ) {
                 $lockedConversation = Conversation::query()
                     ->whereKey($conversation)
@@ -307,8 +331,8 @@ class ChatController extends Controller
                 );
 
                 abort_unless(
-                    (int) $lockedConversation->assigned_staff_id
-                    === (int) $staffId,
+                    (int) $lockedConversation->assigned_admin_id
+                    === (int) $adminId,
                     403,
                     'Bạn chỉ có thể đóng hội thoại do mình phụ trách.'
                 );
@@ -318,7 +342,7 @@ class ChatController extends Controller
                         'closed',
 
                     'closed_by' =>
-                        $staffId,
+                        $adminId,
 
                     'closed_at' =>
                         now(),
@@ -327,7 +351,7 @@ class ChatController extends Controller
         );
 
         return redirect()
-            ->route('staff.chat.index')
+            ->route('admin.chat.index')
             ->with(
                 'success',
                 'Hội thoại đã được đóng.'
