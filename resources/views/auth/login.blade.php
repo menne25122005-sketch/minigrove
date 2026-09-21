@@ -193,6 +193,18 @@
 
             </form>
 
+                    <div class="auth-divider">
+                        <span>HOẶC</span>
+                    </div>
+
+                    <a
+                        href="{{ route('google.redirect') }}"
+                        class="google-login-button"
+                    >
+                        <span class="google-icon">G</span>
+                        <span>Đăng nhập bằng Google</span>
+                    </a>
+
 
             <div class="auth-footer">
 

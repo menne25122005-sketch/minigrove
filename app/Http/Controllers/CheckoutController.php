@@ -6,6 +6,7 @@ use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\PaymentSetting;
+use App\Mail\OrderConfirmationMail;
 
 use App\Services\CheckoutService;
 use App\Services\VoucherService;
@@ -14,6 +15,7 @@ use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -851,8 +853,16 @@ if (
 
     /*
      * COD:
-     * chuyển thẳng tới trang thành công.
+     * gửi email xác nhận đơn hàng
+     * rồi chuyển tới trang thành công.
+     *
+     * Load details để email có đầy đủ thông tin sản phẩm.
      */
+    $order->load('details');
+
+    Mail::to($order->email)
+        ->send(new OrderConfirmationMail($order));
+
     return redirect()
         ->route(
             'checkout.success',

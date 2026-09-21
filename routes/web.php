@@ -35,7 +35,7 @@ use App\Http\Controllers\Customer\ChatController as CustomerChatController;
 use App\Http\Controllers\Customer\ReviewController as CustomerReviewController;
 use App\Models\Review;
 
-
+use App\Http\Controllers\GoogleAuthController;
 /*
 |--------------------------------------------------------------------------
 | Explicit Route Model Binding
@@ -1356,5 +1356,10 @@ Route::resource(
 | - Email Verification
 |
 */
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
+    ->name('google.redirect');
+
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
+    ->name('google.callback');
 
 require __DIR__ . '/auth.php';
