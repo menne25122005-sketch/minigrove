@@ -33,5 +33,13 @@ return [
     'casso' => [
     'webhook_secret' => env('CASSO_WEBHOOK_SECRET'),
 ],
+'ghn' => [
+    'base_url' => env(
+        'GHN_BASE_URL',
+        'https://online-gateway.ghn.vn/shiip/public-api'
+    ),
+    'token' => env('GHN_TOKEN'),
+    'shop_id' => env('GHN_SHOP_ID'),
+],
 
 ];

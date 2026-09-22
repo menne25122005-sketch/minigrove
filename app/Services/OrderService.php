@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherUsage;
 use App\Models\PaymentSetting;
+use App\Services\GHNService;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -21,6 +22,12 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
+       protected GHNService $ghnService;
+
+    public function __construct(GHNService $ghnService)
+    {
+        $this->ghnService = $ghnService;
+    }
     /**
      * Tạo Order thật.
      *
@@ -441,16 +448,70 @@ class OrderService
 
 
                 /*
-                |--------------------------------------------------------------------------
-                | 6. SHIPPING FEE
-                |--------------------------------------------------------------------------
-                |
-                | Bản demo hiện tại:
-                | phí vận chuyển = 0.
-                |
-                */
+|--------------------------------------------------------------------------
+| 6. SHIPPING FEE - GHN
+|--------------------------------------------------------------------------
+|
+| Tính lại phí vận chuyển từ GHN tại thời điểm
+| tạo Order, không tin dữ liệu từ Browser.
+|
+*/
 
-                $shippingFee = 0;
+if (
+    !$address->ghn_district_id ||
+    !$address->ghn_ward_code
+) {
+    throw ValidationException::withMessages([
+        'address' =>
+            'Địa chỉ chưa được cấu hình mã GHN. Vui lòng cập nhật lại địa chỉ.',
+    ]);
+}
+
+/*
+ * Tính tổng trọng lượng đơn hàng.
+ * GHN sử dụng đơn vị gram.
+ */
+$weight = 0;
+
+foreach ($orderItems as $item) {
+
+    $productWeight =
+        (int) ($item['product']->weight ?? 500);
+
+    $weight +=
+        $productWeight
+        * (int) $item['quantity'];
+}
+
+$weight = max(1, $weight);
+
+/*
+ * Thông tin kho/shop MiniGrove trên GHN.
+ */
+$shippingData = [
+    'service_type_id' => 2,
+
+    'from_district_id' => 3440,
+    'from_ward_code' => '13005',
+
+    'to_district_id' =>
+        (int) $address->ghn_district_id,
+
+    'to_ward_code' =>
+        $address->ghn_ward_code,
+
+    'weight' => $weight,
+];
+
+/*
+ * Gọi GHN để lấy phí vận chuyển.
+ */
+$shippingResult =
+    $this->ghnService
+        ->calculateFee($shippingData);
+
+$shippingFee =
+    (float) ($shippingResult['total'] ?? 0);
 
 
                 /*

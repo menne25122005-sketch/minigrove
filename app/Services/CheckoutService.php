@@ -10,6 +10,13 @@ use Illuminate\Validation\ValidationException;
 
 class CheckoutService
 {
+    protected GHNService $ghnService;
+
+    public function __construct(GHNService $ghnService)
+    {
+        $this->ghnService = $ghnService;
+    }
+
     /**
      * Lấy lại toàn bộ dữ liệu Checkout
      * từ Session và Database.
@@ -24,7 +31,6 @@ class CheckoutService
 
         $subtotal = 0;
 
-
         /*
         |--------------------------------------------------------------------------
         | CHECKOUT TỪ CART
@@ -38,7 +44,6 @@ class CheckoutService
                 []
             );
 
-
             if (empty($ids)) {
 
                 throw ValidationException::withMessages([
@@ -46,7 +51,6 @@ class CheckoutService
                         'Vui lòng chọn sản phẩm cần thanh toán.',
                 ]);
             }
-
 
             $items = CartItem::query()
                 ->whereIn('id', $ids)
@@ -85,7 +89,6 @@ class CheckoutService
 
                 ->get();
 
-
             if ($items->isEmpty()) {
 
                 throw ValidationException::withMessages([
@@ -94,11 +97,9 @@ class CheckoutService
                 ]);
             }
 
-
             foreach ($items as $item) {
 
                 $product = $item->product;
-
 
                 /*
                  * Kiểm tra lại Product từ DB.
@@ -113,7 +114,6 @@ class CheckoutService
                             'Có sản phẩm không còn được bán.',
                     ]);
                 }
-
 
                 /*
                  * Kiểm tra lại Stock.
@@ -130,7 +130,6 @@ class CheckoutService
                     ]);
                 }
 
-
                 /*
                  * Giá luôn lấy lại từ DB.
                  */
@@ -139,11 +138,9 @@ class CheckoutService
                         ? (float) $product->sale_price
                         : (float) $product->list_price;
 
-
                 $lineTotal =
                     $unitPrice
                     * $item->quantity;
-
 
                 $checkoutItems->push(
                     (object) [
@@ -164,11 +161,9 @@ class CheckoutService
                     ]
                 );
 
-
                 $subtotal += $lineTotal;
             }
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -183,13 +178,11 @@ class CheckoutService
                     'checkout.product_id'
                 );
 
-
             $quantity =
                 (int) session(
                     'checkout.quantity',
                     1
                 );
-
 
             $product = Product::query()
                 ->with([
@@ -205,7 +198,6 @@ class CheckoutService
                 ])
                 ->find($productId);
 
-
             if (
                 !$product ||
                 !$product->is_active
@@ -216,7 +208,6 @@ class CheckoutService
                         'Sản phẩm hiện không còn được bán.',
                 ]);
             }
-
 
             if (
                 $quantity < 1 ||
@@ -230,16 +221,13 @@ class CheckoutService
                 ]);
             }
 
-
             $unitPrice =
                 $product->sale_price !== null
                     ? (float) $product->sale_price
                     : (float) $product->list_price;
 
-
             $lineTotal =
                 $unitPrice * $quantity;
-
 
             $checkoutItems->push(
                 (object) [
@@ -260,11 +248,9 @@ class CheckoutService
                 ]
             );
 
-
             $subtotal =
                 $lineTotal;
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -280,7 +266,6 @@ class CheckoutService
             ]);
         }
 
-
         return [
             'mode' =>
                 $mode,
@@ -293,17 +278,122 @@ class CheckoutService
         ];
     }
 
-
     /**
-     * Phí vận chuyển.
+     * Tính phí vận chuyển bằng GHN.
      *
-     * Hiện đặc tả chưa quy định công thức cụ thể.
-     * Bản demo MiniGrove đang để 0đ.
+     * GHN chỉ được gọi để tính phí,
+     * không tạo đơn giao hàng.
+     *
+     * Trọng lượng sản phẩm tính bằng gram.
      */
     public function calculateShippingFee(
-        ?Address $address
+        ?Address $address,
+        $checkoutItems
     ): float {
 
-        return 0;
+        /*
+         * Không có địa chỉ hoặc sản phẩm
+         * thì chưa thể tính phí.
+         */
+        if (
+            !$address ||
+            $checkoutItems->isEmpty()
+        ) {
+            return 0;
+        }
+
+        /*
+         |--------------------------------------------------------------------------
+         | TÍNH TỔNG TRỌNG LƯỢNG
+         |--------------------------------------------------------------------------
+         |
+         | Ví dụ:
+         |
+         | Forest Calm: 500g × 2 = 1000g
+         | Mushroom:    500g × 1 =  500g
+         |
+         | Tổng = 1500g
+         |
+         */
+
+        $weight = 0;
+
+        foreach ($checkoutItems as $item) {
+
+            $productWeight =
+                (int) ($item->product->weight ?? 500);
+
+            $quantity =
+                (int) $item->quantity;
+
+            $weight +=
+                $productWeight * $quantity;
+        }
+
+        /*
+         * Đảm bảo trọng lượng tối thiểu là 1 gram.
+         */
+        $weight = max(
+            1,
+            $weight
+        );
+
+        /*
+         |--------------------------------------------------------------------------
+         | DỮ LIỆU GỬI GHN
+         |--------------------------------------------------------------------------
+         |
+         | Shop MiniGrove:
+         * district_id = 3440
+         * ward_code   = 13005
+         |
+         | Địa chỉ khách:
+         * lấy trực tiếp từ Address.
+         |
+         */
+
+        $data = [
+            'service_type_id' => 2,
+
+            // Địa chỉ shop GHN
+            'from_district_id' => 3440,
+            'from_ward_code' => '13005',
+
+            // Địa chỉ khách hàng
+            'to_district_id' =>
+                (int) $address->ghn_district_id,
+
+            'to_ward_code' =>
+                $address->ghn_ward_code,
+
+            // Trọng lượng tính bằng gram
+            'weight' => $weight,
+        ];
+
+        /*
+         |--------------------------------------------------------------------------
+         | GỌI GHN API
+         |--------------------------------------------------------------------------
+         */
+
+        $result =
+            $this->ghnService->calculateFee(
+                $data
+            );
+
+        /*
+         * GHN trả về:
+         *
+         * [
+         *     'total' => 29001,
+         *     ...
+         * ]
+         *
+         * Trả phí về CheckoutController.
+         */
+
+        return (float) (
+            $result['total'] ?? 0
+        );
     }
 }

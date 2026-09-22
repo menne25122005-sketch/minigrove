@@ -38,6 +38,8 @@ class Product extends Model
 
         'size',
 
+        'weight',
+
         'container_diameter_cm',
 
         'container_height_cm',
@@ -86,6 +88,8 @@ class Product extends Model
 
         'sale_price' => 'decimal:2',
 
+        'weight' => 'integer',
+        
         'container_diameter_cm' => 'decimal:2',
 
         'container_height_cm' => 'decimal:2',

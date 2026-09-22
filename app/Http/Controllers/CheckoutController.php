@@ -17,6 +17,9 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderPlacedMail;
+
 
 class CheckoutController extends Controller
 {
@@ -496,12 +499,12 @@ class CheckoutController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $shippingFee =
-            $checkoutService
-                ->calculateShippingFee(
-                    $selectedAddress
-                );
-
+       $shippingFee =
+    $checkoutService
+        ->calculateShippingFee(
+            $selectedAddress,
+            $checkoutItems
+        );
 
         /*
         |--------------------------------------------------------------------------
@@ -779,6 +782,31 @@ if (
                 $validated['payment_method'],
                 $validated['note'] ?? null
             );
+            /*
+|--------------------------------------------------------------------------
+| GỬI EMAIL XÁC NHẬN ĐƠN HÀNG
+|--------------------------------------------------------------------------
+|
+| Order đã được tạo thành công và transaction đã commit.
+|
+*/
+
+try {
+
+    Mail::to($request->user()->email)
+        ->send(
+            new OrderPlacedMail(
+                $order
+            )
+        );
+
+} catch (\Throwable $e) {
+
+    /*
+     * Email lỗi không được làm mất đơn hàng.
+     */
+    report($e);
+}
 
     } catch (
         ValidationException $e
