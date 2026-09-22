@@ -134,6 +134,17 @@ body {
     box-shadow: 0 0 0 3px rgba(47,104,72,.1);
 }
 
+.auth-success {
+    margin-bottom: 20px;
+    padding: 12px 14px;
+    border-radius: 9px;
+    background: var(--green-soft);
+    color: var(--green-dark);
+    border: 1px solid var(--border);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
 .auth-error {
     margin-top: 7px;
     color: #b83f3f;
@@ -266,4 +277,4 @@ body {
     font-size: 18px;
     font-weight: 700;
     color: #4285f4;
-}
+}   

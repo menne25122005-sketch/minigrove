@@ -1,25 +1,176 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-    </div>
+<!DOCTYPE html>
+<html lang="vi">
 
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+<head>
 
-    <form method="POST" action="{{ route('password.email') }}">
-        @csrf
+    <meta charset="UTF-8">
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Quên mật khẩu - MiniGrove</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/auth.css') }}"
+    >
+
+</head>
+
+<body>
+
+<div class="auth-page">
+
+    <section class="auth-brand">
+
+        <div class="auth-brand-content">
+
+            <div class="auth-logo">
+                🌿 MiniGrove
+            </div>
+
+            <div class="auth-slogan">
+                Nhỏ một khu rừng,<br>
+                lớn một thế giới.
+            </div>
+
+            <div class="auth-description">
+                Khám phá những hệ sinh thái mini,
+                tự thiết kế Terrarium và đồng hành
+                cùng khu vườn của riêng bạn.
+            </div>
+
+            <div class="auth-features">
+
+                <span class="auth-feature">
+                    Terrarium
+                </span>
+
+                <span class="auth-feature">
+                    MiniGrove Studio
+                </span>
+
+                <span class="auth-feature">
+                    My Grove
+                </span>
+
+                <span class="auth-feature">
+                    GroveCare
+                </span>
+
+            </div>
+
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
+    </section>
+
+
+    <main class="auth-main">
+
+        <div class="auth-box">
+
+            <div class="auth-heading">
+
+                <h1>
+                    Quên mật khẩu?
+                </h1>
+
+                <p>
+                    Nhập email của bạn để nhận liên kết đặt lại mật khẩu.
+                </p>
+
+            </div>
+
+
+            @if (session('status'))
+
+                <div class="auth-success">
+                    {{ session('status') }}
+                </div>
+
+            @endif
+
+
+            <form
+                method="POST"
+                action="{{ route('password.email') }}"
+            >
+
+                @csrf
+
+
+                <div class="auth-form-group">
+
+                    <label for="email">
+                        Email
+                    </label>
+
+                    <input
+                        id="email"
+                        class="auth-input"
+                        type="email"
+                        name="email"
+                        value="{{ old('email') }}"
+                        required
+                        autofocus
+                        autocomplete="email"
+                        placeholder="example@gmail.com"
+                    >
+
+                    @error('email')
+
+                        <div class="auth-error">
+                            {{ $message }}
+                        </div>
+
+                    @enderror
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="auth-button"
+                >
+                    GỬI LIÊN KẾT ĐẶT LẠI MẬT KHẨU
+                </button>
+
+            </form>
+
+
+            <div class="auth-footer">
+
+                Nhớ mật khẩu rồi?
+
+                <a
+                    href="{{ route('login') }}"
+                    class="auth-link"
+                >
+                    Đăng nhập
+                </a>
+
+            </div>
+
+
+            <div class="auth-back">
+
+                <a
+                    href="{{ route('home') }}"
+                    class="auth-link"
+                >
+                    ← Trở về trang chủ
+                </a>
+
+            </div>
+
         </div>
-    </form>
-</x-guest-layout>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>
