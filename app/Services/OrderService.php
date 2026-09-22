@@ -100,6 +100,7 @@ class OrderService
                         [
                             'COD',
                             'QR',
+                            'ONEPAY',
                         ],
                         true
                     )

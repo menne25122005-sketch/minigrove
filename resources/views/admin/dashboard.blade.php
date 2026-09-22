@@ -537,11 +537,6 @@
 
 
 
-            <a href="{{ route('admin.staff.index') }}">
-
-                Quản lý nhân viên
-
-            </a>
 
 
 

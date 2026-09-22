@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\OnePayController;
 
 use App\Http\Controllers\Shop\ProductController as ShopProductController;
 
@@ -227,6 +228,23 @@ Route::middleware([
     });
 
 
+
+
+/*
+|--------------------------------------------------------------------------
+| OnePay - Return URL
+|--------------------------------------------------------------------------
+|
+| OnePay chuyển khách hàng về đây sau khi hoàn tất thanh toán.
+| Route này không đặt trong middleware auth vì OnePay gọi trực tiếp.
+|
+*/
+
+Route::get(
+    '/checkout/onepay/return',
+    [OnePayController::class, 'return']
+)->name('checkout.onepay.return');
+
 /*
 |--------------------------------------------------------------------------
 | Checkout - Customer
@@ -343,8 +361,89 @@ Route::middleware([
         )->name(
             'checkout.address.select'
         );
+/*
+ * ---------------------------------------------------------------
+ * Sửa địa chỉ giao hàng
+ * ---------------------------------------------------------------
+ */
+Route::patch(
+    '/checkout/address/{address}',
+    [
+        AddressController::class,
+        'update',
+    ]
+)->whereNumber(
+    'address'
+)->name(
+    'checkout.address.update'
+);
 
 
+/*
+ * ---------------------------------------------------------------
+ * Xóa địa chỉ giao hàng
+ * ---------------------------------------------------------------
+ */
+Route::delete(
+    '/checkout/address/{address}',
+    [
+        AddressController::class,
+        'destroy',
+    ]
+)->whereNumber(
+    'address'
+)->name(
+    'checkout.address.destroy'
+);
+/*
+ * ---------------------------------------------------------------
+ * GHN Address API
+ * ---------------------------------------------------------------
+ *
+ * Các API này dùng để:
+ * - Lấy danh sách Tỉnh/Thành phố từ GHN
+ * - Lấy danh sách Quận/Huyện theo Tỉnh
+ * - Lấy danh sách Phường/Xã theo Quận
+ *
+ * GHN Token chỉ được sử dụng ở Backend,
+ * không đưa Token ra JavaScript.
+ */
+
+Route::get(
+    '/checkout/ghn/provinces',
+    [
+        AddressController::class,
+        'ghnProvinces',
+    ]
+)->name(
+    'checkout.ghn.provinces'
+);
+
+
+Route::get(
+    '/checkout/ghn/districts/{provinceId}',
+    [
+        AddressController::class,
+        'ghnDistricts',
+    ]
+)->whereNumber(
+    'provinceId'
+)->name(
+    'checkout.ghn.districts'
+);
+
+
+Route::get(
+    '/checkout/ghn/wards/{districtId}',
+    [
+        AddressController::class,
+        'ghnWards',
+    ]
+)->whereNumber(
+    'districtId'
+)->name(
+    'checkout.ghn.wards'
+);
         /*
          * ---------------------------------------------------------------
          * Áp dụng Voucher

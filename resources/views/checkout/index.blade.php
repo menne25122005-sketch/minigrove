@@ -94,168 +94,463 @@
             </div>
 
 
-            {{-- ADDRESS LIST --}}
+            {{-- =================================================
+     ADDRESS LIST
+================================================== --}}
 
-            @if ($addresses->isNotEmpty())
+@if ($addresses->isNotEmpty())
 
-                <div class="checkout-address-list">
+    <div class="checkout-address-list">
 
-                    @foreach ($addresses as $address)
+        @foreach ($addresses as $address)
 
-                        <div
-                            class="
-                                checkout-address-item
-                                {{
-                                    $selectedAddress
-                                    && $selectedAddress->id === $address->id
-                                        ? 'selected'
-                                        : ''
-                                }}
-                            "
+            <div
+                class="
+                    checkout-address-item
+                    {{
+                        $selectedAddress
+                        && $selectedAddress->id === $address->id
+                            ? 'selected'
+                            : ''
+                    }}
+                "
+            >
+
+                {{-- =================================================
+                     SELECT ADDRESS
+                ================================================== --}}
+
+                <div class="checkout-address-radio">
+
+                    <form
+                        method="POST"
+                        action="{{ route('checkout.address.select') }}"
+                    >
+
+                        @csrf
+
+                        <input
+                            type="hidden"
+                            name="address_id"
+                            value="{{ $address->id }}"
                         >
 
-
-                            {{-- SELECT ADDRESS --}}
-
-                            <div class="checkout-address-radio">
-
-                                <form
-                                    method="POST"
-                                    action="{{
-                                        route(
-                                            'checkout.address.select'
-                                        )
-                                    }}"
-                                >
-
-                                    @csrf
-
-
-                                    <input
-                                        type="hidden"
-                                        name="address_id"
-                                        value="{{ $address->id }}"
-                                    >
-
-
-                                    <button
-                                        type="submit"
-                                        class="
-                                            checkout-address-select-button
-                                        "
-                                        title="Chọn địa chỉ này"
-                                    >
-
-                                        @if (
-                                            $selectedAddress
-                                            && $selectedAddress->id
-                                                === $address->id
-                                        )
-
-                                            ●
-
-                                        @else
-
-                                            ○
-
-                                        @endif
-
-                                    </button>
-
-                                </form>
-
-                            </div>
-
-
-                            {{-- ADDRESS CONTENT --}}
-
-                            <div class="checkout-address-content">
-
-                                <div class="checkout-address-main">
-
-                                    <strong>
-                                        {{ $address->receiver_name }}
-                                    </strong>
-
-
-                                    <span>
-                                        {{ $address->receiver_phone }}
-                                    </span>
-
-
-                                    @if ($address->label)
-
-                                        <span
-                                            class="
-                                                checkout-address-label
-                                            "
-                                        >
-                                            {{ $address->label }}
-                                        </span>
-
-                                    @endif
-
-
-                                    @if ($address->is_default)
-
-                                        <span
-                                            class="
-                                                checkout-address-default
-                                            "
-                                        >
-                                            Mặc định
-                                        </span>
-
-                                    @endif
-
-                                </div>
-
-
-                                <div class="checkout-address-text">
-
-                                    {{ $address->address_detail }},
-                                    {{ $address->ward }},
-                                    {{ $address->district }},
-                                    {{ $address->province }}
-
-                                </div>
-
-                            </div>
-
-
-                            {{-- CURRENT ADDRESS --}}
+                        <button
+                            type="submit"
+                            class="checkout-address-select-button"
+                            title="Chọn địa chỉ này"
+                        >
 
                             @if (
                                 $selectedAddress
-                                && $selectedAddress->id
-                                    === $address->id
+                                && $selectedAddress->id === $address->id
                             )
 
-                                <div
-                                    class="
-                                        checkout-address-current
-                                    "
-                                >
-                                    Đang chọn
-                                </div>
+                                ●
+
+                            @else
+
+                                ○
 
                             @endif
 
-                        </div>
+                        </button>
 
-                    @endforeach
-
-                </div>
-
-            @else
-
-                <div class="checkout-no-address">
-
-                    Bạn chưa có địa chỉ nhận hàng.
+                    </form>
 
                 </div>
 
-            @endif
+
+                {{-- =================================================
+                     ADDRESS CONTENT
+                ================================================== --}}
+
+                <div class="checkout-address-content">
+
+                    <div class="checkout-address-main">
+
+                        <strong>
+                            {{ $address->receiver_name }}
+                        </strong>
+
+                        <span>
+                            {{ $address->receiver_phone }}
+                        </span>
+
+                        @if ($address->label)
+
+                            <span class="checkout-address-label">
+                                {{ $address->label }}
+                            </span>
+
+                        @endif
+
+                        @if ($address->is_default)
+
+                            <span class="checkout-address-default">
+                                Mặc định
+                            </span>
+
+                        @endif
+
+                    </div>
+
+
+                    <div class="checkout-address-text">
+
+                        {{ $address->address_detail }},
+                        {{ $address->ward }},
+                        {{ $address->district }},
+                        {{ $address->province }}
+
+                    </div>
+
+
+                    {{-- =================================================
+                         ADDRESS ACTIONS
+                    ================================================== --}}
+
+                    <div
+                        class="checkout-address-actions"
+                        style="
+                            display: flex;
+                            gap: 8px;
+                            margin-top: 10px;
+                            flex-wrap: wrap;
+                        "
+                    >
+
+                        {{-- SỬA --}}
+
+                        <button
+                            type="button"
+                            class="checkout-secondary-button checkout-address-edit-button"
+                            data-address-edit="{{ $address->id }}"
+                        >
+                            Sửa
+                        </button>
+
+
+                        {{-- XÓA --}}
+
+                        <form
+                            method="POST"
+                            action="{{
+                                route(
+                                    'checkout.address.destroy',
+                                    $address->id
+                                )
+                            }}"
+                            onsubmit="
+                                return confirm(
+                                    'Bạn có chắc muốn xóa địa chỉ này không?'
+                                );
+                            "
+                        >
+
+                            @csrf
+
+                            @method('DELETE')
+
+                            <button
+                                type="submit"
+                                class="checkout-secondary-button checkout-address-delete-button"
+                                 data-address-id="{{ $address->id }}"
+                            >
+                                Xóa
+                            </button>
+
+                        </form>
+
+                    </div>
+
+
+                    {{-- =================================================
+                         EDIT ADDRESS FORM
+                    ================================================== --}}
+
+                    <div
+                        class="checkout-address-edit-form"
+                        id="editAddress{{ $address->id }}"
+                        style="display: none; margin-top: 16px;"
+                    >
+
+                        <form
+                            method="POST"
+                            action="{{
+                                route(
+                                    'checkout.address.update',
+                                    $address->id
+                                )
+                            }}"
+                            class="checkout-address-form"
+                        >
+
+                            @csrf
+
+                            @method('PATCH')
+
+
+                            <div class="checkout-form-grid">
+
+                                {{-- TÊN NGƯỜI NHẬN --}}
+
+                                <div class="checkout-field">
+
+                                    <label>
+                                        Tên người nhận
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="receiver_name"
+                                        value="{{ $address->receiver_name }}"
+                                        maxlength="100"
+                                        required
+                                    >
+
+                                </div>
+
+
+                                {{-- SỐ ĐIỆN THOẠI --}}
+
+                                <div class="checkout-field">
+
+                                    <label>
+                                        Số điện thoại
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="receiver_phone"
+                                        value="{{ $address->receiver_phone }}"
+                                        maxlength="10"
+                                        inputmode="numeric"
+                                        required
+                                    >
+
+                                </div>
+
+
+                                {{-- TỈNH --}}
+
+                                <div class="checkout-field">
+
+                                    <label>
+                                        Tỉnh / Thành phố
+                                    </label>
+
+                                    <select
+                                        class="checkout-edit-province"
+                                        name="province"
+                                        data-address-id="{{ $address->id }}"
+                                        data-current-province="{{ $address->province }}"
+                                        required
+                                    >
+                                        <option value="">
+                                            Đang tải Tỉnh / Thành phố...
+                                        </option>
+                                    </select>
+
+                                </div>
+
+
+                                {{-- QUẬN --}}
+
+                                <div class="checkout-field">
+
+                                    <label>
+                                        Quận / Huyện
+                                    </label>
+
+                                    <select
+                                        class="checkout-edit-district"
+                                        name="district"
+                                        data-address-id="{{ $address->id }}"
+                                        data-current-district="{{ $address->district }}"
+                                        required
+                                        disabled
+                                    >
+                                        <option value="">
+                                            -- Chọn Quận / Huyện --
+                                        </option>
+                                    </select>
+
+                                </div>
+
+
+                                {{-- PHƯỜNG --}}
+
+                                <div class="checkout-field">
+
+                                    <label>
+                                        Phường / Xã
+                                    </label>
+
+                                    <select
+                                        class="checkout-edit-ward"
+                                        name="ward"
+                                        data-address-id="{{ $address->id }}"
+                                        data-current-ward="{{ $address->ward }}"
+                                        required
+                                        disabled
+                                    >
+                                        <option value="">
+                                            -- Chọn Phường / Xã --
+                                        </option>
+                                    </select>
+
+                                </div>
+
+
+                                {{-- GHN DISTRICT ID --}}
+
+                                <input
+                                    type="hidden"
+                                    class="checkout-edit-ghn-district"
+                                    name="ghn_district_id"
+                                    data-address-id="{{ $address->id }}"
+                                    value="{{ $address->ghn_district_id }}"
+                                >
+
+
+                                {{-- GHN WARD CODE --}}
+
+                                <input
+                                    type="hidden"
+                                    class="checkout-edit-ghn-ward"
+                                    name="ghn_ward_code"
+                                    data-address-id="{{ $address->id }}"
+                                    value="{{ $address->ghn_ward_code }}"
+                                >
+
+
+                                {{-- NHÃN --}}
+
+                                <div class="checkout-field">
+
+                                    <label>
+                                        Nhãn địa chỉ
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="label"
+                                        value="{{ $address->label }}"
+                                        maxlength="50"
+                                        placeholder="Ví dụ: Nhà riêng"
+                                    >
+
+                                </div>
+
+
+                                {{-- ĐỊA CHỈ CHI TIẾT --}}
+
+                                <div
+                                    class="
+                                        checkout-field
+                                        checkout-field-full
+                                    "
+                                >
+
+                                    <label>
+                                        Số nhà / Tên đường
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="address_detail"
+                                        value="{{ $address->address_detail }}"
+                                        maxlength="255"
+                                        required
+                                    >
+
+                                </div>
+
+                            </div>
+
+
+                            {{-- MẶC ĐỊNH --}}
+
+                            <label class="checkout-default-check">
+
+                                <input
+                                    type="checkbox"
+                                    name="is_default"
+                                    value="1"
+                                    @checked($address->is_default)
+                                >
+
+                                Đặt làm địa chỉ mặc định
+
+                            </label>
+
+
+                            <div
+                                style="
+                                    display: flex;
+                                    gap: 8px;
+                                    margin-top: 12px;
+                                "
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="checkout-secondary-button"
+                                >
+                                    Lưu thay đổi
+                                </button>
+
+
+                                <button
+    type="button"
+    class="checkout-secondary-button checkout-address-cancel-edit"
+    data-address-id="{{ $address->id }}"
+>
+    Hủy
+</button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+
+                {{-- =================================================
+                     CURRENT ADDRESS
+                ================================================== --}}
+
+                @if (
+                    $selectedAddress
+                    && $selectedAddress->id === $address->id
+                )
+
+                    <div class="checkout-address-current">
+                        Đang chọn
+                    </div>
+
+                @endif
+
+            </div>
+
+        @endforeach
+
+    </div>
+
+@else
+
+    <div class="checkout-no-address">
+
+        Bạn chưa có địa chỉ nhận hàng.
+
+    </div>
+
+@endif
+
+
 
 
             {{-- =================================================
@@ -350,84 +645,103 @@
                         </div>
 
 
-                        {{-- =================================================
-                             PROVINCE
-                        ================================================== --}}
 
-                        <div class="checkout-field">
+{{-- =================================================
+     PROVINCE
+================================================== --}}
 
-                            <label for="checkoutProvince">
-                                Tỉnh / Thành phố
-                            </label>
+<div class="checkout-field">
 
-                            <select
-                                id="checkoutProvince"
-                                name="province"
-                                data-old="{{ old('province') }}"
-                                required
-                            >
+    <label for="checkoutProvince">
+        Tỉnh / Thành phố
+    </label>
 
-                                <option value="">
-                                    -- Chọn Tỉnh / Thành phố --
-                                </option>
+    <select
+        id="checkoutProvince"
+        name="province"
+        data-old="{{ old('province') }}"
+        required
+    >
+        <option value="">
+            -- Chọn Tỉnh / Thành phố --
+        </option>
+    </select>
 
-                            </select>
-
-                        </div>
-
-
-                        {{-- =================================================
-                             DISTRICT
-                        ================================================== --}}
-
-                        <div class="checkout-field">
-
-                            <label for="checkoutDistrict">
-                                Quận / Huyện
-                            </label>
-
-                            <select
-                                id="checkoutDistrict"
-                                name="district"
-                                data-old="{{ old('district') }}"
-                                required
-                                disabled
-                            >
-
-                                <option value="">
-                                    -- Chọn Quận / Huyện --
-                                </option>
-
-                            </select>
-
-                        </div>
+</div>
 
 
-                        {{-- =================================================
-                             WARD
-                        ================================================== --}}
+{{-- =================================================
+     DISTRICT
+================================================== --}}
 
-                        <div class="checkout-field">
+<div class="checkout-field">
 
-                            <label for="checkoutWard">
-                                Phường / Xã
-                            </label>
+    <label for="checkoutDistrict">
+        Quận / Huyện
+    </label>
 
-                            <select
-                                id="checkoutWard"
-                                name="ward"
-                                data-old="{{ old('ward') }}"
-                                required
-                                disabled
-                            >
+    <select
+        id="checkoutDistrict"
+        name="district"
+        data-old="{{ old('district') }}"
+        required
+        disabled
+    >
+        <option value="">
+            -- Chọn Quận / Huyện --
+        </option>
+    </select>
 
-                                <option value="">
-                                    -- Chọn Phường / Xã --
-                                </option>
+</div>
 
-                            </select>
 
-                        </div>
+{{-- =================================================
+     WARD
+================================================== --}}
+
+<div class="checkout-field">
+
+    <label for="checkoutWard">
+        Phường / Xã
+    </label>
+
+    <select
+        id="checkoutWard"
+        name="ward"
+        data-old="{{ old('ward') }}"
+        required
+        disabled
+    >
+        <option value="">
+            -- Chọn Phường / Xã --
+        </option>
+    </select>
+
+</div>
+
+
+{{-- =================================================
+     GHN CODES
+
+     Các giá trị này KHÔNG cho người dùng nhập.
+     JavaScript/backend sẽ tự điền.
+================================================== --}}
+
+<input
+    type="hidden"
+    name="ghn_district_id"
+    id="ghnDistrictId"
+    value="{{ old('ghn_district_id') }}"
+>
+
+<input
+    type="hidden"
+    name="ghn_ward_code"
+    id="ghnWardCode"
+    value="{{ old('ghn_ward_code') }}"
+>
+
+
 
 
                         {{-- LABEL --}}
@@ -858,6 +1172,9 @@
         $qrSetting =
             $paymentSettings->get('QR');
 
+        $onePaySetting =
+    $paymentSettings->get('ONEPAY');
+
     @endphp
 
 
@@ -976,7 +1293,40 @@
 
 
             @endif
+{{-- =============================================
+     ONEPAY
+============================================== --}}
 
+@if ($onePaySetting)
+
+    <label class="checkout-payment-option">
+
+        <input
+            type="radio"
+            name="payment_method"
+            value="ONEPAY"
+            @checked(
+                $selectedPaymentMethod
+                === 'ONEPAY'
+            )
+        >
+
+        <span>
+
+            <strong>
+                {{ $onePaySetting->display_name }}
+            </strong>
+
+            <small>
+                Thanh toán thẻ qua OnePay
+                (môi trường TEST)
+            </small>
+
+        </span>
+
+    </label>
+
+@endif
 
         </div>
 

@@ -297,52 +297,7 @@
         </a>
 
 
-        {{-- =====================================================
-             FLASH MESSAGE
-        ====================================================== --}}
 
-        @if (session('success'))
-
-            <div
-                class="
-                    orders-alert
-                    orders-alert-success
-                "
-            >
-                {{ session('success') }}
-            </div>
-
-        @endif
-
-
-        @if (session('error'))
-
-            <div
-                class="
-                    orders-alert
-                    orders-alert-error
-                "
-            >
-                {{ session('error') }}
-            </div>
-
-        @endif
-
-
-        @if ($errors->any())
-
-            <div
-                class="
-                    orders-alert
-                    orders-alert-error
-                "
-            >
-
-                {{ $errors->first() }}
-
-            </div>
-
-        @endif
 
 
         {{-- =====================================================

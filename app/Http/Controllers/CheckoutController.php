@@ -10,6 +10,7 @@ use App\Models\PaymentSetting;
 use App\Services\CheckoutService;
 use App\Services\VoucherService;
 use App\Services\OrderService;
+use App\Services\OnePayService;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -349,76 +350,158 @@ class CheckoutController extends Controller
             ];
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | ĐỊA CHỈ CỦA CUSTOMER
-        |--------------------------------------------------------------------------
-        */
 
-        $addresses =
-            $request->user()
-                ->addresses()
-                ->orderByDesc(
-                    'is_default'
-                )
-                ->orderByDesc(
-                    'id'
-                )
-                ->get();
+/*
+|--------------------------------------------------------------------------
+| ĐỊA CHỈ CỦA CUSTOMER
+|--------------------------------------------------------------------------
+|
+| Chỉ sử dụng địa chỉ có đầy đủ mã GHN.
+|
+*/
 
+$addresses =
+    $request->user()
+        ->addresses()
+        ->orderByDesc(
+            'is_default'
+        )
+        ->orderByDesc(
+            'id'
+        )
+        ->get();
+
+
+/*
+|--------------------------------------------------------------------------
+| ĐỊA CHỈ ĐANG ĐƯỢC CHỌN
+|--------------------------------------------------------------------------
+*/
+
+$selectedAddress = null;
+
+$selectedAddressId =
+    session(
+        'checkout.address_id'
+    );
+
+
+/*
+|--------------------------------------------------------------------------
+| 1. ƯU TIÊN ADDRESS ĐANG CÓ TRONG SESSION
+|--------------------------------------------------------------------------
+|
+| Nhưng phải kiểm tra Address đó có mã GHN.
+|
+*/
+
+if ($selectedAddressId) {
+
+    $candidate =
+        $addresses->firstWhere(
+            'id',
+            (int) $selectedAddressId
+        );
+
+    if (
+        $candidate
+        &&
+        $candidate->ghn_district_id
+        &&
+        $candidate->ghn_ward_code
+    ) {
 
         $selectedAddress =
-            null;
+            $candidate;
+    }
+}
 
 
-        $selectedAddressId =
-            session(
-                'checkout.address_id'
-            );
+/*
+|--------------------------------------------------------------------------
+| 2. NẾU SESSION CHỨA ADDRESS KHÔNG HỢP LỆ
+|--------------------------------------------------------------------------
+|
+| Tìm địa chỉ mặc định có mã GHN hợp lệ.
+|
+*/
 
+if (!$selectedAddress) {
 
-        /*
-         * Nếu Session đang có Address ID,
-         * chỉ lấy trong danh sách Address
-         * thuộc Customer hiện tại.
-         */
-        if ($selectedAddressId) {
+    $selectedAddress =
+        $addresses->first(
+            function ($address) {
 
-            $selectedAddress =
-                $addresses->firstWhere(
-                    'id',
-                    (int)
-                    $selectedAddressId
-                );
-        }
-
-
-        /*
-         * Nếu chưa chọn Address:
-         *
-         * 1. Ưu tiên Address mặc định.
-         * 2. Nếu chưa có mặc định thì lấy
-         *    Address đầu tiên.
-         */
-        if (!$selectedAddress) {
-
-            $selectedAddress =
-                $addresses
-                    ->firstWhere(
-                        'is_default',
-                        true
+                return
+                    !empty(
+                        $address->ghn_district_id
                     )
-                ?? $addresses->first();
-
-
-            if ($selectedAddress) {
-
-                session([
-                    'checkout.address_id'
-                        => $selectedAddress->id,
-                ]);
+                    &&
+                    !empty(
+                        $address->ghn_ward_code
+                    )
+                    &&
+                    $address->is_default;
             }
-        }
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| 3. NẾU KHÔNG CÓ ADDRESS MẶC ĐỊNH HỢP LỆ
+|--------------------------------------------------------------------------
+|
+| Lấy địa chỉ đầu tiên có mã GHN hợp lệ.
+|
+*/
+
+if (!$selectedAddress) {
+
+    $selectedAddress =
+        $addresses->first(
+            function ($address) {
+
+                return
+                    !empty(
+                        $address->ghn_district_id
+                    )
+                    &&
+                    !empty(
+                        $address->ghn_ward_code
+                    );
+            }
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| 4. CẬP NHẬT SESSION
+|--------------------------------------------------------------------------
+|
+| Đảm bảo Checkout luôn sử dụng Address
+| mà GHN có thể tính phí.
+|
+*/
+
+if ($selectedAddress) {
+
+    session([
+        'checkout.address_id'
+            => $selectedAddress->id,
+    ]);
+} else {
+
+    /*
+     * Không có địa chỉ GHN hợp lệ.
+     * Xóa Address ID cũ để tránh gọi GHN
+     * với mã NULL/0.
+     */
+    session()->forget(
+        'checkout.address_id'
+    );
+}
 
 
         /*
@@ -542,6 +625,7 @@ $paymentSettings =
             [
                 'COD',
                 'QR',
+                'ONEPAY',
             ]
         )
         ->where(
@@ -708,7 +792,8 @@ $paymentSettings =
  */
 public function placeOrder(
     Request $request,
-    OrderService $orderService
+    OrderService $orderService,
+    OnePayService $onePayService
 ): RedirectResponse {
 
     $validated = $request->validate(
@@ -719,9 +804,9 @@ public function placeOrder(
             ],
 
             'payment_method' => [
-                'required',
-                'in:COD,QR',
-            ],
+    'required',
+    'in:COD,QR,ONEPAY',
+],
 
             'note' => [
                 'nullable',
@@ -840,52 +925,87 @@ try {
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | ĐẶT HÀNG THÀNH CÔNG
-    |--------------------------------------------------------------------------
-    |
-    | Lúc này Order đã được commit.
-    | Có thể xóa Checkout Session.
-    |
-    */
-
-    session()->forget([
-        'checkout.mode',
-        'checkout.cart_item_ids',
-        'checkout.product_id',
-        'checkout.quantity',
-        'checkout.address_id',
-        'checkout.voucher_code',
-    ]);
+   /*
+|--------------------------------------------------------------------------
+| XỬ LÝ THANH TOÁN SAU KHI TẠO ORDER
+|--------------------------------------------------------------------------
+|
+| Order và Payment đã được tạo thành công.
+|
+*/
 
 
-    /*
-     * QR:
-     * chuyển tới trang thanh toán QR.
-     */
-    if (
-        $order->payment_method
-        === 'QR'
-    ) {
+/*
+|--------------------------------------------------------------------------
+| ONEPAY
+|--------------------------------------------------------------------------
+|
+| Payment vẫn đang ở trạng thái pending.
+| Chuyển khách hàng sang OnePay TEST.
+|
+*/
 
-        return redirect()
-            ->route(
-                'checkout.qr',
-                $order
-            );
-    }
+if (
+    $order->payment_method === 'ONEPAY'
+) {
+
+    $onePayUrl = $onePayService->createPaymentUrl(
+        $order,
+        route('checkout.onepay.return')
+    );
+
+    return redirect()->away($onePayUrl);
+}
 
 
-    /*
-     * COD:
-     * chuyển thẳng tới trang thành công.
-     */
+/*
+|--------------------------------------------------------------------------
+| XÓA CHECKOUT SESSION
+|--------------------------------------------------------------------------
+|
+| Chỉ xóa sau khi xử lý OnePay.
+|
+*/
+
+session()->forget([
+    'checkout.mode',
+    'checkout.cart_item_ids',
+    'checkout.product_id',
+    'checkout.quantity',
+    'checkout.address_id',
+    'checkout.voucher_code',
+]);
+
+
+/*
+|--------------------------------------------------------------------------
+| QR
+|--------------------------------------------------------------------------
+*/
+
+if (
+    $order->payment_method === 'QR'
+) {
+
     return redirect()
         ->route(
-            'checkout.success',
+            'checkout.qr',
             $order
         );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| COD
+|--------------------------------------------------------------------------
+*/
+
+return redirect()
+    ->route(
+        'checkout.success',
+        $order
+    );
 }
 
 

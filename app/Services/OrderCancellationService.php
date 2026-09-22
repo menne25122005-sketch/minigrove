@@ -22,16 +22,18 @@ class OrderCancellationService
      * Chỉ được hủy khi Order = pending.
      */
     public function cancel(
-        User $user,
-        Order $order,
-        ?string $reason = null
-    ): Order {
+    User $user,
+    Order $order,
+    ?string $reason = null,
+    bool $system = false
+): Order {
 
         return DB::transaction(
             function () use (
                 $user,
                 $order,
-                $reason
+                $reason,
+                $system
             ) {
 
                 /*
@@ -231,8 +233,12 @@ class OrderCancellationService
                             null,
 
                         'note' =>
-                            'Hoàn tồn kho do Customer hủy đơn '
-                            . $lockedOrder->order_code,
+    (
+        $system
+            ? 'Hoàn tồn kho do hệ thống tự động hủy đơn '
+            : 'Hoàn tồn kho do Customer hủy đơn '
+    )
+    . $lockedOrder->order_code,
                     ]);
                 }
 
@@ -324,7 +330,11 @@ class OrderCancellationService
                                     ? $payment->note . ' '
                                     : ''
                                 )
-                                . 'Đơn hàng đã bị Customer hủy trước khi thanh toán hoàn tất.'
+                                . (
+    $system
+        ? 'Đơn hàng được hệ thống tự động hủy do thanh toán không hoàn tất.'
+        : 'Đơn hàng đã bị Customer hủy trước khi thanh toán hoàn tất.'
+)
                             );
 
 
@@ -363,7 +373,9 @@ class OrderCancellationService
                 */
 
                 $description =
-                    'Customer đã hủy đơn hàng.';
+    $system
+        ? 'Hệ thống tự động hủy đơn hàng.'
+        : 'Customer đã hủy đơn hàng.';
 
 
                 if (
@@ -391,7 +403,9 @@ class OrderCancellationService
                      * Customer tự thao tác.
                      */
                     'updated_by' =>
-                        $user->id,
+    $system
+        ? null
+        : $user->id,
                 ]);
 
 
