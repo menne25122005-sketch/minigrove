@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ProductSeeder::class,
             StudioProductSeeder::class,
+            ProductImageSeeder::class,
             VoucherSeeder::class,
             CareRuleSeeder::class,
         ]);
