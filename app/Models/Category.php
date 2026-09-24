@@ -30,4 +30,16 @@ class Category extends Model
     {
         return $this->hasMany(Product::class);
     }
+    /**
+     * Các sản phẩm thuộc danh mục quà tặng.
+     */
+    public function giftProducts()
+    {
+        return $this->belongsToMany(
+            Product::class,
+            'category_product',
+            'category_id',
+            'product_id'
+        )->withTimestamps();
+    }
 }

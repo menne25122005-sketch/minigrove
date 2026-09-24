@@ -277,5 +277,20 @@ class Product extends Model
             'top_product_id'
         );
     }
+    /**
+     * Các danh mục quà tặng mà Product thuộc về.
+     *
+     * Một Product có thể xuất hiện trong nhiều
+     * danh mục quà tặng khác nhau.
+     */
+    public function giftCategories()
+    {
+        return $this->belongsToMany(
+            Category::class,
+            'category_product',
+            'product_id',
+            'category_id'
+        )->withTimestamps();
+    }
 
 }
