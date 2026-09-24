@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Events\ChatMessageSent;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Services\ChatAttachmentService;
+use App\Support\ChatMessagePayload;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ChatController extends Controller
@@ -17,6 +22,13 @@ class ChatController extends Controller
      */
     public function index(Request $request): View
     {
+        $hasChatHistory = Conversation::query()
+            ->where(
+                'customer_id',
+                $request->user()->id
+            )
+            ->exists();
+
         /*
         |--------------------------------------------------------------------------
         | CONVERSATION ĐANG HOẠT ĐỘNG
@@ -62,6 +74,10 @@ class ChatController extends Controller
 
         if ($conversation) {
             $messages = Message::query()
+                ->with([
+                    'attachments:id,message_id,original_name,file_path,mime_type,file_size,attachment_type',
+                    'productCards:id,message_id,product_id,product_name,product_sku,list_price,sale_price,image_path,sort_order',
+                ])
                 ->where(
                     'conversation_id',
                     $conversation->id
@@ -137,7 +153,8 @@ class ChatController extends Controller
             compact(
                 'conversation',
                 'messages',
-                'closedConversations'
+                'closedConversations',
+                'hasChatHistory'
             )
         );
     }
@@ -146,29 +163,59 @@ class ChatController extends Controller
      * Customer gửi tin nhắn.
      */
     public function store(
-        Request $request
-    ): RedirectResponse {
+        Request $request,
+        ChatAttachmentService $attachmentService
+    ): RedirectResponse|JsonResponse {
         $validated = $request->validate(
             [
                 'content' => [
-                    'required',
+                    'nullable',
                     'string',
                     'max:5000',
                 ],
+                'images' => [
+                    'nullable',
+                    'array',
+                    'max:5',
+                ],
+                'images.*' => [
+                    'image',
+                    'mimes:jpg,jpeg,png,webp,gif',
+                    'max:5120',
+                ],
             ],
             [
-                'content.required' =>
-                    'Vui lòng nhập nội dung tin nhắn.',
-
                 'content.max' =>
                     'Tin nhắn không được vượt quá 5000 ký tự.',
+                'images.max' =>
+                    'Mỗi tin nhắn chỉ được gửi tối đa 5 ảnh.',
+                'images.*.image' =>
+                    'Tệp đính kèm phải là hình ảnh.',
+                'images.*.mimes' =>
+                    'Ảnh chỉ hỗ trợ JPG, JPEG, PNG, WEBP hoặc GIF.',
+                'images.*.max' =>
+                    'Mỗi ảnh không được vượt quá 5MB.',
             ]
         );
 
-        DB::transaction(
+        $content = trim(
+            (string) ($validated['content'] ?? '')
+        );
+        $images = $request->file('images', []);
+
+        if ($content === '' && $images === []) {
+            throw ValidationException::withMessages([
+                'content' =>
+                    'Vui lòng nhập tin nhắn hoặc chọn ít nhất một ảnh.',
+            ]);
+        }
+
+        [$conversation, $message] = DB::transaction(
             function () use (
                 $request,
-                $validated
+                $content,
+                $images,
+                $attachmentService
             ) {
                 /*
                 |--------------------------------------------------------------------------
@@ -232,7 +279,7 @@ class ChatController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                Message::create([
+                $message = Message::create([
                     'conversation_id' =>
                         $conversation->id,
 
@@ -240,12 +287,18 @@ class ChatController extends Controller
                         $request->user()->id,
 
                     'content' =>
-                        trim(
-                            $validated['content']
-                        ),
+                        $content !== ''
+                            ? $content
+                            : null,
 
                     'message_type' =>
-                        'TEXT',
+                        $images !== []
+                            ? (
+                                $content !== ''
+                                    ? 'MIXED'
+                                    : 'IMAGE'
+                            )
+                            : 'TEXT',
 
                     'sent_at' =>
                         now(),
@@ -253,6 +306,13 @@ class ChatController extends Controller
                     'read_at' =>
                         null,
                 ]);
+
+                if ($images !== []) {
+                    $attachmentService->attachImages(
+                        $message,
+                        $images
+                    );
+                }
 
                 /*
                 |--------------------------------------------------------------------------
@@ -267,8 +327,33 @@ class ChatController extends Controller
                     'last_message_at' =>
                         now(),
                 ]);
+
+                return [
+                    $conversation->fresh(),
+                    $message->fresh()->load('attachments'),
+                ];
             }
         );
+
+        ChatMessageSent::dispatch(
+            $message,
+            $conversation
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'conversation_id' => $conversation->id,
+                'message' => ChatMessagePayload::make(
+                    $message
+                ),
+                'conversation' => [
+                    'id' => $conversation->id,
+                    'status' => $conversation->status,
+                    'subject' => $conversation->subject,
+                ],
+            ]);
+        }
 
         return redirect()
             ->route('chat.index')

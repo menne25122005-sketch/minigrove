@@ -12,6 +12,19 @@ use RuntimeException;
 
 class AddressController extends Controller
 {
+    public function index(Request $request)
+{
+    $addresses = $request->user()
+        ->addresses()
+        ->orderByDesc('is_default')
+        ->orderByDesc('id')
+        ->get();
+
+    return view('profile.addresses', [
+        'user' => $request->user(),
+        'addresses' => $addresses,
+    ]);
+}
     /**
      * Thêm địa chỉ giao hàng.
      */
@@ -117,6 +130,8 @@ class AddressController extends Controller
         );
 
         $user = $request->user();
+        $fromProfile =
+    $request->input('context') === 'profile';
 
         /*
          * Địa chỉ đầu tiên tự động
@@ -204,17 +219,26 @@ class AddressController extends Controller
          * Tự chọn địa chỉ vừa thêm
          * cho Checkout hiện tại.
          */
-        session([
-            'checkout.address_id'
-                => $address->id,
-        ]);
+        if (!$fromProfile) {
 
-        return redirect()
-            ->route('checkout.index')
-            ->with(
-                'success',
-                'Đã thêm địa chỉ giao hàng.'
-            );
+    session([
+        'checkout.address_id'
+            => $address->id,
+    ]);
+}
+
+return redirect()
+    ->route(
+        $fromProfile
+            ? 'profile.addresses'
+            : 'checkout.index'
+    )
+    ->with(
+        'success',
+        $fromProfile
+            ? 'Đã thêm địa chỉ mới.'
+            : 'Đã thêm địa chỉ giao hàng.'
+    );
     }
 
 
@@ -295,6 +319,8 @@ class AddressController extends Controller
 
             abort(404);
         }
+        $fromProfile =
+    $request->input('context') === 'profile';
 
         $validated = $request->validate(
             [
@@ -496,11 +522,17 @@ class AddressController extends Controller
         }
 
         return redirect()
-            ->route('checkout.index')
-            ->with(
-                'success',
-                'Đã cập nhật địa chỉ giao hàng.'
-            );
+    ->route(
+        $fromProfile
+            ? 'profile.addresses'
+            : 'checkout.index'
+    )
+    ->with(
+        'success',
+        $fromProfile
+            ? 'Đã cập nhật địa chỉ.'
+            : 'Đã cập nhật địa chỉ giao hàng.'
+    );
     }
 
 
@@ -523,6 +555,8 @@ class AddressController extends Controller
 
             abort(404);
         }
+        $fromProfile =
+    $request->input('context') === 'profile';
 
         $user = $request->user();
 
@@ -606,11 +640,19 @@ class AddressController extends Controller
         }
 
         return redirect()
-            ->route('checkout.index')
-            ->with(
-                'success',
-                'Đã xóa địa chỉ giao hàng.'
-            );
+    ->route(
+        $fromProfile
+            ? 'profile.addresses'
+            : 'checkout.index'
+    )
+    ->with(
+        'success',
+        $fromProfile
+            ? 'Đã xóa địa chỉ.'
+            : 'Đã xóa địa chỉ giao hàng.'
+    );
+
+            
     }
 
 

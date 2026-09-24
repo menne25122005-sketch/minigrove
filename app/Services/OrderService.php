@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Address;
 use App\Models\CartItem;
+use App\Models\CustomDesign;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderStatusHistory;
@@ -22,10 +23,12 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-       protected GHNService $ghnService;
+    protected GHNService $ghnService;
 
-    public function __construct(GHNService $ghnService)
-    {
+    public function __construct(
+        GHNService $ghnService,
+        private CustomDesignService $customDesignService
+    ) {
         $this->ghnService = $ghnService;
     }
     /**
@@ -179,10 +182,9 @@ class OrderService
                                     );
                                 }
                             )
-                            ->where(
-                                'item_type',
-                                'PRODUCT'
-                            )
+                            ->with([
+                                'customDesign.items.product',
+                            ])
                             ->get();
 
 
@@ -213,66 +215,127 @@ class OrderService
                     foreach (
                         $cartItems as $cartItem
                     ) {
+                        if ($cartItem->item_type === 'PRODUCT') {
+                            $product =
+                                Product::query()
+                                    ->with('category')
+                                    ->whereKey(
+                                        $cartItem->product_id
+                                    )
+                                    ->lockForUpdate()
+                                    ->first();
 
-                        /*
-                         * Lock Product để tránh
-                         * hai đơn cùng trừ stock
-                         * tại cùng thời điểm.
-                         */
-                        $product =
-                            Product::query()
-                                ->with('category')
-                                ->whereKey(
-                                    $cartItem
-                                        ->product_id
-                                )
-                                ->lockForUpdate()
-                                ->first();
-
-
-                        $this->validateProduct(
-                            $product,
-                            $cartItem->quantity
-                        );
-
-
-                        /*
-                         * Giá luôn lấy lại
-                         * trực tiếp từ Database.
-                         */
-                        $unitPrice =
-                            $this->getProductPrice(
-                                $product
+                            $this->validateProduct(
+                                $product,
+                                $cartItem->quantity
                             );
 
+                            $unitPrice =
+                                $this->getProductPrice($product);
 
-                        $lineSubtotal =
-                            $unitPrice
-                            * $cartItem->quantity;
+                            $lineSubtotal =
+                                $unitPrice
+                                * $cartItem->quantity;
 
+                            $subtotal += $lineSubtotal;
 
-                        $subtotal +=
-                            $lineSubtotal;
+                            $orderItems->push([
+                                'item_type' => 'PRODUCT',
+                                'cart_item_id' => $cartItem->id,
+                                'product' => $product,
+                                'custom_design' => null,
+                                'design_products' => collect(),
+                                'quantity' => $cartItem->quantity,
+                                'unit_price' => $unitPrice,
+                                'subtotal' => $lineSubtotal,
+                                'weight' =>
+                                    (int) ($product->weight ?? 500)
+                                    * (int) $cartItem->quantity,
+                            ]);
+                        } elseif (
+                            $cartItem->item_type === 'CUSTOM_DESIGN'
+                            && $cartItem->customDesign
+                        ) {
+                            /** @var CustomDesign $design */
+                            $design = $cartItem->customDesign;
 
+                            if ($design->user_id !== $user->id) {
+                                throw ValidationException::withMessages([
+                                    'checkout' =>
+                                        'Thiết kế không thuộc tài khoản hiện tại.',
+                                ]);
+                            }
 
-                        $orderItems->push(
-                            [
-                                'cart_item_id' =>
-                                    $cartItem->id,
+                            $recalculated =
+                                $this->customDesignService
+                                    ->recalculate($design);
 
-                                'product' =>
-                                    $product,
+                            $designProducts = collect();
+                            $weight = 0;
 
-                                'quantity' =>
-                                    $cartItem->quantity,
+                            foreach (
+                                $recalculated['pricing']['items']
+                                as $designItem
+                            ) {
+                                $lockedProduct =
+                                    Product::query()
+                                        ->whereKey(
+                                            $designItem['product_id']
+                                        )
+                                        ->lockForUpdate()
+                                        ->first();
 
-                                'unit_price' =>
-                                    $unitPrice,
+                                $requiredQuantity =
+                                    (int) $designItem['quantity'];
 
-                                'subtotal' =>
-                                    $lineSubtotal,
-                            ]
-                        );
+                                $this->validateProduct(
+                                    $lockedProduct,
+                                    $requiredQuantity
+                                );
+
+                                $designProducts->push([
+                                    'product' => $lockedProduct,
+                                    'quantity' => $requiredQuantity,
+                                    'unit_price' =>
+                                        (float) $designItem['unit_price'],
+                                    'subtotal' =>
+                                        (float) $designItem['subtotal'],
+                                    'product_type' =>
+                                        $designItem['product_type'] ?? null,
+                                ]);
+
+                                $weight +=
+                                    (int) ($lockedProduct->weight ?? 0)
+                                    * $requiredQuantity;
+                            }
+
+                            $unitPrice =
+                                (float) $recalculated['pricing']['estimated_price'];
+
+                            $lineSubtotal = $unitPrice;
+                            $subtotal += $lineSubtotal;
+
+                            $orderItems->push([
+                                'item_type' => 'CUSTOM_DESIGN',
+                                'cart_item_id' => $cartItem->id,
+                                'product' => null,
+                                'custom_design' => $design,
+                                'design_products' => $designProducts,
+                                'quantity' => 1,
+                                'unit_price' => $unitPrice,
+                                'subtotal' => $lineSubtotal,
+                                'weight' => max(1, $weight),
+                                'purchase_pricing' =>
+                                    $recalculated['pricing'],
+                                'purchase_compatibility' =>
+                                    $recalculated['compatibility'],
+                            ]);
+                        } else {
+                            throw ValidationException::withMessages([
+                                'checkout' =>
+                                    'Có mục trong giỏ hàng không hợp lệ.',
+                            ]);
+                        }
                     }
                 }
 
@@ -343,11 +406,20 @@ class OrderService
 
                     $orderItems->push(
                         [
+                            'item_type' =>
+                                'PRODUCT',
+
                             'cart_item_id' =>
                                 null,
 
                             'product' =>
                                 $product,
+
+                            'custom_design' =>
+                                null,
+
+                            'design_products' =>
+                                collect(),
 
                             'quantity' =>
                                 $quantity,
@@ -357,6 +429,10 @@ class OrderService
 
                             'subtotal' =>
                                 $lineSubtotal,
+
+                            'weight' =>
+                                (int) ($product->weight ?? 500)
+                                * $quantity,
                         ]
                     );
                 }
@@ -475,13 +551,8 @@ if (
 $weight = 0;
 
 foreach ($orderItems as $item) {
-
-    $productWeight =
-        (int) ($item['product']->weight ?? 500);
-
     $weight +=
-        $productWeight
-        * (int) $item['quantity'];
+        (int) ($item['weight'] ?? 500);
 }
 
 $weight = max(1, $weight);
@@ -618,184 +689,153 @@ $shippingFee =
                 foreach (
                     $orderItems as $item
                 ) {
+                    if ($item['item_type'] === 'PRODUCT') {
+                        /** @var Product $product */
+                        $product = $item['product'];
+                        $quantity = (int) $item['quantity'];
 
-                    /** @var Product $product */
-                    $product =
-                        $item['product'];
+                        $quantityBefore =
+                            (int) $product->stock_quantity;
+                        $quantityAfter =
+                            $quantityBefore - $quantity;
 
+                        if ($quantityAfter < 0) {
+                            throw ValidationException::withMessages([
+                                'stock' =>
+                                    'Sản phẩm '
+                                    . $product->name
+                                    . ' không còn đủ tồn kho.',
+                            ]);
+                        }
 
-                    $quantity =
-                        (int)
-                        $item['quantity'];
-
-
-                    /*
-                     * Snapshot tồn kho trước.
-                     */
-                    $quantityBefore =
-                        (int)
-                        $product
-                            ->stock_quantity;
-
-
-                    $quantityAfter =
-                        $quantityBefore
-                        - $quantity;
-
-
-                    /*
-                     * Tuy đã kiểm tra phía trên,
-                     * vẫn bảo vệ không để Stock âm.
-                     */
-                    if (
-                        $quantityAfter < 0
-                    ) {
-
-                        throw ValidationException::withMessages([
-                            'stock' =>
-                                'Sản phẩm '
-                                . $product->name
-                                . ' không còn đủ tồn kho.',
-                        ]);
-                    }
-
-
-                    /*
-                     * Tạo Order Detail.
-                     */
-                    OrderDetail::create(
-                        [
-                            'order_id' =>
-                                $order->id,
-
-                            'item_type' =>
-                                'PRODUCT',
-
-                            'product_id' =>
-                                $product->id,
-
-                            'custom_design_id' =>
-                                null,
-
-                            'item_name' =>
-                                $product->name,
-
+                        OrderDetail::create([
+                            'order_id' => $order->id,
+                            'item_type' => 'PRODUCT',
+                            'product_id' => $product->id,
+                            'custom_design_id' => null,
+                            'item_name' => $product->name,
                             'item_code' =>
                                 $product->sku
-                                ?? (
-                                    'PRODUCT-'
-                                    . $product->id
-                                ),
-
-                            'unit_price' =>
-                                $item[
-                                    'unit_price'
-                                ],
-
-                            'quantity' =>
-                                $quantity,
-
-                            'subtotal' =>
-                                $item[
-                                    'subtotal'
-                                ],
-
-                            /*
-                             * Snapshot tại
-                             * thời điểm mua.
-                             */
+                                ?? ('PRODUCT-' . $product->id),
+                            'unit_price' => $item['unit_price'],
+                            'quantity' => $quantity,
+                            'subtotal' => $item['subtotal'],
                             'item_snapshot' => [
-                                'product_id' =>
-                                    $product->id,
-
-                                'sku' =>
-                                    $product->sku,
-
-                                'name' =>
-                                    $product->name,
-
+                                'product_id' => $product->id,
+                                'sku' => $product->sku,
+                                'name' => $product->name,
                                 'category' =>
-                                    $product
-                                        ->category
-                                        ?->name,
-
+                                    $product->category?->name,
                                 'list_price' =>
-                                    (float)
-                                    $product
-                                        ->list_price,
-
+                                    (float) $product->list_price,
                                 'sale_price' =>
-                                    $product
-                                        ->sale_price
-                                        !== null
-                                            ? (float)
-                                            $product
-                                                ->sale_price
-                                            : null,
-
-                                'unit_price' =>
-                                    $item[
-                                        'unit_price'
-                                    ],
+                                    $product->sale_price !== null
+                                        ? (float) $product->sale_price
+                                        : null,
+                                'unit_price' => $item['unit_price'],
                             ],
-                        ]
-                    );
+                        ]);
 
+                        $product->stock_quantity = $quantityAfter;
+                        $product->save();
 
-                    /*
-                     * Trừ Stock.
-                     */
-                    $product
-                        ->stock_quantity =
-                            $quantityAfter;
-
-
-                    $product->save();
-
-
-                    /*
-                     * Ghi Stock History.
-                     *
-                     * transaction_type = ORDER
-                     * là quy ước MiniGrove
-                     * cho việc xuất kho do Order.
-                     */
-                    StockHistory::create(
-                        [
-                            'stock_type' =>
-                                'PRODUCT',
-
-                            'product_id' =>
-    $product->id,
-
-'transaction_type' =>
-    'ORDER',
-
-                            'quantity_before' =>
-                                $quantityBefore,
-
-                            'quantity_change' =>
-                                -$quantity,
-
-                            'quantity_after' =>
-                                $quantityAfter,
-
-                            'order_id' =>
-                                $order->id,
-
-                            /*
-                             * Hệ thống tự động
-                             * thực hiện trừ kho.
-                             */
-                            'updated_by' =>
-                                null,
-
+                        StockHistory::create([
+                            'stock_type' => 'PRODUCT',
+                            'product_id' => $product->id,
+                            'transaction_type' => 'ORDER',
+                            'quantity_before' => $quantityBefore,
+                            'quantity_change' => -$quantity,
+                            'quantity_after' => $quantityAfter,
+                            'order_id' => $order->id,
+                            'updated_by' => null,
                             'note' =>
                                 'Trừ tồn kho khi tạo đơn '
-                                . $order
-                                    ->order_code,
-                        ]
-                    );
+                                . $order->order_code,
+                        ]);
+                    } else {
+                        /** @var CustomDesign $design */
+                        $design = $item['custom_design'];
+
+                        OrderDetail::create([
+                            'order_id' => $order->id,
+                            'item_type' => 'CUSTOM_DESIGN',
+                            'product_id' => null,
+                            'custom_design_id' => $design->id,
+                            'item_name' => $design->name,
+                            'item_code' => $design->design_code,
+                            'unit_price' => $item['unit_price'],
+                            'quantity' => 1,
+                            'subtotal' => $item['subtotal'],
+                            'item_snapshot' => [
+                                'design_id' => $design->id,
+                                'design_code' => $design->design_code,
+                                'name' => $design->name,
+                                'style' => $design->style,
+                                'saved_snapshot' =>
+                                    $design->configuration_snapshot,
+                                'saved_estimated_price' =>
+                                    (float) $design->estimated_price,
+                                'purchase_price' =>
+                                    (float) $item['unit_price'],
+                                'purchase_products' =>
+                                    $item['purchase_pricing']['items'],
+                                'purchase_compatibility' =>
+                                    $item['purchase_compatibility'],
+                                'purchased_at' =>
+                                    now()->toIso8601String(),
+                            ],
+                        ]);
+
+                        foreach (
+                            $item['design_products']
+                            as $designProduct
+                        ) {
+                            /** @var Product $componentProduct */
+                            $componentProduct =
+                                $designProduct['product'];
+
+                            $requiredQuantity =
+                                (int) $designProduct['quantity'];
+
+                            $quantityBefore =
+                                (int) $componentProduct->stock_quantity;
+                            $quantityAfter =
+                                $quantityBefore - $requiredQuantity;
+
+                            if ($quantityAfter < 0) {
+                                throw ValidationException::withMessages([
+                                    'stock' =>
+                                        'Sản phẩm '
+                                        . $componentProduct->name
+                                        . ' không còn đủ tồn kho.',
+                                ]);
+                            }
+
+                            $componentProduct->stock_quantity =
+                                $quantityAfter;
+                            $componentProduct->save();
+
+                            StockHistory::create([
+                                'stock_type' => 'PRODUCT',
+                                'product_id' =>
+                                    $componentProduct->id,
+                                'transaction_type' => 'ORDER',
+                                'quantity_before' =>
+                                    $quantityBefore,
+                                'quantity_change' =>
+                                    -$requiredQuantity,
+                                'quantity_after' =>
+                                    $quantityAfter,
+                                'order_id' => $order->id,
+                                'updated_by' => null,
+                                'note' =>
+                                    'Trừ tồn kho Product của thiết kế '
+                                    . $design->design_code
+                                    . ' khi tạo đơn '
+                                    . $order->order_code,
+                            ]);
+                        }
+                    }
                 }
 
 
@@ -895,46 +935,15 @@ $transferContent = null;
 
 
 if ($paymentMethod === 'QR') {
-
     /*
-     * QR bắt buộc phải có đủ
-     * thông tin tài khoản ngân hàng.
+     * QR mới được xử lý bởi PayOS.
+     * Thông tin ngân hàng / QR động sẽ được
+     * PayOS trả về sau khi Order đã được tạo.
      */
-    if (
-        !$paymentSetting->bank_name
-        ||
-        !$paymentSetting->account_name
-        ||
-        !$paymentSetting->account_number
-    ) {
-
-        throw ValidationException::withMessages([
-            'payment_method' =>
-                'Thông tin thanh toán QR hiện chưa được cấu hình đầy đủ.',
-        ]);
-    }
-
-
-    /*
-     * Snapshot cấu hình QR hiện tại.
-     */
-    $bankName =
-        $paymentSetting->bank_name;
-
-    $accountName =
-        $paymentSetting->account_name;
-
-    $accountNumber =
-        $paymentSetting->account_number;
-
-
-    /*
-     * Nội dung chuyển khoản
-     * gắn với từng Order.
-     */
-    $transferContent =
-        'MINIGROVE '
-        . $order->order_code;
+    $bankName = null;
+    $accountName = null;
+    $accountNumber = null;
+    $transferContent = null;
 }
 
 
@@ -951,6 +960,11 @@ Payment::create(
 
         'payment_method' =>
             $paymentMethod,
+
+        'payment_provider' =>
+            $paymentMethod === 'QR'
+                ? 'PAYOS'
+                : null,
 
         'amount' =>
             $totalAmount,
@@ -1003,7 +1017,7 @@ Payment::create(
 
         'note' =>
             $paymentMethod === 'QR'
-                ? 'Thanh toán QR chờ Staff/Admin xác nhận.'
+                ? 'Thanh toán QR qua PayOS, chờ xác nhận tự động.'
                 : null,
     ]
 );

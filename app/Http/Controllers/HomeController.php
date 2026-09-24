@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Wishlist;
 
 class HomeController extends Controller
 {
@@ -16,12 +17,13 @@ class HomeController extends Controller
             ->where('is_active', true)
             ->withCount([
                 'products as active_products_count' => function ($query) {
-                    $query->where('is_active', true);
+                    $query
+                        ->where('is_active', true)
+                        ->where('is_studio_item', false);
                 },
             ])
             ->orderBy('display_order')
             ->orderBy('id')
-            ->take(10)
             ->get();
 
 
@@ -39,6 +41,7 @@ class HomeController extends Controller
                 },
             ])
             ->where('is_active', true)
+            ->where('is_studio_item', false)
             ->where('stock_quantity', '>', 0)
             ->where('is_featured', true)
             ->latest('id')
@@ -60,10 +63,34 @@ class HomeController extends Controller
                 },
             ])
             ->where('is_active', true)
+            ->where('is_studio_item', false)
             ->where('stock_quantity', '>', 0)
             ->latest('id')
             ->take(8)
             ->get();
+
+        /*
+         * Trạng thái Wishlist để card ở Home hiển thị đúng
+         * tim đỏ cho các sản phẩm Customer đã lưu.
+         */
+        $wishlistProductIds = [];
+
+        if (
+            auth()->check()
+            && auth()->user()->role?->name === 'customer'
+        ) {
+            $wishlist = Wishlist::query()
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if ($wishlist) {
+                $wishlistProductIds = $wishlist
+                    ->items()
+                    ->pluck('product_id')
+                    ->map(fn ($productId) => (int) $productId)
+                    ->all();
+            }
+        }
 
 
         return view(
@@ -71,7 +98,8 @@ class HomeController extends Controller
             compact(
                 'categories',
                 'featuredProducts',
-                'newProducts'
+                'newProducts',
+                'wishlistProductIds'
             )
         );
     }

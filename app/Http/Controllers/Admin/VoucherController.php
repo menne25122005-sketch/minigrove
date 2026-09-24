@@ -371,6 +371,27 @@ class VoucherController extends Controller
     ): array {
         $voucherId = $voucher?->id;
 
+        /*
+         * Voucher mới có hiệu lực ngay lập tức
+         * và mặc định ở trạng thái Active.
+         *
+         * Khi sửa Voucher, giữ nguyên start_at
+         * và is_active hiện tại. Trạng thái được
+         * bật/tắt từ danh sách Voucher.
+         */
+        $request->merge([
+            'start_at' =>
+                $voucher?->start_at?->format(
+                    'Y-m-d H:i:s'
+                )
+                ?? now()->format('Y-m-d H:i:s'),
+
+            'is_active' =>
+                $voucher
+                    ? (int) $voucher->is_active
+                    : 1,
+        ]);
+
 
         $validated = $request->validate([
             'code' => [

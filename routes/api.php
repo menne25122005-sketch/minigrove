@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Webhook\CassoWebhookController;
+use App\Http\Controllers\Webhook\PayOSWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +16,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 Route::post(
-    '/webhooks/casso',
-    [CassoWebhookController::class, 'handle']
-)->name('webhooks.casso');
+    '/webhooks/payos',
+    [PayOSWebhookController::class, 'handle']
+)->name('webhooks.payos');

@@ -1097,7 +1097,7 @@
 
                             <p>
                                 Giao dịch đã được hệ thống xác nhận
-                                tự động qua Casso Webhook.
+                                tự động qua PayOS Webhook.
                                 Admin chỉ theo dõi trạng thái thanh toán,
                                 không cần xác nhận thủ công.
                             </p>
@@ -1117,7 +1117,7 @@
                         @else
 
                             <p>
-                                Đang chờ Casso Webhook xác nhận giao dịch.
+                                Đang chờ PayOS Webhook xác nhận giao dịch.
                                 Admin không cần và không thể xác nhận
                                 thanh toán thủ công.
                             </p>
@@ -1188,7 +1188,7 @@
 
                         <div class="admin-action-warning">
 
-                            Đơn QR đang chờ Casso Webhook
+                            Đơn QR đang chờ PayOS Webhook
                             xác nhận thanh toán trước khi xử lý đơn.
 
                         </div>

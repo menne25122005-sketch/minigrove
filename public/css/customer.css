@@ -58,6 +58,17 @@ img {
    TOP BAR
 ========================================================= */
 
+.customer-sticky-shell {
+    position: sticky;
+    top: 0;
+    z-index: 120;
+
+    background: white;
+
+    box-shadow:
+        0 4px 14px rgba(22, 69, 49, .06);
+}
+
 .customer-topbar {
     background: var(--mg-green-dark);
     color: rgba(255, 255, 255, .82);
@@ -97,9 +108,7 @@ img {
 ========================================================= */
 
 .customer-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    position: static;
 
     background: rgba(255, 255, 255, .96);
 
@@ -110,14 +119,17 @@ img {
 }
 
 .customer-header-inner {
-    min-height: 78px;
+    min-height: 72px;
 
     display: grid;
 
     grid-template-columns:
-        auto minmax(260px, 1fr) auto;
+        auto
+        minmax(430px, 1fr)
+        minmax(190px, 230px)
+        auto;
 
-    gap: 32px;
+    gap: 18px;
 
     align-items: center;
 }
@@ -168,14 +180,17 @@ img {
 
 .customer-search {
     position: relative;
+    width: 100%;
+    max-width: 230px;
+    justify-self: end;
 }
 
 .customer-search input {
     width: 100%;
-    height: 46px;
+    height: 40px;
 
     padding:
-        0 50px 0 17px;
+        0 42px 0 14px;
 
     border:
         1px solid var(--mg-border);
@@ -186,7 +201,7 @@ img {
 
     outline: none;
 
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .customer-search input:focus {
@@ -201,11 +216,11 @@ img {
 .search-button {
     position: absolute;
 
-    top: 5px;
-    right: 5px;
+    top: 4px;
+    right: 4px;
 
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
 
     border: 0;
     border-radius: 8px;
@@ -280,20 +295,12 @@ img {
    NAV
 ========================================================= */
 
-.customer-nav {
-    background: white;
-
-    border-bottom:
-        1px solid var(--mg-border);
-}
-
-.customer-nav-inner {
-    min-height: 48px;
-
+.customer-main-nav {
     display: flex;
     align-items: center;
-
-    gap: 30px;
+    justify-content: center;
+    gap: 16px;
+    min-width: 0;
 }
 
 .nav-link {
@@ -301,14 +308,17 @@ img {
 
     text-decoration: none;
 
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
+    white-space: nowrap;
+    transition:
+        color .2s ease,
+        background .2s ease;
 }
 
 .nav-link:hover {
     color: var(--mg-green);
 }
-
 
 /* =========================================================
    HERO
@@ -622,6 +632,8 @@ img {
 .product-card {
     overflow: hidden;
 
+    cursor: pointer;
+
     border:
         1px solid var(--mg-border);
 
@@ -632,6 +644,13 @@ img {
     transition:
         transform .2s,
         box-shadow .2s;
+}
+
+.product-card:focus-visible {
+    outline:
+        3px solid rgba(39, 103, 73, .22);
+
+    outline-offset: 3px;
 }
 
 .product-card:hover {
@@ -887,9 +906,9 @@ img {
     display: grid;
 
     grid-template-columns:
-        1.3fr 1fr 1fr;
+        1.35fr .8fr 1.2fr .8fr;
 
-    gap: 50px;
+    gap: 38px;
 }
 
 .footer-brand {
@@ -933,6 +952,32 @@ img {
     color: white;
 }
 
+.footer-contact-item,
+.footer-contact-link {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.footer-contact-item {
+    margin-bottom: 10px;
+
+    color:
+        rgba(255,255,255,.68);
+
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.footer-contact-icon {
+    flex: 0 0 18px;
+
+    color:
+        rgba(255,255,255,.9);
+
+    text-align: center;
+}
+
 .customer-footer-bottom {
     padding: 15px 0;
 
@@ -954,6 +999,42 @@ img {
 
 @media (max-width: 1100px) {
 
+    .customer-footer-inner {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .customer-header-inner {
+        grid-template-columns:
+            auto minmax(0, 1fr) auto;
+
+        grid-template-areas:
+            "brand nav actions"
+            "brand search actions";
+
+        gap: 8px 16px;
+        padding: 9px 0;
+    }
+
+    .customer-brand {
+        grid-area: brand;
+    }
+
+    .customer-main-nav {
+        grid-area: nav;
+        justify-content: flex-start;
+    }
+
+    .customer-search {
+        grid-area: search;
+        max-width: 360px;
+        justify-self: start;
+    }
+
+    .header-actions {
+        grid-area: actions;
+    }
+
     .product-grid {
         grid-template-columns:
             repeat(3, minmax(0,1fr));
@@ -971,6 +1052,11 @@ img {
     .customer-header-inner {
         grid-template-columns:
             1fr;
+        grid-template-areas:
+            "brand"
+            "nav"
+            "search"
+            "actions";
 
         gap: 12px;
 
@@ -978,11 +1064,22 @@ img {
     }
 
     .header-actions {
+        grid-area: actions;
         flex-wrap: wrap;
     }
 
-    .customer-nav-inner {
+    .customer-main-nav {
+        grid-area: nav;
+        justify-content: flex-start;
         overflow-x: auto;
+        padding-bottom: 3px;
+    }
+
+    .customer-search {
+        grid-area: search;
+        width: 100%;
+        max-width: none;
+        justify-self: stretch;
     }
 
     .hero-box {
@@ -1087,4 +1184,283 @@ img {
 
     font-size: 10px;
     font-weight: 800;
+}
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.header-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    min-height: 38px;
+    padding: 0 8px;
+    font-size: 13px;
+}
+
+.header-action-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+
+/* =========================================================
+   ACCOUNT DROPDOWN
+========================================================= */
+
+.header-account {
+    position: relative;
+}
+
+.header-account summary {
+    list-style: none;
+}
+
+.header-account summary::-webkit-details-marker {
+    display: none;
+}
+
+.header-account-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    min-height: 40px;
+    padding: 4px 7px;
+
+    border-radius: 10px;
+
+    color: #173f30;
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+    user-select: none;
+}
+
+.header-account-trigger:hover {
+    background: #f1f6f3;
+}
+
+.header-account-avatar {
+    width: 32px;
+    height: 32px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #e8f2ec;
+    color: #174d37;
+
+    font-weight: 700;
+}
+.header-account-avatar {
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+.header-account-avatar img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.header-account-arrow {
+    font-size: 12px;
+}
+
+.header-account-menu {
+    position: absolute;
+
+    top: calc(100% + 10px);
+    right: 0;
+
+    width: 220px;
+
+    padding: 8px;
+
+    background: #fff;
+
+    border: 1px solid #e1e8e4;
+    border-radius: 12px;
+
+    box-shadow:
+        0 12px 30px
+        rgba(20, 63, 46, 0.12);
+
+    z-index: 1000;
+}
+
+.header-account-menu-item {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    padding: 11px 12px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #263d34;
+    text-decoration: none;
+
+    font: inherit;
+    font-size: 14px;
+
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.header-account-menu-item:hover {
+    background: #f2f7f4;
+    color: #174d37;
+}
+
+.header-account-logout {
+    margin: 0;
+}
+/* =========================================================
+   PRODUCT CARD WISHLIST
+========================================================= */
+
+.product-image-box {
+    position: relative;
+}
+
+
+/* form chứa nút tim */
+.product-card-wishlist-form {
+    position: absolute;
+
+    top: 12px;
+    right: 12px;
+
+    z-index: 20;
+
+    margin: 0;
+}
+
+
+/* trường hợp guest dùng <a> */
+.product-card-wishlist {
+    position: absolute;
+
+    top: 12px;
+    right: 12px;
+
+    z-index: 20;
+
+    width: 38px;
+    height: 38px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid rgba(23, 77, 55, .12);
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, .96);
+    color: var(--mg-green-dark);
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 12px
+        rgba(0, 0, 0, .08);
+
+    transition:
+        transform .2s ease,
+        border-color .2s ease,
+        background .2s ease,
+        color .2s ease;
+}
+
+
+/* button nằm trong form thì không cần absolute lần nữa */
+.product-card-wishlist-form
+.product-card-wishlist {
+    position: static;
+}
+
+
+/* icon tim */
+.product-card-wishlist svg {
+    width: 19px;
+    height: 19px;
+
+    display: block;
+
+    fill: none;
+    stroke: currentColor;
+
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+
+/* hover */
+.product-card-wishlist:hover {
+    transform: translateY(-1px);
+
+    border-color: #e05a67;
+
+    background: #fff6f7;
+    color: #e05a67;
+}
+
+
+/* đã yêu thích */
+.product-card-wishlist.active {
+    border-color: #e05a67;
+
+    background: #fff4f6;
+    color: #e05a67;
+}
+
+.product-card-wishlist.active svg {
+    fill: currentColor;
+}
+
+
+/* tránh đè badge nổi bật */
+.product-badge {
+    z-index: 10;
+}
+
+
+/* mobile */
+@media (max-width: 650px) {
+
+    .product-card-wishlist-form,
+    .product-card-wishlist {
+        top: 9px;
+        right: 9px;
+    }
+
+    .product-card-wishlist {
+        width: 34px;
+        height: 34px;
+    }
+
+    .product-card-wishlist svg {
+        width: 17px;
+        height: 17px;
+    }
+
 }

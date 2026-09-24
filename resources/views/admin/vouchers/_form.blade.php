@@ -254,33 +254,8 @@
 @endif
 
 
-{{-- THỜI GIAN BẮT ĐẦU --}}
-<div class="form-group voucher-time-start">
-
-    <label for="start_at">
-        Thời gian bắt đầu (*)
-    </label>
-
-    <input
-        type="datetime-local"
-        id="start_at"
-        name="start_at"
-        value="{{
-            old(
-                'start_at',
-                isset($voucher)
-                    ? $voucher->start_at->format('Y-m-d\TH:i')
-                    : now()->format('Y-m-d\TH:i')
-            )
-        }}"
-        required
-    >
-
-</div>
-
-
 {{-- THỜI GIAN KẾT THÚC --}}
-<div class="form-group">
+<div class="form-group voucher-full-width">
 
     <label for="end_at">
         Thời gian kết thúc (*)
@@ -301,38 +276,14 @@
         required
     >
 
-</div>
-
-{{-- ACTIVE --}}
-<div class="voucher-active-box">
-
-    <input
-        type="hidden"
-        name="is_active"
-        value="0"
-    >
-
-    <label class="voucher-active-label">
-
-        <input
-            type="checkbox"
-            name="is_active"
-            value="1"
-            @checked(
-                (string) old(
-                    'is_active',
-                    isset($voucher)
-                        ? (int) $voucher->is_active
-                        : 1
-                ) === '1'
-            )
-        >
-
-        <span>
-            Voucher đang hoạt động
-        </span>
-
-    </label>
+    <div class="voucher-form-help">
+        @if ($isEdit)
+            Voucher giữ nguyên thời điểm bắt đầu và trạng thái hiện tại.
+            Có thể bật/tắt Voucher tại trang danh sách.
+        @else
+            Voucher có hiệu lực ngay sau khi tạo và mặc định ở trạng thái hoạt động.
+        @endif
+    </div>
 
 </div>
 

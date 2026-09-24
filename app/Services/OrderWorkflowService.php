@@ -159,8 +159,9 @@ class OrderWorkflowService
                 |--------------------------------------------------------------------------
                 |
                 | Với QR:
-                | Staff/Admin phải xác nhận đã nhận tiền
-                | trước khi xác nhận Order.
+                | Payment phải ở trạng thái Paid trước khi
+                | Order được xác nhận. PayOS sẽ tự chuyển
+                | Pending -> Confirmed khi thanh toán thành công.
                 |
                 */
 

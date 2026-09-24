@@ -49,4 +49,14 @@ class Message extends Model
     {
         return $this->hasMany(MessageAttachment::class);
     }
+
+    /**
+     * Các sản phẩm Admin đã gửi kèm tin nhắn.
+     */
+    public function productCards()
+    {
+        return $this->hasMany(MessageProduct::class)
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
 }

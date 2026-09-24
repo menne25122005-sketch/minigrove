@@ -134,7 +134,7 @@
                 </h2>
 
                 <p>
-                    Bật hoặc tắt COD và QR.
+                    Bật hoặc tắt COD, QR và OnePay.
                     Thông tin QR được dùng khi Customer
                     chọn chuyển khoản.
                 </p>
@@ -354,7 +354,7 @@
                             </span>
 
                             <h3>
-                                Chuyển khoản QR
+                                Thanh toán QR qua PayOS
                             </h3>
 
                         </div>
@@ -411,84 +411,17 @@
                     </div>
 
 
-                    {{-- THÔNG TIN NGÂN HÀNG --}}
-                    <div class="payment-qr-grid">
+                    <div class="payment-field">
+                        <label>
+                            Nhà cung cấp
+                        </label>
 
-
-                        {{-- NGÂN HÀNG --}}
-                        <div class="payment-field">
-
-                            <label>
-                                Ngân hàng
-                            </label>
-
-                            <input
-                                type="text"
-                                name="bank_name"
-                                maxlength="100"
-                                value="{{
-                                    old(
-                                        'bank_name',
-                                        $qrSetting->bank_name
-                                    )
-                                }}"
-                                required
-                            >
-
+                        <div class="payment-provider-note">
+                            PayOS tạo QR động và tự động xác nhận
+                            giao dịch qua Webhook. Client ID,
+                            API Key và Checksum Key được cấu hình
+                            trong file <code>.env</code>.
                         </div>
-
-
-                        {{-- CHỦ TÀI KHOẢN --}}
-                        <div class="payment-field">
-
-                            <label>
-                                Chủ tài khoản
-                            </label>
-
-                            <input
-                                type="text"
-                                name="account_name"
-                                maxlength="150"
-                                value="{{
-                                    old(
-                                        'account_name',
-                                        $qrSetting->account_name
-                                    )
-                                }}"
-                                required
-                            >
-
-                        </div>
-
-
-                        {{-- SỐ TÀI KHOẢN --}}
-                        <div
-                            class="
-                                payment-field
-                                payment-field-full
-                            "
-                        >
-
-                            <label>
-                                Số tài khoản
-                            </label>
-
-                            <input
-                                type="text"
-                                name="account_number"
-                                maxlength="50"
-                                value="{{
-                                    old(
-                                        'account_number',
-                                        $qrSetting->account_number
-                                    )
-                                }}"
-                                required
-                            >
-
-                        </div>
-
-
                     </div>
 
 
@@ -499,12 +432,12 @@
                         <div>
 
                             <strong>
-                                Cho phép thanh toán QR
+                                Cho phép thanh toán QR qua PayOS
                             </strong>
 
                             <small>
-                                Customer có thể chọn QR
-                                tại Checkout.
+                                Customer được chuyển sang PayOS
+                                khi đặt hàng.
                             </small>
 
                         </div>
@@ -551,13 +484,114 @@
                             payment-btn-primary
                         "
                     >
-                        Cập nhật QR
+                        Cập nhật PayOS
                     </button>
 
 
                 </form>
 
 
+            @endif
+
+            {{-- =================================================
+                 ONEPAY
+            ================================================== --}}
+            @php
+                $onePaySetting =
+                    $paymentSettings->get('ONEPAY');
+            @endphp
+
+            @if ($onePaySetting)
+                <form
+                    method="POST"
+                    action="{{
+                        route(
+                            'admin.payments.settings.update',
+                            $onePaySetting
+                        )
+                    }}"
+                    class="payment-setting-card"
+                >
+                    @csrf
+                    @method('PATCH')
+
+                    <div class="payment-setting-top">
+                        <div>
+                            <span class="payment-method-code">
+                                ONEPAY
+                            </span>
+
+                            <h3>
+                                Thanh toán qua OnePay
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div class="payment-field">
+                        <label>
+                            Tên hiển thị
+                        </label>
+
+                        <input
+                            type="text"
+                            name="display_name"
+                            maxlength="100"
+                            value="{{
+                                old(
+                                    'display_name',
+                                    $onePaySetting->display_name
+                                )
+                            }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="payment-toggle-row">
+                        <div>
+                            <strong>
+                                Cho phép thanh toán OnePay
+                            </strong>
+
+                            <small>
+                                Customer được chuyển sang cổng OnePay
+                                khi đặt hàng.
+                            </small>
+                        </div>
+
+                        <label class="payment-switch">
+                            <input
+                                type="hidden"
+                                name="is_enabled"
+                                value="0"
+                            >
+
+                            <input
+                                type="checkbox"
+                                name="is_enabled"
+                                value="1"
+                                {{
+                                    $onePaySetting->is_enabled
+                                        ? 'checked'
+                                        : ''
+                                }}
+                            >
+
+                            <span
+                                class="payment-switch-slider"
+                            ></span>
+                        </label>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="
+                            payment-btn
+                            payment-btn-primary
+                        "
+                    >
+                        Cập nhật OnePay
+                    </button>
+                </form>
             @endif
 
 
@@ -638,6 +672,17 @@
                     }}
                 >
                     QR
+                </option>
+
+                <option
+                    value="ONEPAY"
+                    {{
+                        $method === 'ONEPAY'
+                            ? 'selected'
+                            : ''
+                    }}
+                >
+                    OnePay
                 </option>
 
             </select>

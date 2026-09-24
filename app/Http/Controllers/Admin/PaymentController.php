@@ -97,7 +97,7 @@ class PaymentController extends Controller
         */
         if (in_array(
             $method,
-            ['COD', 'QR'],
+            ['COD', 'QR', 'ONEPAY'],
             true
         )) {
             $query->where(
@@ -227,39 +227,6 @@ class PaymentController extends Controller
             ],
         ];
 
-
-        /*
-         * QR cần thêm thông tin ngân hàng.
-         */
-        if (
-            $paymentSetting->payment_method
-            === 'QR'
-        ) {
-            $rules = array_merge(
-                $rules,
-                [
-                    'bank_name' => [
-                        'required',
-                        'string',
-                        'max:100',
-                    ],
-
-                    'account_name' => [
-                        'required',
-                        'string',
-                        'max:150',
-                    ],
-
-                    'account_number' => [
-                        'required',
-                        'string',
-                        'max:50',
-                    ],
-                ]
-            );
-        }
-
-
         $validated = $request->validate(
             $rules,
             [
@@ -275,33 +242,20 @@ class PaymentController extends Controller
                 'is_enabled.boolean' =>
                     'Trạng thái phương thức thanh toán không hợp lệ.',
 
-                'bank_name.required' =>
-                    'Vui lòng nhập tên ngân hàng.',
-
-                'bank_name.max' =>
-                    'Tên ngân hàng không được vượt quá 100 ký tự.',
-
-                'account_name.required' =>
-                    'Vui lòng nhập tên chủ tài khoản.',
-
-                'account_name.max' =>
-                    'Tên chủ tài khoản không được vượt quá 150 ký tự.',
-
-                'account_number.required' =>
-                    'Vui lòng nhập số tài khoản.',
-
-                'account_number.max' =>
-                    'Số tài khoản không được vượt quá 50 ký tự.',
             ]
         );
 
 
         /*
-         * COD không sử dụng thông tin ngân hàng.
+         * COD và QR PayOS không cấu hình tài khoản
+         * ngân hàng thủ công tại MiniGrove.
          */
         if (
-            $paymentSetting->payment_method
-            === 'COD'
+            in_array(
+                $paymentSetting->payment_method,
+                ['COD', 'QR'],
+                true
+            )
         ) {
             $validated['bank_name'] = null;
             $validated['account_name'] = null;

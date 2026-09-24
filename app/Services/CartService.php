@@ -4,12 +4,18 @@ namespace App\Services;
 
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\CustomDesign;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 class CartService
 {
+    public function __construct(
+        private CustomDesignService $customDesignService
+    ) {
+    }
+
     /**
      * Lấy Cart hiện tại của Customer.
      * Nếu chưa có thì tự tạo.
@@ -134,6 +140,49 @@ class CartService
 
             'quantity' =>
                 $quantity,
+        ]);
+    }
+
+    /**
+     * Thêm một Custom Design vào Cart.
+     *
+     * Giá không lưu trong CartItem. Mỗi lần Cart/Checkout đọc thiết kế,
+     * hệ thống sẽ tính lại theo giá Product hiện hành.
+     */
+    public function addCustomDesign(
+        User $user,
+        CustomDesign $design
+    ): CartItem {
+        if ($design->user_id !== $user->id) {
+            throw ValidationException::withMessages([
+                'design' => 'Bạn không có quyền sử dụng thiết kế này.',
+            ]);
+        }
+
+        if ($design->status !== 'saved') {
+            throw ValidationException::withMessages([
+                'design' => 'Thiết kế hiện không thể thêm vào giỏ hàng.',
+            ]);
+        }
+
+        $this->customDesignService->recalculate($design);
+
+        $cart = $this->getOrCreateCart($user);
+
+        $cartItem = $cart->items()
+            ->where('item_type', 'CUSTOM_DESIGN')
+            ->where('custom_design_id', $design->id)
+            ->first();
+
+        if ($cartItem) {
+            return $cartItem;
+        }
+
+        return $cart->items()->create([
+            'item_type' => 'CUSTOM_DESIGN',
+            'product_id' => null,
+            'custom_design_id' => $design->id,
+            'quantity' => 1,
         ]);
     }
 

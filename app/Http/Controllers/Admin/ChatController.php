@@ -2,16 +2,40 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\ChatConversationUpdated;
+use App\Events\ChatMessageSent;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\Product;
+use App\Services\AdminChatUnreadService;
+use App\Services\ChatAttachmentService;
+use App\Support\ChatMessagePayload;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ChatController extends Controller
 {
+    /**
+     * Số tin nhắn Customer chưa đọc của Admin.
+     */
+    public function unreadCount(
+        Request $request,
+        AdminChatUnreadService $service
+    ): JsonResponse {
+        return response()->json([
+            'unread_count' =>
+                $service->countForAdmin(
+                    (int) $request->user()->id
+                ),
+        ]);
+    }
+
     /**
      * Danh sách hội thoại Customer cần Admin xử lý.
      *
@@ -106,6 +130,10 @@ class ChatController extends Controller
             ->firstOrFail();
 
         $messages = Message::query()
+            ->with([
+                'attachments:id,message_id,original_name,file_path,mime_type,file_size,attachment_type',
+                'productCards:id,message_id,product_id,product_name,product_sku,list_price,sale_price,image_path,sort_order',
+            ])
             ->where(
                 'conversation_id',
                 $conversation->id
@@ -123,13 +151,41 @@ class ChatController extends Controller
             ->orderBy('id')
             ->get();
 
+        $products = Product::query()
+            ->where('is_active', true)
+            ->with([
+                'images' => function ($query) {
+                    $query
+                        ->select([
+                            'id',
+                            'product_id',
+                            'image_path',
+                            'is_primary',
+                            'sort_order',
+                        ])
+                        ->orderByDesc('is_primary')
+                        ->orderBy('sort_order')
+                        ->orderBy('id');
+                },
+            ])
+            ->select([
+                'id',
+                'name',
+                'sku',
+                'list_price',
+                'sale_price',
+                'stock_quantity',
+            ])
+            ->orderBy('name')
+            ->get();
+
         /*
         |--------------------------------------------------------------------------
         | Đánh dấu tin nhắn Customer đã đọc
         |--------------------------------------------------------------------------
         */
 
-        Message::query()
+        $markedRead = Message::query()
             ->where(
                 'conversation_id',
                 $conversation->id
@@ -143,13 +199,80 @@ class ChatController extends Controller
                 'read_at' => now(),
             ]);
 
+        if ($markedRead > 0) {
+            ChatConversationUpdated::dispatch(
+                $conversation->fresh()
+            );
+        }
+
         return view(
             'admin.chat.show',
             compact(
                 'conversation',
-                'messages'
+                'messages',
+                'products'
             )
         );
+    }
+
+    /**
+     * Đánh dấu tin nhắn Customer đã đọc khi Admin
+     * đang mở hội thoại và nhận tin mới qua Reverb.
+     */
+    public function markRead(
+        Request $request,
+        int $conversation,
+        AdminChatUnreadService $service
+    ): JsonResponse {
+        $adminId = (int) $request->user()->id;
+
+        $conversation = Conversation::query()
+            ->whereKey($conversation)
+            ->whereIn(
+                'status',
+                ['open', 'waiting']
+            )
+            ->where(
+                function ($query) use ($adminId) {
+                    $query
+                        ->whereNull(
+                            'assigned_admin_id'
+                        )
+                        ->orWhere(
+                            'assigned_admin_id',
+                            $adminId
+                        );
+                }
+            )
+            ->firstOrFail();
+
+        $markedRead = Message::query()
+            ->where(
+                'conversation_id',
+                $conversation->id
+            )
+            ->where(
+                'sender_id',
+                $conversation->customer_id
+            )
+            ->whereNull('read_at')
+            ->update([
+                'read_at' => now(),
+            ]);
+
+        if ($markedRead > 0) {
+            ChatConversationUpdated::dispatch(
+                $conversation->fresh()
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'unread_count' =>
+                $service->countForAdmin(
+                    $adminId
+                ),
+        ]);
     }
 
     /**
@@ -158,10 +281,10 @@ class ChatController extends Controller
     public function accept(
         Request $request,
         int $conversation
-    ): RedirectResponse {
+    ): RedirectResponse|JsonResponse {
         $adminId = $request->user()->id;
 
-        DB::transaction(
+        $updatedConversation = DB::transaction(
             function () use (
                 $conversation,
                 $adminId
@@ -192,8 +315,27 @@ class ChatController extends Controller
                         'assigned_admin_id' => $adminId,
                     ]);
                 }
+
+                return $lockedConversation->fresh();
             }
         );
+
+        ChatConversationUpdated::dispatch(
+            $updatedConversation
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'conversation' => [
+                    'id' => $updatedConversation->id,
+                    'status' => $updatedConversation->status,
+                    'assigned_admin_id' =>
+                        $updatedConversation
+                            ->assigned_admin_id,
+                ],
+            ]);
+        }
 
         return redirect()
             ->route(
@@ -213,32 +355,138 @@ class ChatController extends Controller
      */
     public function reply(
         Request $request,
-        int $conversation
-    ): RedirectResponse {
+        int $conversation,
+        ChatAttachmentService $attachmentService
+    ): RedirectResponse|JsonResponse {
         $validated = $request->validate(
             [
                 'content' => [
-                    'required',
+                    'nullable',
                     'string',
                     'max:5000',
                 ],
+                'images' => [
+                    'nullable',
+                    'array',
+                    'max:5',
+                ],
+                'images.*' => [
+                    'image',
+                    'mimes:jpg,jpeg,png,webp,gif',
+                    'max:5120',
+                ],
+                'product_ids' => [
+                    'nullable',
+                    'array',
+                    'max:3',
+                ],
+                'product_ids.*' => [
+                    'integer',
+                    'distinct',
+                    Rule::exists('products', 'id')
+                        ->where('is_active', true),
+                ],
             ],
             [
-                'content.required' =>
-                    'Vui lòng nhập nội dung phản hồi.',
-
                 'content.max' =>
                     'Tin nhắn không được vượt quá 5000 ký tự.',
+                'images.max' =>
+                    'Mỗi tin nhắn chỉ được gửi tối đa 5 ảnh.',
+                'images.*.image' =>
+                    'Tệp đính kèm phải là hình ảnh.',
+                'images.*.mimes' =>
+                    'Ảnh chỉ hỗ trợ JPG, JPEG, PNG, WEBP hoặc GIF.',
+                'images.*.max' =>
+                    'Mỗi ảnh không được vượt quá 5MB.',
+                'product_ids.max' =>
+                    'Mỗi lần chỉ được gửi tối đa 3 sản phẩm.',
+                'product_ids.*.distinct' =>
+                    'Không thể chọn trùng sản phẩm.',
+                'product_ids.*.exists' =>
+                    'Sản phẩm đã chọn không còn khả dụng.',
             ]
         );
 
         $adminId = $request->user()->id;
+        $images = $request->file('images', []);
+        $productIds = array_values(
+            $validated['product_ids'] ?? []
+        );
+        $content = trim(
+            (string) ($validated['content'] ?? '')
+        );
 
-        DB::transaction(
+        $selectedProducts = collect();
+
+        if ($productIds !== []) {
+            $productsById = Product::query()
+                ->whereIn('id', $productIds)
+                ->where('is_active', true)
+                ->with([
+                    'images' => function ($query) {
+                        $query
+                            ->select([
+                                'id',
+                                'product_id',
+                                'image_path',
+                                'is_primary',
+                                'sort_order',
+                            ])
+                            ->orderByDesc('is_primary')
+                            ->orderBy('sort_order')
+                            ->orderBy('id');
+                    },
+                ])
+                ->get([
+                    'id',
+                    'name',
+                    'sku',
+                    'list_price',
+                    'sale_price',
+                ])
+                ->keyBy('id');
+
+            $selectedProducts = collect($productIds)
+                ->map(
+                    fn ($productId) =>
+                        $productsById->get((int) $productId)
+                )
+                ->filter()
+                ->values();
+        }
+
+        if (
+            $content === ''
+            && $images === []
+            && $selectedProducts->isEmpty()
+        ) {
+            throw ValidationException::withMessages([
+                'content' =>
+                    'Vui lòng nhập phản hồi, chọn ảnh hoặc chọn sản phẩm.',
+            ]);
+        }
+
+        $hasProducts = $selectedProducts->isNotEmpty();
+        $hasImages = $images !== [];
+        $hasText = $content !== '';
+
+        $messageType = match (true) {
+            ($hasText && ($hasImages || $hasProducts)),
+            ($hasImages && $hasProducts) => 'MIXED',
+            $hasImages => 'IMAGE',
+            $hasProducts => 'PRODUCT',
+            default => 'TEXT',
+        };
+
+        [$updatedConversation, $message] = DB::transaction(
             function () use (
                 $conversation,
                 $adminId,
-                $validated
+                $content,
+                $images,
+                $selectedProducts,
+                $messageType,
+                $attachmentService
             ) {
                 $lockedConversation = Conversation::query()
                     ->whereKey($conversation)
@@ -259,7 +507,7 @@ class ChatController extends Controller
 
                 $sentAt = now();
 
-                Message::create([
+                $message = Message::create([
                     'conversation_id' =>
                         $lockedConversation->id,
 
@@ -267,10 +515,12 @@ class ChatController extends Controller
                         $adminId,
 
                     'content' =>
-                        trim($validated['content']),
+                        $content !== ''
+                            ? $content
+                            : null,
 
                     'message_type' =>
-                        'TEXT',
+                        $messageType,
 
                     'sent_at' =>
                         $sentAt,
@@ -278,6 +528,31 @@ class ChatController extends Controller
                     'read_at' =>
                         null,
                 ]);
+
+                if ($images !== []) {
+                    $attachmentService->attachImages(
+                        $message,
+                        $images
+                    );
+                }
+
+                foreach (
+                    $selectedProducts as $index => $product
+                ) {
+                    $productImage =
+                        $product->images->first();
+
+                    $message->productCards()->create([
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'product_sku' => $product->sku,
+                        'list_price' => $product->list_price,
+                        'sale_price' => $product->sale_price,
+                        'image_path' =>
+                            $productImage?->image_path,
+                        'sort_order' => $index,
+                    ]);
+                }
 
                 /*
                 |--------------------------------------------------------------------------
@@ -292,8 +567,37 @@ class ChatController extends Controller
                     'last_message_at' =>
                         $sentAt,
                 ]);
+
+                return [
+                    $lockedConversation->fresh(),
+                    $message->fresh()->load([
+                        'attachments',
+                        'productCards',
+                    ]),
+                ];
             }
         );
+
+        ChatMessageSent::dispatch(
+            $message,
+            $updatedConversation
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => ChatMessagePayload::make(
+                    $message
+                ),
+                'conversation' => [
+                    'id' => $updatedConversation->id,
+                    'status' => $updatedConversation->status,
+                    'assigned_admin_id' =>
+                        $updatedConversation
+                            ->assigned_admin_id,
+                ],
+            ]);
+        }
 
         return redirect()
             ->route(
@@ -312,10 +616,10 @@ class ChatController extends Controller
     public function close(
         Request $request,
         int $conversation
-    ): RedirectResponse {
+    ): RedirectResponse|JsonResponse {
         $adminId = $request->user()->id;
 
-        DB::transaction(
+        $updatedConversation = DB::transaction(
             function () use (
                 $conversation,
                 $adminId
@@ -347,8 +651,27 @@ class ChatController extends Controller
                     'closed_at' =>
                         now(),
                 ]);
+
+                return $lockedConversation->fresh();
             }
         );
+
+        ChatConversationUpdated::dispatch(
+            $updatedConversation
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'conversation' => [
+                    'id' => $updatedConversation->id,
+                    'status' => $updatedConversation->status,
+                    'assigned_admin_id' =>
+                        $updatedConversation
+                            ->assigned_admin_id,
+                ],
+            ]);
+        }
 
         return redirect()
             ->route('admin.chat.index')

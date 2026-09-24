@@ -6,6 +6,11 @@
     <meta charset="UTF-8">
 
     <meta
+        name="csrf-token"
+        content="{{ csrf_token() }}"
+    >
+
+    <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
@@ -16,7 +21,15 @@
 
     <link
         rel="stylesheet"
-        href="{{ asset('css/customer.css') }}"
+        href="{{
+            asset('css/customer.css')
+            . '?v='
+            . filemtime(
+                public_path(
+                    'css/customer.css'
+                )
+            )
+        }}"
     >
 
     @stack('styles')
@@ -25,6 +38,7 @@
 
 <body>
 
+<div class="customer-sticky-shell">
 
 {{-- TOP BAR --}}
 <div class="customer-topbar">
@@ -41,27 +55,7 @@
         </div>
 
 
-        <div class="topbar-links">
-
-            <a
-                href="{{ route('studio.index') }}"
-                class="topbar-link"
-            >
-                MiniGrove Studio
-            </a>
-
-            @auth
-
-                <a
-                    href="{{ route('profile.edit') }}"
-                    class="topbar-link"
-                >
-                    Hồ sơ
-                </a>
-
-            @endauth
-
-        </div>
+        <div class="topbar-links"></div>
 
     </div>
 
@@ -105,6 +99,64 @@
 
         </a>
 
+        {{-- MAIN NAVIGATION --}}
+        <nav class="customer-main-nav">
+
+            <a
+                href="{{ route('home') }}"
+                class="nav-link"
+            >
+                Trang chủ
+            </a>
+
+            <a
+                href="{{ route('home') }}#categories"
+                class="nav-link"
+            >
+                Danh mục
+            </a>
+
+            <a
+                href="{{ route('products.index') }}"
+                class="nav-link"
+            >
+                Sản phẩm
+            </a>
+
+            @auth
+
+                @if (
+                    auth()->user()->role?->name
+                    === 'customer'
+                )
+
+                    <a
+                        href="{{ route('designs.index') }}"
+                        class="nav-link"
+                    >
+                        Thiết kế của tôi
+                    </a>
+
+                    <a
+                        href="{{ route('chat.index') }}"
+                        class="nav-link"
+                    >
+                        Chat
+                    </a>
+
+                    <a
+                        href="{{ route('profile.vouchers') }}"
+                        class="nav-link"
+                    >
+                        Voucher
+                    </a>
+
+                @endif
+
+            @endauth
+
+        </nav>
+
 
         {{-- Search --}}
         <form
@@ -116,7 +168,7 @@
                 type="text"
                 name="keyword"
                 value="{{ request('keyword') }}"
-                placeholder="Tìm Terrarium, tên sản phẩm, SKU..."
+                placeholder="Tìm sản phẩm, SKU..."
             >
 
             <button
@@ -131,243 +183,264 @@
 
 
         {{-- Actions --}}
-        <div class="header-actions">
+<div class="header-actions">
 
-            @guest
+    @guest
 
-                <a
-                    href="{{ route('login') }}"
-                    class="header-action"
-                >
-                    Đăng nhập
-                </a>
+        <a
+            href="{{ route('login') }}"
+            class="header-action"
+        >
+            Đăng nhập
+        </a>
 
-                <a
-                    href="{{ route('register') }}"
-                    class="
-                        header-action
-                        header-action-primary
-                    "
-                >
-                    Đăng ký
-                </a>
+        <a
+            href="{{ route('register') }}"
+            class="
+                header-action
+                header-action-primary
+            "
+        >
+            Đăng ký
+        </a>
 
-            @else
+    @else
 
-                @if (
-                    auth()->user()->role?->name
-                    === 'admin'
-                )
+        @if (
+            auth()->user()->role?->name
+            === 'customer'
+        )
 
-                    <a
-                        href="{{ route('admin.dashboard') }}"
-                        class="
-                            header-action
-                            header-action-primary
-                        "
-                    >
-                        Khu quản trị
-                    </a>
+            @php
+
+                $headerCartQuantity = 0;
+
+                $headerCartQuantity =
+                    \App\Models\CartItem::query()
+                        ->whereHas(
+                            'cart',
+                            function ($query) {
+
+                                $query->where(
+                                    'user_id',
+                                    auth()->id()
+                                );
+                            }
+                        )
+                        ->sum('quantity');
+
+            @endphp
+
+
+            {{-- YÊU THÍCH --}}
+            <a
+                href="{{ Route::has('wishlist.index')
+                    ? route('wishlist.index')
+                    : '#'
+                }}"
+                class="
+                    header-action
+                    header-wishlist-link
+                "
+                title="Yêu thích"
+            >
+                <span class="header-action-icon">
+                    ♡
+                </span>
+
+                <span>
+                    Yêu thích
+                </span>
+            </a>
+
+
+            {{-- GIỎ HÀNG --}}
+            <a
+                href="{{ route('cart.index') }}"
+                class="
+                    header-action
+                    header-cart-link
+                "
+                title="Giỏ hàng"
+            >
+
+                <span class="header-action-icon">
+                    🛒
+                </span>
+
+                <span>
+                    Giỏ hàng
+                </span>
+
+
+                @if ($headerCartQuantity > 0)
+
+                    <span class="header-cart-badge">
+
+                        {{
+                            $headerCartQuantity > 99
+                                ? '99+'
+                                : $headerCartQuantity
+                        }}
+
+                    </span>
 
                 @endif
 
-
-                <a
-                    href="{{ route('profile.edit') }}"
-                    class="header-action"
-                >
-                    {{ auth()->user()->name }}
-                </a>
+            </a>
 
 
-                <form
-                    method="POST"
-                    action="{{ route('logout') }}"
-                    class="header-logout"
-                >
+            {{-- TÀI KHOẢN --}}
+            <details class="header-account">
 
-                    @csrf
-
-                    <button
-                        type="submit"
-                        class="header-action"
-                    >
-                        Đăng xuất
-                    </button>
-
-                </form>
-
-            @endguest
-
-
-            @guest
-
-                <a
-                    href="{{ route('login') }}"
-                    class="header-action"
-                    title="Đăng nhập để xem giỏ hàng"
-                >
-                    🛒
-                </a>
-
-            @else
-
-                @if (
-                    auth()->user()->role?->name
-                    === 'customer'
-                )
+                <summary class="header-account-trigger">
 
                     @php
 
-                        $headerCartQuantity = 0;
+    $headerUser = auth()->user();
 
-                        if (
-                            auth()->check()
-                            && auth()->user()->role?->name
-                                === 'customer'
-                        ) {
+    $headerAvatarUrl = null;
 
-                            $headerCartQuantity =
-                                \App\Models\CartItem::query()
-                                    ->whereHas(
-                                        'cart',
-                                        function ($query) {
+    if ($headerUser->avatar) {
 
-                                            $query->where(
-                                                'user_id',
-                                                auth()->id()
-                                            );
-                                        }
-                                    )
-                                    ->sum('quantity');
-                        }
+        if (
+            str_starts_with(
+                $headerUser->avatar,
+                'http://'
+            )
+            ||
+            str_starts_with(
+                $headerUser->avatar,
+                'https://'
+            )
+        ) {
 
-                    @endphp
+            /*
+             * Avatar Google.
+             */
+            $headerAvatarUrl =
+                $headerUser->avatar;
+
+        } else {
+
+            /*
+             * Avatar upload local.
+             */
+            $headerAvatarUrl =
+                asset(
+                    'storage/' .
+                    ltrim(
+                        $headerUser->avatar,
+                        '/'
+                    )
+                );
+        }
+    }
+
+@endphp
+
+
+<span class="header-account-avatar">
+
+    @if ($headerAvatarUrl)
+
+        <img
+            src="{{ $headerAvatarUrl }}"
+            alt="{{ $headerUser->name }}"
+        >
+
+    @else
+
+        {{
+            strtoupper(
+                mb_substr(
+                    $headerUser->name,
+                    0,
+                    1
+                )
+            )
+        }}
+
+    @endif
+
+</span>
+
+                    <span>
+                        Tài khoản của tôi
+                    </span>
+
+                    <span class="header-account-arrow">
+                        ▾
+                    </span>
+
+                </summary>
+
+
+                <div class="header-account-menu">
+
+                    <a
+                        href="{{ route('profile.edit') }}"
+                        class="header-account-menu-item"
+                    >
+                        Tài khoản của tôi
+                    </a>
 
 
                     <a
-                        href="{{ route('cart.index') }}"
-                        class="
-                            header-action
-                            header-cart-link
-                        "
-                        title="Giỏ hàng"
+                        href="{{ route('orders.index') }}"
+                        class="header-account-menu-item"
                     >
-
-                        <span>
-                            🛒
-                        </span>
-
-
-                        @if ($headerCartQuantity > 0)
-
-                            <span class="header-cart-badge">
-
-                                {{
-                                    $headerCartQuantity > 99
-                                        ? '99+'
-                                        : $headerCartQuantity
-                                }}
-
-                            </span>
-
-                        @endif
-
+                        Đơn mua
                     </a>
 
-                @endif
 
-            @endguest
+                    <form
+                        method="POST"
+                        action="{{ route('logout') }}"
+                        class="header-account-logout"
+                    >
 
-        </div>
+                        @csrf
+
+                        <button
+                            type="submit"
+                            class="header-account-menu-item"
+                        >
+                            Đăng xuất
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </details>
+
+        @elseif (
+            auth()->user()->role?->name
+            === 'admin'
+        )
+
+            <a
+                href="{{ route('admin.dashboard') }}"
+                class="
+                    header-action
+                    header-action-primary
+                "
+            >
+                Khu quản trị
+            </a>
+
+        @endif
+
+    @endguest
+
+</div>
 
     </div>
 
 </header>
 
-
-{{-- NAVIGATION --}}
-<nav class="customer-nav">
-
-    <div
-        class="
-            customer-container
-            customer-nav-inner
-        "
-    >
-
-        <a
-            href="{{ route('home') }}"
-            class="nav-link"
-        >
-            Trang chủ
-        </a>
-
-        <a
-            href="#categories"
-            class="nav-link"
-        >
-            Danh mục
-        </a>
-
-        <a
-            href="#products"
-            class="nav-link"
-        >
-            Sản phẩm
-        </a>
-
-        <a
-            href="{{ route('studio.index') }}"
-            class="nav-link"
-        >
-            MiniGrove Studio
-        </a>
-
-
-        @auth
-
-            @if (
-                auth()->user()->role?->name
-                === 'customer'
-            )
-
-                <a
-                    href="{{ route('groves.index') }}"
-                    class="nav-link"
-                >
-                    My Grove
-                </a>
-
-                <a
-                    href="{{ route('chat.index') }}"
-                    class="nav-link"
-                >
-                    Chat
-                </a>
-
-            @endif
-
-        @endauth
-
-
-        <a
-            href="#"
-            class="nav-link"
-        >
-            GroveMatch
-        </a>
-
-        <a
-            href="#"
-            class="nav-link"
-        >
-            Kiến thức
-        </a>
-
-    </div>
-
-</nav>
+</div>
 
 
 {{-- CONTENT --}}
@@ -462,12 +535,11 @@
             </a>
 
             <a
-                href="{{ route('studio.index') }}"
+                href="{{ route('about') }}"
                 class="footer-link"
             >
-                MiniGrove Studio
+                Về chúng tôi
             </a>
-
 
             @auth
 
@@ -475,13 +547,6 @@
                     auth()->user()->role?->name
                     === 'customer'
                 )
-
-                    <a
-                        href="{{ route('groves.index') }}"
-                        class="footer-link"
-                    >
-                        My Grove
-                    </a>
 
                     <a
                         href="{{ route('chat.index') }}"
@@ -494,12 +559,38 @@
 
             @endauth
 
+        </div>
+
+
+        <div>
+
+            <div class="footer-title">
+                Liên hệ
+            </div>
+
+            <div class="footer-contact-item">
+                <span class="footer-contact-icon">⌖</span>
+
+                <span>
+                    Số 41A phường Phú Diễn,
+                    quận Bắc Từ Liêm, Hà Nội
+                </span>
+            </div>
 
             <a
-                href="#"
-                class="footer-link"
+                href="tel:035791347"
+                class="footer-link footer-contact-link"
             >
-                GroveMatch
+                <span class="footer-contact-icon">☎</span>
+                035791347
+            </a>
+
+            <a
+                href="mailto:gioinhatlop@gmail.com"
+                class="footer-link footer-contact-link"
+            >
+                <span class="footer-contact-icon">✉</span>
+                gioinhatlop@gmail.com
             </a>
 
         </div>
@@ -545,13 +636,16 @@
 
     <div class="customer-footer-bottom">
 
-        MiniGrove —
-        Nhỏ một khu rừng, lớn một thế giới.
+        MiniGrove được thực hiện bởi nhóm 13:
+        Nguyễn Thị Mến, Nguyễn Minh Hà,
+        Nguyễn Tùng Dương.
 
     </div>
 
 </footer>
 
+
+@vite(['resources/js/app.js'])
 
 @stack('scripts')
 

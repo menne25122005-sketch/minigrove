@@ -42,7 +42,7 @@
 
         @checked(
 
-            old($field) == $product->id
+            old($field, $defaults[$field] ?? null) == $product->id
 
         )
 

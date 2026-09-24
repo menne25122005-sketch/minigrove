@@ -9,6 +9,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\OnePayController;
+use App\Http\Controllers\GoogleAuthController;
 
 use App\Http\Controllers\Shop\ProductController as ShopProductController;
 
@@ -30,10 +31,14 @@ use App\Http\Controllers\Admin\ChatController as AdminChatController;
 
 
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
+use App\Http\Controllers\Customer\VoucherController as CustomerVoucherController;
 use App\Http\Controllers\Customer\ReturnRequestController as CustomerReturnRequestController;
 use App\Http\Controllers\Customer\GroveController as CustomerGroveController;
 use App\Http\Controllers\Customer\ChatController as CustomerChatController;
 use App\Http\Controllers\Customer\ReviewController as CustomerReviewController;
+use App\Http\Controllers\Customer\WishlistController as CustomerWishlistController;
+use App\Http\Controllers\Customer\CustomDesignController as CustomerCustomDesignController;
+
 use App\Models\Review;
 
 
@@ -70,6 +75,11 @@ Route::get(
     [HomeController::class, 'index']
 )->name('home');
 
+Route::view(
+    '/about',
+    'about'
+)->name('about');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -96,6 +106,46 @@ Route::post(
     '/studio/preview',
     [StudioController::class, 'preview']
 )->name('studio.preview');
+
+/*
+|--------------------------------------------------------------------------
+| Saved MiniGrove Studio Designs - Customer
+|--------------------------------------------------------------------------
+*/
+Route::middleware([
+    'auth',
+    'role:customer',
+])->group(function () {
+    Route::get(
+        '/designs',
+        [CustomerCustomDesignController::class, 'index']
+    )->name('designs.index');
+
+    Route::post(
+        '/studio/designs',
+        [CustomerCustomDesignController::class, 'store']
+    )->name('designs.store');
+
+    Route::get(
+        '/designs/{customDesign}/edit',
+        [CustomerCustomDesignController::class, 'edit']
+    )->name('designs.edit');
+
+    Route::patch(
+        '/designs/{customDesign}',
+        [CustomerCustomDesignController::class, 'update']
+    )->name('designs.update');
+
+    Route::delete(
+        '/designs/{customDesign}',
+        [CustomerCustomDesignController::class, 'destroy']
+    )->name('designs.destroy');
+
+    Route::post(
+        '/designs/{customDesign}/cart',
+        [CustomerCustomDesignController::class, 'addToCart']
+    )->name('designs.cart');
+});
 
 
 /*
@@ -226,6 +276,19 @@ Route::middleware([
         );
 
     });
+    Route::get(
+    '/profile/addresses',
+    [AddressController::class, 'index']
+)->name('profile.addresses');
+Route::get(
+    '/profile/password',
+    [ProfileController::class, 'password']
+)->name('profile.password');
+
+Route::post(
+    '/profile/password/reset',
+    [ProfileController::class, 'startPasswordReset']
+)->name('profile.password.reset');
 
 
 
@@ -477,6 +540,37 @@ Route::get(
             'checkout.voucher.remove'
         );
 
+        /*
+|--------------------------------------------------------------------------
+| CUSTOMER WISHLIST
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/wishlist',
+    [
+        CustomerWishlistController::class,
+        'index',
+    ]
+)->name('wishlist.index');
+
+
+Route::post(
+    '/wishlist/{product}',
+    [
+        CustomerWishlistController::class,
+        'store',
+    ]
+)->name('wishlist.store');
+
+
+Route::delete(
+    '/wishlist/{product}',
+    [
+        CustomerWishlistController::class,
+        'destroy',
+    ]
+)->name('wishlist.destroy');
 
         /*
          * ---------------------------------------------------------------
@@ -548,6 +642,26 @@ Route::get(
             ]
         )->name(
             'checkout.qr'
+        );
+
+        Route::get(
+            '/checkout/payos/{order}/return',
+            [
+                CheckoutController::class,
+                'payOSReturn',
+            ]
+        )->name(
+            'checkout.payos.return'
+        );
+
+        Route::get(
+            '/checkout/payos/{order}/cancel',
+            [
+                CheckoutController::class,
+                'payOSCancel',
+            ]
+        )->name(
+            'checkout.payos.cancel'
         );
 /*
  * ---------------------------------------------------------------
@@ -718,7 +832,41 @@ Route::delete(
     'customer.reviews.destroy'
 );
 
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER VOUCHER WALLET
+|--------------------------------------------------------------------------
+*/
 
+Route::get(
+    '/profile/vouchers',
+    [
+        CustomerVoucherController::class,
+        'index',
+    ]
+)->name(
+    'profile.vouchers'
+);
+
+Route::post(
+    '/profile/vouchers/{voucher}/save',
+    [
+        CustomerVoucherController::class,
+        'save',
+    ]
+)->name(
+    'profile.vouchers.save'
+);
+
+Route::delete(
+    '/profile/vouchers/{voucher}/save',
+    [
+        CustomerVoucherController::class,
+        'unsave',
+    ]
+)->name(
+    'profile.vouchers.unsave'
+);
 
 
         /*
@@ -950,6 +1098,13 @@ Route::prefix('admin')
         );
 
         Route::get(
+            '/chat/unread-count',
+            [AdminChatController::class, 'unreadCount']
+        )->name(
+            'chat.unread-count'
+        );
+
+        Route::get(
             '/chat/{conversation}',
             [AdminChatController::class, 'show']
         )->name(
@@ -968,6 +1123,13 @@ Route::prefix('admin')
             [AdminChatController::class, 'reply']
         )->name(
             'chat.reply'
+        );
+
+        Route::post(
+            '/chat/{conversation}/read',
+            [AdminChatController::class, 'markRead']
+        )->name(
+            'chat.read'
         );
 
         Route::post(
@@ -1395,6 +1557,16 @@ Route::patch(
             'products.images.primary'
         );
 
+        Route::patch(
+            '/products/{product}/images/{image}',
+            [
+                ProductController::class,
+                'replaceImage',
+            ]
+        )->name(
+            'products.images.update'
+        );
+
 
         Route::delete(
             '/products/{product}/images/{image}',
@@ -1455,5 +1627,21 @@ Route::resource(
 | - Email Verification
 |
 */
+
+/*
+|--------------------------------------------------------------------------
+| Google Authentication
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/auth/google',
+    [GoogleAuthController::class, 'redirect']
+)->name('google.redirect');
+
+Route::get(
+    '/auth/google/callback',
+    [GoogleAuthController::class, 'callback']
+)->name('google.callback');
 
 require __DIR__ . '/auth.php';

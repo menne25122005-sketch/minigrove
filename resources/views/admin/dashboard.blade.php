@@ -145,7 +145,7 @@
 
     {{-- RECENT ORDERS --}}
 
-    <div class="dashboard-section">
+    <div class="dashboard-section dashboard-section--recent-orders">
 
 
         <div class="dashboard-section-header">
@@ -487,71 +487,6 @@
 
 
 
-
-
-
-    {{-- QUICK LINKS --}}
-
-
-    <div class="dashboard-section">
-
-
-        <h2>
-            Truy cập nhanh
-        </h2>
-
-
-
-        <div class="dashboard-links">
-
-
-            <a href="{{ route('admin.categories.index') }}">
-
-                Quản lý danh mục
-
-            </a>
-
-
-
-            <a href="{{ route('admin.products.index') }}">
-
-                Quản lý sản phẩm
-
-            </a>
-
-
-
-            <a href="{{ route('admin.orders.index') }}">
-
-                Quản lý đơn hàng
-
-            </a>
-
-
-
-            <a href="{{ route('admin.customers.index') }}">
-
-                Quản lý khách hàng
-
-            </a>
-
-
-
-
-
-
-            <a href="{{ route('admin.groves.index') }}">
-
-                Quản lý Grove
-
-            </a>
-
-
-
-        </div>
-
-
-    </div>
 
 
 

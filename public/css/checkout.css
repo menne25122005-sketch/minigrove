@@ -100,6 +100,13 @@
     background: white;
 }
 
+.checkout-card-voucher {
+    position: relative;
+    z-index: 30;
+
+    overflow: visible;
+}
+
 .checkout-card-header {
     padding: 18px 20px;
 
@@ -522,8 +529,14 @@
     gap: 10px;
 }
 
-.checkout-voucher-form input {
+.checkout-voucher-picker {
     flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+.checkout-voucher-form input {
+    width: 100%;
 
     height: 42px;
 
@@ -539,6 +552,129 @@
 
 .checkout-voucher-form input:focus {
     border-color: var(--mg-green);
+}
+
+.checkout-saved-vouchers {
+    display: none;
+
+    position: absolute;
+    top: calc(100% + 7px);
+    left: 0;
+    right: 0;
+
+    z-index: 1000;
+
+    max-height: 310px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+
+    border: 1px solid var(--mg-border);
+    border-radius: 10px;
+
+    background: #fff;
+
+    box-shadow:
+        0 14px 34px
+        rgba(23, 77, 55, .14);
+}
+
+.checkout-voucher-picker:focus-within
+.checkout-saved-vouchers,
+.checkout-saved-vouchers.is-open {
+    display: block;
+}
+
+.checkout-card-voucher + .checkout-card {
+    position: relative;
+    z-index: 1;
+}
+
+.checkout-saved-vouchers-title {
+    padding: 11px 13px 8px;
+
+    color: var(--mg-muted);
+
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .45px;
+}
+
+.checkout-saved-voucher-option {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 12px 13px;
+
+    border: 0;
+    border-top: 1px solid #edf1ef;
+
+    background: #fff;
+    color: inherit;
+
+    font-family: inherit;
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.checkout-saved-voucher-option:hover {
+    background: #f4faf6;
+}
+
+.checkout-saved-voucher-option.is-disabled {
+    background: #fafbfa;
+    cursor: not-allowed;
+    opacity: .7;
+}
+
+.checkout-saved-voucher-main {
+    min-width: 130px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.checkout-saved-voucher-main strong {
+    color: var(--mg-green-dark);
+    font-size: 13px;
+}
+
+.checkout-saved-voucher-main span,
+.checkout-saved-voucher-status {
+    color: var(--mg-muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.checkout-saved-voucher-status {
+    text-align: right;
+}
+
+.checkout-saved-voucher-status.is-eligible {
+    color: var(--mg-green);
+    font-weight: 700;
+}
+
+.checkout-saved-vouchers-empty {
+    padding: 16px 13px;
+
+    color: var(--mg-muted);
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.checkout-saved-vouchers-empty a {
+    color: var(--mg-green-dark);
+    font-weight: 700;
 }
 
 .checkout-voucher-applied {
@@ -837,6 +973,20 @@
 
     .checkout-voucher-form {
         flex-direction: column;
+    }
+
+    .checkout-voucher-picker {
+        width: 100%;
+    }
+
+    .checkout-saved-voucher-option {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .checkout-saved-voucher-status {
+        text-align: left;
     }
 
 }

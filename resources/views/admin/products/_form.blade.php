@@ -1,5 +1,14 @@
 @php
     $editingProduct = $product ?? null;
+    $currentImageCount =
+        $editingProduct?->images?->count() ?? 0;
+    $remainingImageSlots =
+        max(0, 8 - $currentImageCount);
+    $hasPrimaryImage =
+        $editingProduct?->images?->contains(
+            'is_primary',
+            true
+        ) ?? false;
 @endphp
 
 <div class="product-form-grid">
@@ -291,54 +300,6 @@
     </div>
 
 
-    {{-- Đường kính --}}
-    <div class="form-group">
-        <label for="container_diameter_cm">
-            Đường kính bình (cm)
-        </label>
-
-        <input
-            type="number"
-            id="container_diameter_cm"
-            name="container_diameter_cm"
-            min="0"
-            step="0.1"
-            value="{{ old(
-                'container_diameter_cm',
-                $editingProduct?->container_diameter_cm
-            ) }}"
-        >
-
-        @error('container_diameter_cm')
-            <div class="error">{{ $message }}</div>
-        @enderror
-    </div>
-
-
-    {{-- Chiều cao --}}
-    <div class="form-group">
-        <label for="container_height_cm">
-            Chiều cao bình (cm)
-        </label>
-
-        <input
-            type="number"
-            id="container_height_cm"
-            name="container_height_cm"
-            min="0"
-            step="0.1"
-            value="{{ old(
-                'container_height_cm',
-                $editingProduct?->container_height_cm
-            ) }}"
-        >
-
-        @error('container_height_cm')
-            <div class="error">{{ $message }}</div>
-        @enderror
-    </div>
-
-
     {{-- Ánh sáng --}}
     <div class="form-group">
         <label for="light_requirement">
@@ -412,7 +373,11 @@
     {{-- Upload ảnh --}}
     <div class="form-group">
         <label for="images">
-            Hình ảnh sản phẩm
+            {{
+                $editingProduct
+                    ? 'Thêm hình ảnh sản phẩm'
+                    : 'Hình ảnh sản phẩm'
+            }}
         </label>
 
         <input
@@ -421,11 +386,44 @@
             name="images[]"
             multiple
             accept=".jpg,.jpeg,.png,.webp"
+            data-max-files="{{
+                $editingProduct
+                    ? $remainingImageSlots
+                    : 8
+            }}"
+            data-auto-primary="{{
+                !$editingProduct || !$hasPrimaryImage
+                    ? '1'
+                    : '0'
+            }}"
+            @disabled(
+                $editingProduct &&
+                $remainingImageSlots === 0
+            )
         >
 
         <small class="help-text">
-            Tối đa 8 ảnh/lần, mỗi ảnh tối đa 4MB.
+            @if ($editingProduct)
+                Hiện có
+                <strong>{{ $currentImageCount }}/8</strong>
+                ảnh.
+
+                @if ($remainingImageSlots > 0)
+                    Bạn có thể thêm tối đa
+                    {{ $remainingImageSlots }} ảnh nữa.
+                @else
+                    Đã đủ 8 ảnh. Hãy thay thế hoặc xóa
+                    ảnh hiện có nếu muốn đổi ảnh.
+                @endif
+            @else
+                Tối đa 8 ảnh, mỗi ảnh tối đa 4MB.
+            @endif
         </small>
+
+        <div
+            id="new-image-preview"
+            class="new-image-preview"
+        ></div>
 
         @error('images')
             <div class="error">{{ $message }}</div>
@@ -434,9 +432,145 @@
         @error('images.*')
             <div class="error">{{ $message }}</div>
         @enderror
+
+        @error('primary_image_index')
+            <div class="error">{{ $message }}</div>
+        @enderror
     </div>
 
 </div>
+
+<script>
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+        const input = document.getElementById(
+            'images'
+        );
+
+        const preview = document.getElementById(
+            'new-image-preview'
+        );
+
+        if (!input || !preview) {
+            return;
+        }
+
+        input.addEventListener(
+            'change',
+            function () {
+                preview.innerHTML = '';
+
+                const files = Array.from(
+                    input.files || []
+                );
+
+                const maxFiles = Number(
+                    input.dataset.maxFiles || 8
+                );
+
+                if (files.length > maxFiles) {
+                    window.alert(
+                        'Bạn chỉ có thể chọn tối đa '
+                        + maxFiles
+                        + ' ảnh ở lần này.'
+                    );
+
+                    input.value = '';
+                    return;
+                }
+
+                files.forEach(
+                    function (file, index) {
+                        const card =
+                            document.createElement(
+                                'div'
+                            );
+
+                        card.className =
+                            'new-image-card';
+
+                        const image =
+                            document.createElement(
+                                'img'
+                            );
+
+                        image.src =
+                            URL.createObjectURL(file);
+
+                        image.alt =
+                            'Ảnh mới '
+                            + (index + 1);
+
+                        image.onload = function () {
+                            URL.revokeObjectURL(
+                                image.src
+                            );
+                        };
+
+                        const name =
+                            document.createElement(
+                                'div'
+                            );
+
+                        name.className =
+                            'new-image-name';
+
+                        name.textContent = file.name;
+
+                        const primaryLabel =
+                            document.createElement(
+                                'label'
+                            );
+
+                        primaryLabel.className =
+                            'new-image-primary';
+
+                        const radio =
+                            document.createElement(
+                                'input'
+                            );
+
+                        radio.type = 'radio';
+                        radio.name =
+                            'primary_image_index';
+                        radio.value = String(index);
+
+                        if (
+                            index === 0 &&
+                            input.dataset
+                                .autoPrimary === '1'
+                        ) {
+                            radio.checked = true;
+                        }
+
+                        const labelText =
+                            document.createElement(
+                                'span'
+                            );
+
+                        labelText.textContent =
+                            'Đặt làm ảnh chính';
+
+                        primaryLabel.append(
+                            radio,
+                            labelText
+                        );
+
+                        card.append(
+                            image,
+                            name,
+                            primaryLabel
+                        );
+
+                        preview.appendChild(card);
+                    }
+                );
+            }
+        );
+    }
+);
+</script>
 
 
 {{-- Mô tả --}}
@@ -559,88 +693,6 @@
     </div>
 
 
-    <div class="checkbox-row">
-        <input
-            type="checkbox"
-            id="is_warranty_eligible"
-            name="is_warranty_eligible"
-            value="1"
-            @checked(
-                old(
-                    'is_warranty_eligible',
-                    $editingProduct?->is_warranty_eligible ?? false
-                )
-            )
-        >
-
-        <label for="is_warranty_eligible">
-            Có bảo hành
-        </label>
-    </div>
-
-</div>
-
-
-<div
-    id="warranty-box"
-    class="warranty-box"
->
-
-    <h3>
-        Thông tin bảo hành
-    </h3>
-
-    <div class="product-form-grid">
-
-        <div class="form-group">
-
-            <label for="warranty_days">
-                Thời hạn bảo hành (ngày)
-            </label>
-
-            <input
-                type="number"
-                id="warranty_days"
-                name="warranty_days"
-                min="1"
-                value="{{ old(
-                    'warranty_days',
-                    $editingProduct?->warranty_days
-                ) }}"
-                placeholder="Ví dụ: 30"
-            >
-
-            @error('warranty_days')
-                <div class="error">
-                    {{ $message }}
-                </div>
-            @enderror
-
-        </div>
-
-    </div>
-
-
-    <div class="form-group">
-
-        <label for="warranty_policy">
-            Chính sách bảo hành
-        </label>
-
-        <textarea
-            id="warranty_policy"
-            name="warranty_policy"
-            placeholder="Nội dung, điều kiện và phạm vi bảo hành..."
-        >{{ old('warranty_policy', $editingProduct?->warranty_policy) }}</textarea>
-
-        @error('warranty_policy')
-            <div class="error">
-                {{ $message }}
-            </div>
-        @enderror
-
-    </div>
-
 </div>
 
 
@@ -663,14 +715,6 @@
         border-radius: 9px;
     }
 
-    .warranty-box {
-        padding: 20px;
-        margin: 20px 0;
-        background: #faf8f1;
-        border: 1px solid #e8dfc7;
-        border-radius: 10px;
-    }
-
     select {
         width: 100%;
         border: 1px solid #ccd5cf;
@@ -686,43 +730,58 @@
         margin-top: 6px;
     }
 
+    .new-image-preview {
+        display: grid;
+        grid-template-columns:
+            repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .new-image-card {
+        overflow: hidden;
+        border: 1px solid #dbe3de;
+        border-radius: 9px;
+        background: #f8faf8;
+        padding: 8px;
+    }
+
+    .new-image-card img {
+        width: 100%;
+        height: 100px;
+        display: block;
+        object-fit: cover;
+        border-radius: 7px;
+        background: #edf2ee;
+    }
+
+    .new-image-name {
+        overflow: hidden;
+        margin: 7px 0;
+        color: #5e6861;
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .new-image-primary {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #174d39;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .new-image-primary input {
+        width: auto;
+    }
+
     @media (max-width: 750px) {
         .product-form-grid {
             grid-template-columns: 1fr;
         }
     }
 </style>
-@endpush
-
-
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-
-        const checkbox =
-            document.getElementById(
-                'is_warranty_eligible'
-            );
-
-        const warrantyBox =
-            document.getElementById(
-                'warranty-box'
-            );
-
-        function updateWarrantyBox() {
-
-            warrantyBox.style.display =
-                checkbox.checked
-                    ? 'block'
-                    : 'none';
-        }
-
-        checkbox.addEventListener(
-            'change',
-            updateWarrantyBox
-        );
-
-        updateWarrantyBox();
-    });
-</script>
 @endpush

@@ -8,13 +8,195 @@
             )
         ?? $product->images->first();
 
+    $isCardWishlisted =
+        in_array(
+            $product->id,
+            $wishlistProductIds ?? []
+        );
+
 @endphp
 
 
-<article class="product-card">
+<article
+    class="product-card"
+    data-product-card
+    data-product-url="{{
+        route(
+            'products.show',
+            $product
+        )
+    }}"
+    tabindex="0"
+    aria-label="Xem chi tiết {{ $product->name }}"
+>
 
 
     <div class="product-image-box">
+        {{-- WISHLIST QUICK ACTION --}}
+
+@guest
+
+    <a
+        href="{{
+            route(
+                'login',
+                [
+                    'redirect'
+                        => request()->getRequestUri()
+                ]
+            )
+        }}"
+        class="product-card-wishlist"
+        title="Đăng nhập để lưu yêu thích"
+        aria-label="Đăng nhập để lưu yêu thích"
+    >
+        <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+        >
+            <path
+                d="
+                    M12 21
+                    C10.6 19.7 4 15.2 4 9.5
+                    C4 6.5 6.2 4.5 8.9 4.5
+                    C10.4 4.5 11.5 5.2 12 6
+                    C12.5 5.2 13.6 4.5 15.1 4.5
+                    C17.8 4.5 20 6.5 20 9.5
+                    C20 15.2 13.4 19.7 12 21
+                    Z
+                "
+            />
+        </svg>
+    </a>
+
+@else
+
+    @if (
+        auth()->user()->role?->name
+        === 'customer'
+    )
+
+        @if ($isCardWishlisted)
+
+            <form
+                method="POST"
+                action="{{
+                    route(
+                        'wishlist.destroy',
+                        $product
+                    )
+                }}"
+                class="product-card-wishlist-form"
+                data-wishlist-toggle
+                data-store-url="{{
+                    route(
+                        'wishlist.store',
+                        $product
+                    )
+                }}"
+                data-destroy-url="{{
+                    route(
+                        'wishlist.destroy',
+                        $product
+                    )
+                }}"
+            >
+
+                @csrf
+                @method('DELETE')
+
+                <button
+                    type="submit"
+                    class="
+                        product-card-wishlist
+                        active
+                    "
+                    title="Bỏ khỏi yêu thích"
+                    aria-label="Bỏ khỏi yêu thích"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="
+                                M12 21
+                                C10.6 19.7 4 15.2 4 9.5
+                                C4 6.5 6.2 4.5 8.9 4.5
+                                C10.4 4.5 11.5 5.2 12 6
+                                C12.5 5.2 13.6 4.5 15.1 4.5
+                                C17.8 4.5 20 6.5 20 9.5
+                                C20 15.2 13.4 19.7 12 21
+                                Z
+                            "
+                        />
+                    </svg>
+
+                </button>
+
+            </form>
+
+        @else
+
+            <form
+                method="POST"
+                action="{{
+                    route(
+                        'wishlist.store',
+                        $product
+                    )
+                }}"
+                class="product-card-wishlist-form"
+                data-wishlist-toggle
+                data-store-url="{{
+                    route(
+                        'wishlist.store',
+                        $product
+                    )
+                }}"
+                data-destroy-url="{{
+                    route(
+                        'wishlist.destroy',
+                        $product
+                    )
+                }}"
+            >
+
+                @csrf
+
+                <button
+                    type="submit"
+                    class="product-card-wishlist"
+                    title="Thêm vào yêu thích"
+                    aria-label="Thêm vào yêu thích"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="
+                                M12 21
+                                C10.6 19.7 4 15.2 4 9.5
+                                C4 6.5 6.2 4.5 8.9 4.5
+                                C10.4 4.5 11.5 5.2 12 6
+                                C12.5 5.2 13.6 4.5 15.1 4.5
+                                C17.8 4.5 20 6.5 20 9.5
+                                C20 15.2 13.4 19.7 12 21
+                                Z
+                            "
+                        />
+                    </svg>
+
+                </button>
+
+            </form>
+
+        @endif
+
+    @endif
+
+@endguest
 
         @if ($primaryImage)
 

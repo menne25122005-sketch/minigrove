@@ -21,16 +21,25 @@ class Product extends Model
         'sku',
 
         /*
-         * Phân loại sản phẩm:
-         * plant
-         * container
-         * moss
-         * substrate
-         * stone
-         * accessory
-         * grove
+         * Môi trường Terrarium:
+         * closed / open / dry / all.
          */
         'ecosystem_type',
+
+        /*
+         * Vai trò Product trong MiniGrove Studio:
+         * container / plant / moss / substrate / stone / accessory.
+         * Product bán hoàn chỉnh có thể để null.
+         */
+        'product_type',
+
+        'is_studio_item',
+
+        /*
+         * Chỉ áp dụng cho product_type = container.
+         * Số lượng Product tối đa có thể đặt trong bình.
+         */
+        'studio_capacity',
 
         'list_price',
 
@@ -100,12 +109,16 @@ class Product extends Model
 
         'low_stock_threshold' => 'integer',
 
+        'studio_capacity' => 'integer',
+
 
         'is_active' => 'boolean',
 
         'is_featured' => 'boolean',
 
         'is_grove_eligible' => 'boolean',
+
+        'is_studio_item' => 'boolean',
 
 
 

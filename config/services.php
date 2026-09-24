@@ -33,6 +33,12 @@ return [
     'casso' => [
     'webhook_secret' => env('CASSO_WEBHOOK_SECRET'),
 ],
+'payos' => [
+    'client_id' => env('PAYOS_CLIENT_ID'),
+    'api_key' => env('PAYOS_API_KEY'),
+    'checksum_key' => env('PAYOS_CHECKSUM_KEY'),
+    'webhook_url' => env('PAYOS_WEBHOOK_URL'),
+],
 'ghn' => [
     'base_url' => env(
         'GHN_BASE_URL',
@@ -42,4 +48,9 @@ return [
     'shop_id' => env('GHN_SHOP_ID'),
 ],
 
+'google' => [
+    'client_id' => env('GOOGLE_CLIENT_ID'),
+    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+    'redirect' => env('GOOGLE_REDIRECT_URI'),
+],
 ];

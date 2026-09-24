@@ -22,6 +22,7 @@ class User extends Authenticatable
         'role_id',
         'name',
         'email',
+        'google_id',
         'phone',
         'avatar',
         'position',
@@ -83,7 +84,7 @@ public function customDesigns()
  */
 public function wishlist()
 {
-    return $this->hasOne(Wishlist::class);
+    return $this->hasOne(\App\Models\Wishlist::class);
 }
 /**
  * Một User có một Cart.
@@ -105,6 +106,17 @@ public function orders()
 public function voucherUsages()
 {
     return $this->hasMany(VoucherUsage::class);
+}
+
+/**
+ * Các Voucher Customer đã lưu để dùng sau.
+ */
+public function savedVouchers()
+{
+    return $this->belongsToMany(
+        Voucher::class,
+        'saved_vouchers'
+    )->withTimestamps();
 }
 /**
  * Các thay đổi kho do User/Staff/Admin thực hiện.

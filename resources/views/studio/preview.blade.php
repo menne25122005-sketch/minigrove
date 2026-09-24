@@ -439,7 +439,7 @@ Thành tiền
 <td>
 
 
-@switch($item['ecosystem_type'])
+@switch($item['product_type'])
 
 
 @case('container')
@@ -486,7 +486,7 @@ Phụ kiện
 
 @default
 
-{{ $item['ecosystem_type'] }}
+{{ $item['product_type'] }}
 
 
 @endswitch
@@ -645,21 +645,68 @@ class="btn btn-secondary"
 </a>
 
 
+@auth
+    @if (auth()->user()->role?->name === 'customer')
+        <form
+            method="POST"
+            action="{{
+                $editingDesign
+                    ? route('designs.update', $editingDesign)
+                    : route('designs.store')
+            }}"
+            style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"
+        >
+            @csrf
 
+            @if ($editingDesign)
+                @method('PATCH')
+            @endif
 
-<button
+            <input
+                type="text"
+                name="name"
+                value="{{ old('name', $editingDesign?->name ?? 'Terrarium của tôi') }}"
+                maxlength="150"
+                required
+                placeholder="Tên thiết kế"
+                style="min-height:42px;padding:8px 12px;border:1px solid #d8e1dc;border-radius:8px"
+            >
 
-type="button"
+            <input
+                type="hidden"
+                name="style"
+                value="{{ $style }}"
+            >
 
-class="btn btn-primary"
+            @foreach ($selectedItems as $index => $selectedItem)
+                <input
+                    type="hidden"
+                    name="items[{{ $index }}][product_id]"
+                    value="{{ $selectedItem['product_id'] }}"
+                >
+                <input
+                    type="hidden"
+                    name="items[{{ $index }}][quantity]"
+                    value="{{ $selectedItem['quantity'] }}"
+                >
+            @endforeach
 
-disabled
-
->
-
-Lưu thiết kế
-
-</button>
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                {{ $editingDesign ? 'Cập nhật thiết kế' : 'Lưu thiết kế' }}
+            </button>
+        </form>
+    @endif
+@else
+    <a
+        href="{{ route('login') }}"
+        class="btn btn-primary"
+    >
+        Đăng nhập để lưu thiết kế
+    </a>
+@endauth
 
 
 

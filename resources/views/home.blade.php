@@ -114,14 +114,22 @@
 
             @forelse ($categories as $category)
 
-                <div
-                    class="
-                        category-card
-                        {{ $category->image
-                            ? 'has-image'
-                            : '' }}
-                    "
-                >
+                <a
+    href="{{
+        route(
+            'products.index',
+            [
+                'category' => $category->slug
+            ]
+        )
+    }}"
+    class="
+        category-card
+        {{ $category->image
+            ? 'has-image'
+            : '' }}
+    "
+>
 
                     @if ($category->image)
 
@@ -159,7 +167,7 @@
 
                     </div>
 
-                </div>
+                </a>
 
             @empty
 
@@ -254,7 +262,7 @@
                 <p>
                     Chọn bình, cây, rêu, nền,
                     đá và phụ kiện.
-                    MiniGrove Studio sẽ kiểm tra
+                    Công cụ thiết kế sẽ kiểm tra
                     khả năng tương thích và tính
                     giá trực tiếp cho thiết kế.
                 </p>
@@ -266,7 +274,7 @@
                 href="{{ route('studio.index') }}"
                 class="studio-button"
             >
-                Khám phá Studio →
+                Bắt đầu thiết kế →
             </a>
 
         </div>

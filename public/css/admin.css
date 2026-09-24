@@ -194,6 +194,33 @@ body {
     text-align: center;
 }
 
+.sidebar-link-label {
+    min-width: 0;
+}
+
+.sidebar-unread-badge {
+    min-width: 22px;
+    height: 22px;
+    margin-left: auto;
+    padding: 0 6px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 999px;
+    background: #e85d68;
+    color: white;
+
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.sidebar-unread-badge.is-hidden {
+    display: none;
+}
+
 
 /* =========================
    CHỨC NĂNG CHƯA TRIỂN KHAI
@@ -273,6 +300,7 @@ body {
     width: calc(100% - 255px);
     margin-left: 255px;
     min-height: 100vh;
+    min-width: 0;
 }
 
 .admin-topbar {
@@ -299,6 +327,7 @@ body {
 .container {
     width: min(1280px, 94%);
     margin: 28px auto;
+    min-width: 0;
 }
 
 
@@ -315,6 +344,7 @@ body {
     padding: 24px;
 
     box-shadow: 0 3px 12px rgba(0,0,0,.04);
+    min-width: 0;
 }
 
 .page-header {
@@ -626,6 +656,7 @@ input[type="tel"],
 select,
 textarea {
     width: 100%;
+    min-height: 42px;
 
     padding: 11px;
 
@@ -633,13 +664,36 @@ textarea {
     border-radius: 7px;
 
     font-size: 14px;
+    font-family: inherit;
+    color: var(--mg-text);
 
     background: white;
+
+    transition:
+        border-color .15s ease,
+        box-shadow .15s ease;
 }
 
 textarea {
-    min-height: 130px;
+    min-height: 120px;
     resize: vertical;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="file"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="tel"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--mg-green);
+    box-shadow: 0 0 0 3px rgba(36,88,60,.09);
+}
+
+input[type="file"] {
+    padding: 8px 10px;
 }
 
 .checkbox-row {
@@ -667,6 +721,8 @@ textarea {
 
 .search-form {
     display: flex;
+    align-items: center;
+    flex-wrap: wrap;
 
     gap: 8px;
 
@@ -675,6 +731,14 @@ textarea {
 
 .search-form input {
     max-width: 380px;
+    flex: 1 1 280px;
+}
+
+.search-form .btn {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 
@@ -701,7 +765,80 @@ textarea {
 ========================= */
 
 .pagination {
-    margin-top: 20px;
+    margin-top: 22px;
+}
+
+.pagination nav {
+    display: block;
+}
+
+.pagination nav > div:first-child:not(:last-child) {
+    display: none;
+}
+
+.pagination nav > div:last-child {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.pagination nav > div:last-child > div:last-child > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.pagination nav p {
+    margin: 0;
+    color: var(--mg-muted);
+    font-size: 13px;
+}
+
+.pagination nav a,
+.pagination nav span[aria-current] > span,
+.pagination nav span[aria-disabled] > span {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid var(--mg-border);
+    border-radius: 7px;
+
+    background: white;
+    color: var(--mg-green-dark);
+
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 1;
+}
+
+.pagination nav a:hover {
+    border-color: var(--mg-green);
+    background: var(--mg-green-light);
+}
+
+.pagination nav span[aria-current] > span {
+    border-color: var(--mg-green);
+    background: var(--mg-green);
+    color: white;
+}
+
+.pagination nav span[aria-disabled] > span {
+    background: #f3f6f4;
+    color: #a8b2ac;
+}
+
+.pagination svg {
+    width: 18px !important;
+    height: 18px !important;
+    display: block;
 }
 
 .empty {
@@ -736,5 +873,31 @@ textarea {
     .quick-links {
         grid-template-columns:
             repeat(2, minmax(0,1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .page-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .search-form {
+        align-items: stretch;
+    }
+
+    .search-form input,
+    .search-form .btn {
+        width: 100%;
+        max-width: none;
+    }
+
+    .pagination nav > div:last-child {
+        justify-content: center;
+    }
+
+    .pagination nav > div:last-child > div:first-child {
+        width: 100%;
+        text-align: center;
     }
 }

@@ -39,6 +39,11 @@ document.addEventListener(
                 'deleteSelectedButton'
             );
 
+        const wishlistButton =
+            document.getElementById(
+                'saveWishlistButton'
+            );
+
         const deleteInputs =
             document.getElementById(
                 'deleteSelectedInputs'
@@ -74,6 +79,20 @@ document.addEventListener(
             return itemCheckboxes.filter(
                 checkbox =>
                     checkbox.checked
+            );
+        }
+
+        function getWishlistCandidates() {
+
+            return getSelectedItems().filter(
+                checkbox =>
+                    checkbox.dataset.itemType
+                        === 'product'
+                    && checkbox.dataset.wishlisted
+                        !== '1'
+                    && Boolean(
+                        checkbox.dataset.wishlistUrl
+                    )
             );
         }
 
@@ -186,6 +205,41 @@ document.addEventListener(
 
                 deleteButton.disabled =
                     selected.length === 0;
+            }
+
+            if (wishlistButton) {
+
+                const selectedProducts =
+                    selected.filter(
+                        checkbox =>
+                            checkbox.dataset.itemType
+                                === 'product'
+                    );
+
+                const wishlistCandidates =
+                    getWishlistCandidates();
+
+                wishlistButton.disabled =
+                    wishlistCandidates.length === 0;
+
+                if (
+                    selectedProducts.length > 0
+                    && wishlistCandidates.length === 0
+                ) {
+                    wishlistButton.textContent =
+                        '♥ Đã có trong mục đã thích';
+
+                    wishlistButton.title =
+                        'Các sản phẩm đang chọn đã có trong mục đã thích.';
+                } else {
+                    wishlistButton.textContent =
+                        '♡ Lưu vào mục đã thích';
+
+                    wishlistButton.title =
+                        wishlistCandidates.length > 0
+                            ? 'Lưu các sản phẩm đang chọn vào mục đã thích.'
+                            : 'Chọn sản phẩm để lưu vào mục đã thích.';
+                }
             }
 
 
@@ -321,6 +375,96 @@ if (checkoutInputs) {
                     setAll(
                         selectAllBottom.checked
                     );
+                }
+            );
+        }
+
+        if (wishlistButton) {
+
+            wishlistButton.addEventListener(
+                'click',
+                async function () {
+
+                    const candidates =
+                        getWishlistCandidates();
+
+                    if (candidates.length === 0) {
+                        return;
+                    }
+
+                    const csrfToken = document
+                        .querySelector(
+                            'meta[name="csrf-token"]'
+                        )
+                        ?.getAttribute('content');
+
+                    wishlistButton.disabled = true;
+                    wishlistButton.textContent =
+                        'Đang lưu...';
+
+                    const results =
+                        await Promise.allSettled(
+                            candidates.map(
+                                async checkbox => {
+
+                                    const response =
+                                        await fetch(
+                                            checkbox
+                                                .dataset
+                                                .wishlistUrl,
+                                            {
+                                                method: 'POST',
+                                                headers: {
+                                                    Accept:
+                                                        'application/json',
+                                                    'X-Requested-With':
+                                                        'XMLHttpRequest',
+                                                    'X-CSRF-TOKEN':
+                                                        csrfToken
+                                                        ?? '',
+                                                },
+                                                credentials:
+                                                    'same-origin',
+                                            }
+                                        );
+
+                                    if (!response.ok) {
+                                        throw new Error(
+                                            'Không thể lưu sản phẩm vào Wishlist.'
+                                        );
+                                    }
+
+                                    const data =
+                                        await response
+                                            .json();
+
+                                    if (data.wishlisted) {
+                                        checkbox
+                                            .dataset
+                                            .wishlisted =
+                                            '1';
+                                    }
+
+                                    return data;
+                                }
+                            )
+                        );
+
+                    const failed =
+                        results.filter(
+                            result =>
+                                result.status
+                                    === 'rejected'
+                        );
+
+                    if (failed.length > 0) {
+                        console.error(
+                            'Một số sản phẩm chưa thể lưu vào Wishlist.',
+                            failed
+                        );
+                    }
+
+                    updateSummary();
                 }
             );
         }

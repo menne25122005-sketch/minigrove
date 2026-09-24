@@ -29,6 +29,24 @@
             )
         ?? $product->images->first();
 
+    $studioQueryKey = [
+        'container' => 'container',
+        'plant' => 'plant',
+        'moss' => 'moss',
+        'substrate' => 'substrate',
+        'stone' => 'stone',
+        'accessory' => 'accessory',
+    ][$product->product_type] ?? null;
+
+    $studioActionLabel = [
+        'container' => 'Dùng bình này trong Studio',
+        'plant' => 'Dùng cây này trong Studio',
+        'moss' => 'Dùng rêu này trong Studio',
+        'substrate' => 'Dùng nền này trong Studio',
+        'stone' => 'Dùng đá này trong Studio',
+        'accessory' => 'Dùng phụ kiện này trong Studio',
+    ][$product->product_type] ?? 'Dùng sản phẩm này trong Studio';
+
 @endphp
 
 
@@ -53,6 +71,7 @@
                     @if ($primaryImage)
 
                         <img
+                            id="product-main-image"
                             src="{{
                                 asset(
                                     'storage/'
@@ -82,25 +101,60 @@
                             as $image
                         )
 
-                            <div class="product-thumbnail">
+                            <button
+                                type="button"
+                                class="product-thumbnail{{ $primaryImage?->id === $image->id ? ' active' : '' }}"
+                                data-gallery-src="{{ asset('storage/' . $image->image_path) }}"
+                                data-gallery-alt="{{ $product->name }} - ảnh {{ $loop->iteration }}"
+                                aria-label="Xem ảnh {{ $loop->iteration }} của {{ $product->name }}"
+                                aria-pressed="{{ $primaryImage?->id === $image->id ? 'true' : 'false' }}"
+                            >
 
                                 <img
-                                    src="{{
-                                        asset(
-                                            'storage/'
-                                            . $image->image_path
-                                        )
-                                    }}"
-                                    alt="{{ $product->name }}"
+                                    src="{{ asset('storage/' . $image->image_path) }}"
+                                    alt="{{ $product->name }} - ảnh {{ $loop->iteration }}"
                                 >
 
-                            </div>
+                            </button>
 
                         @endforeach
 
                     </div>
 
                 @endif
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const mainImage = document.getElementById('product-main-image');
+                        const thumbnails = document.querySelectorAll('.product-thumbnail[data-gallery-src]');
+
+                        if (!mainImage || thumbnails.length === 0) {
+                            return;
+                        }
+
+                        thumbnails.forEach(function (thumbnail) {
+                            thumbnail.addEventListener('click', function () {
+                                const nextSrc = thumbnail.dataset.gallerySrc;
+                                const nextAlt = thumbnail.dataset.galleryAlt;
+
+                                if (!nextSrc) {
+                                    return;
+                                }
+
+                                mainImage.src = nextSrc;
+                                mainImage.alt = nextAlt || mainImage.alt;
+
+                                thumbnails.forEach(function (item) {
+                                    item.classList.remove('active');
+                                    item.setAttribute('aria-pressed', 'false');
+                                });
+
+                                thumbnail.classList.add('active');
+                                thumbnail.setAttribute('aria-pressed', 'true');
+                            });
+                        });
+                    });
+                </script>
 
             </div>
 
@@ -347,48 +401,48 @@
 
                 @endif
 
-<div class="product-buy-area">
-
+<div class="product-purchase-panel">
 
     @guest
 
-        <a
-            href="{{
-                route(
-                    'login',
-                    [
-                        'redirect'
-                            => request()->getRequestUri()
-                    ]
-                )
-            }}"
-            class="
-                product-buy-button
-                secondary
-            "
-        >
-            🛒 Thêm vào giỏ hàng
-        </a>
+        <div class="product-buy-area">
 
+            <a
+                href="{{
+                    route(
+                        'login',
+                        [
+                            'redirect'
+                                => request()->getRequestUri()
+                        ]
+                    )
+                }}"
+                class="
+                    product-buy-button
+                    secondary
+                "
+            >
+                🛒 Thêm vào giỏ hàng
+            </a>
 
-        <a
-            href="{{
-                route(
-                    'login',
-                    [
-                        'redirect'
-                            => request()->getRequestUri()
-                    ]
-                )
-            }}"
-            class="product-buy-button"
-        >
-            Mua ngay
-        </a>
+            <a
+                href="{{
+                    route(
+                        'login',
+                        [
+                            'redirect'
+                                => request()->getRequestUri()
+                        ]
+                    )
+                }}"
+                class="product-buy-button"
+            >
+                Mua ngay
+            </a>
 
+        </div>
 
     @else
-
 
         @if (
             auth()->user()->role?->name
@@ -397,66 +451,428 @@
 
             @if ($product->stock_quantity > 0)
 
-                <form
-                    method="POST"
-                    action="{{
-                        route(
-                            'cart.add',
-                            $product
-                        )
-                    }}"
-                >
+                {{-- SỐ LƯỢNG --}}
+                <div class="product-quantity-row">
 
-                    @csrf
+                    <span class="product-quantity-label">
+                        Số lượng
+                    </span>
 
-                    <input
-                        type="hidden"
-                        name="quantity"
-                        value="1"
+                    <div class="product-quantity-box">
+
+                        <button
+                            type="button"
+                            class="product-quantity-btn"
+                            id="quantity-decrease"
+                            aria-label="Giảm số lượng"
+                        >
+                            −
+                        </button>
+
+                        <input
+                            type="text"
+                            id="product-quantity-display"
+                            class="product-quantity-input"
+                            value="1"
+                            readonly
+                            aria-label="Số lượng sản phẩm"
+                        >
+
+                        <button
+                            type="button"
+                            class="product-quantity-btn"
+                            id="quantity-increase"
+                            aria-label="Tăng số lượng"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                    <span class="product-quantity-stock">
+                        Còn {{ $product->stock_quantity }} sản phẩm
+                    </span>
+
+                </div>
+
+
+                {{-- MUA HÀNG + YÊU THÍCH --}}
+                <div class="product-buy-area">
+
+                    <form
+                        method="POST"
+                        action="{{
+                            route(
+                                'cart.add',
+                                $product
+                            )
+                        }}"
                     >
 
+                        @csrf
+
+                        <input
+                            type="hidden"
+                            name="quantity"
+                            id="cart-quantity-input"
+                            value="1"
+                        >
+
+                        <button
+                            type="submit"
+                            class="
+                                product-buy-button
+                                secondary
+                            "
+                        >
+                            🛒 Thêm vào giỏ hàng
+                        </button>
+
+                    </form>
+
+
+                    <form
+                        method="POST"
+                        action="{{
+                            route(
+                                'checkout.buy-now',
+                                $product
+                            )
+                        }}"
+                    >
+
+                        @csrf
+
+                        <input
+                            type="hidden"
+                            name="quantity"
+                            id="buy-now-quantity-input"
+                            value="1"
+                        >
+
+                        <button
+                            type="submit"
+                            class="product-buy-button"
+                        >
+                            Mua ngay
+                        </button>
+
+                    </form>
+
+
+                    @if ($isWishlisted)
+
+                        <form
+                            method="POST"
+                            action="{{
+                                route(
+                                    'wishlist.destroy',
+                                    $product
+                                )
+                            }}"
+                            class="product-wishlist-form"
+                        >
+
+                            @csrf
+                            @method('DELETE')
+
+                            <button
+                                type="submit"
+                                class="
+                                    product-wishlist-button
+                                    active
+                                "
+                                title="Bỏ khỏi yêu thích"
+                                aria-label="Bỏ khỏi yêu thích"
+                                aria-pressed="true"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    class="product-wishlist-icon"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="
+                                            M12 21
+                                            C10.6 19.7 4 15.2 4 9.5
+                                            C4 6.5 6.2 4.5 8.9 4.5
+                                            C10.4 4.5 11.5 5.2 12 6
+                                            C12.5 5.2 13.6 4.5 15.1 4.5
+                                            C17.8 4.5 20 6.5 20 9.5
+                                            C20 15.2 13.4 19.7 12 21
+                                            Z
+                                        "
+                                    />
+                                </svg>
+                            </button>
+
+                        </form>
+
+                    @else
+
+                        <form
+                            method="POST"
+                            action="{{
+                                route(
+                                    'wishlist.store',
+                                    $product
+                                )
+                            }}"
+                            class="product-wishlist-form"
+                        >
+
+                            @csrf
+
+                            <button
+                                type="submit"
+                                class="product-wishlist-button"
+                                title="Thêm vào yêu thích"
+                                aria-label="Thêm vào yêu thích"
+                                aria-pressed="false"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    class="product-wishlist-icon"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="
+                                            M12 21
+                                            C10.6 19.7 4 15.2 4 9.5
+                                            C4 6.5 6.2 4.5 8.9 4.5
+                                            C10.4 4.5 11.5 5.2 12 6
+                                            C12.5 5.2 13.6 4.5 15.1 4.5
+                                            C17.8 4.5 20 6.5 20 9.5
+                                            C20 15.2 13.4 19.7 12 21
+                                            Z
+                                        "
+                                    />
+                                </svg>
+                            </button>
+
+                        </form>
+
+                    @endif
+
+                </div>
+
+
+                <script>
+                    document.addEventListener(
+                        'DOMContentLoaded',
+                        function () {
+
+                            const stock =
+                                {{ (int) $product->stock_quantity }};
+
+                            const displayInput =
+                                document.getElementById(
+                                    'product-quantity-display'
+                                );
+
+                            const cartInput =
+                                document.getElementById(
+                                    'cart-quantity-input'
+                                );
+
+                            const buyNowInput =
+                                document.getElementById(
+                                    'buy-now-quantity-input'
+                                );
+
+                            const decreaseButton =
+                                document.getElementById(
+                                    'quantity-decrease'
+                                );
+
+                            const increaseButton =
+                                document.getElementById(
+                                    'quantity-increase'
+                                );
+
+                            if (
+                                !displayInput
+                                || !cartInput
+                                || !buyNowInput
+                                || !decreaseButton
+                                || !increaseButton
+                            ) {
+                                return;
+                            }
+
+                            let quantity = 1;
+
+                            const syncQuantity = function () {
+
+                                quantity =
+                                    Math.max(
+                                        1,
+                                        Math.min(
+                                            quantity,
+                                            stock
+                                        )
+                                    );
+
+                                displayInput.value =
+                                    quantity;
+
+                                cartInput.value =
+                                    quantity;
+
+                                buyNowInput.value =
+                                    quantity;
+
+                                decreaseButton.disabled =
+                                    quantity <= 1;
+
+                                increaseButton.disabled =
+                                    quantity >= stock;
+                            };
+
+                            decreaseButton.addEventListener(
+                                'click',
+                                function () {
+
+                                    if (quantity > 1) {
+                                        quantity--;
+                                        syncQuantity();
+                                    }
+
+                                }
+                            );
+
+                            increaseButton.addEventListener(
+                                'click',
+                                function () {
+
+                                    if (quantity < stock) {
+                                        quantity++;
+                                        syncQuantity();
+                                    }
+
+                                }
+                            );
+
+                            syncQuantity();
+                        }
+                    );
+                </script>
+
+            @else
+
+                <div class="product-buy-area">
+
                     <button
-                        type="submit"
+                        type="button"
                         class="
                             product-buy-button
                             secondary
                         "
+                        disabled
                     >
-                        🛒 Thêm vào giỏ hàng
+                        🛒 Hết hàng
                     </button>
 
-                </form>
 
+                    @if ($isWishlisted)
 
-                <form
-    method="POST"
-    action="{{
-        route(
-            'checkout.buy-now',
-            $product
-        )
-    }}"
->
+                        <form
+                            method="POST"
+                            action="{{
+                                route(
+                                    'wishlist.destroy',
+                                    $product
+                                )
+                            }}"
+                            class="product-wishlist-form"
+                        >
 
-    @csrf
+                            @csrf
+                            @method('DELETE')
 
-    <input
-        type="hidden"
-        name="quantity"
-        value="1"
-    >
+                            <button
+                                type="submit"
+                                class="
+                                    product-wishlist-button
+                                    active
+                                "
+                                title="Bỏ khỏi yêu thích"
+                                aria-label="Bỏ khỏi yêu thích"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    class="product-wishlist-icon"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="
+                                            M12 21
+                                            C10.6 19.7 4 15.2 4 9.5
+                                            C4 6.5 6.2 4.5 8.9 4.5
+                                            C10.4 4.5 11.5 5.2 12 6
+                                            C12.5 5.2 13.6 4.5 15.1 4.5
+                                            C17.8 4.5 20 6.5 20 9.5
+                                            C20 15.2 13.4 19.7 12 21
+                                            Z
+                                        "
+                                    />
+                                </svg>
+                            </button>
 
-    <button
-        type="submit"
-        class="product-buy-button"
-    >
-        Mua ngay
-    </button>
+                        </form>
 
-</form>
+                    @else
+
+                        <form
+                            method="POST"
+                            action="{{
+                                route(
+                                    'wishlist.store',
+                                    $product
+                                )
+                            }}"
+                            class="product-wishlist-form"
+                        >
+
+                            @csrf
+
+                            <button
+                                type="submit"
+                                class="product-wishlist-button"
+                                title="Thêm vào yêu thích"
+                                aria-label="Thêm vào yêu thích"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    class="product-wishlist-icon"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="
+                                            M12 21
+                                            C10.6 19.7 4 15.2 4 9.5
+                                            C4 6.5 6.2 4.5 8.9 4.5
+                                            C10.4 4.5 11.5 5.2 12 6
+                                            C12.5 5.2 13.6 4.5 15.1 4.5
+                                            C17.8 4.5 20 6.5 20 9.5
+                                            C20 15.2 13.4 19.7 12 21
+                                            Z
+                                        "
+                                    />
+                                </svg>
+                            </button>
+
+                        </form>
+
+                    @endif
+
+                </div>
 
             @endif
-
 
         @else
 
@@ -469,13 +885,39 @@
 
         @endif
 
-
     @endguest
 
+    @if ($product->is_studio_item && $studioQueryKey)
+        <div class="product-studio-callout">
+            <div class="product-studio-callout-icon" aria-hidden="true">
+                🌿
+            </div>
 
+            <div class="product-studio-callout-content">
+                <strong>
+                    Có thể dùng trong MiniGrove Studio
+                </strong>
+
+                <span>
+                    Chọn sẵn sản phẩm này và tiếp tục hoàn thiện Terrarium của bạn.
+                </span>
+            </div>
+
+            <a
+                href="{{
+                    route(
+                        'studio.index',
+                        [$studioQueryKey => $product->id]
+                    )
+                }}"
+                class="product-studio-callout-button"
+            >
+                {{ $studioActionLabel }}
+            </a>
+        </div>
+    @endif
 
 </div>
-
             </div>
 
         </div>

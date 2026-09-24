@@ -8,9 +8,11 @@ use App\Models\Order;
 use App\Models\PaymentSetting;
 
 use App\Services\CheckoutService;
+use App\Services\CustomDesignService;
 use App\Services\VoucherService;
 use App\Services\OrderService;
 use App\Services\OnePayService;
+use App\Services\PayOSService;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +31,8 @@ class CheckoutController extends Controller
      * từ trang giỏ hàng.
      */
     public function prepareCart(
-        Request $request
+        Request $request,
+        CustomDesignService $customDesignService
     ): RedirectResponse {
 
         $validated = $request->validate(
@@ -76,63 +79,94 @@ class CheckoutController extends Controller
                     );
                 }
             )
-            ->where(
-                'item_type',
-                'PRODUCT'
-            )
-            ->with('product')
+            ->with([
+                'product',
+                'customDesign.items.product',
+            ])
             ->get();
 
 
-        if ($items->isEmpty()) {
+        if (
+            $items->isEmpty()
+            || $items->count()
+                !== count(array_unique($validated['selected_items']))
+        ) {
 
             return redirect()
                 ->route('cart.index')
                 ->with(
                     'error',
-                    'Không tìm thấy sản phẩm hợp lệ để mua.'
+                    'Giỏ hàng đã thay đổi. Vui lòng chọn lại các mục cần thanh toán.'
                 );
         }
 
 
         /*
         |--------------------------------------------------------------------------
-        | KIỂM TRA PRODUCT + STOCK
+        | KIỂM TRA PRODUCT / CUSTOM DESIGN + STOCK
         |--------------------------------------------------------------------------
         */
 
         foreach ($items as $item) {
+            if ($item->item_type === 'PRODUCT') {
+                $product = $item->product;
 
-            $product = $item->product;
+                if (
+                    !$product
+                    || !$product->is_active
+                ) {
+                    return redirect()
+                        ->route('cart.index')
+                        ->with(
+                            'error',
+                            'Có sản phẩm không còn được bán.'
+                        );
+                }
 
+                if (
+                    $item->quantity < 1
+                    || $item->quantity > $product->stock_quantity
+                ) {
+                    return redirect()
+                        ->route('cart.index')
+                        ->with(
+                            'error',
+                            'Có sản phẩm không còn đủ số lượng tồn kho.'
+                        );
+                }
 
-            if (
-                !$product ||
-                !$product->is_active
-            ) {
-
-                return redirect()
-                    ->route('cart.index')
-                    ->with(
-                        'error',
-                        'Có sản phẩm không còn được bán.'
-                    );
+                continue;
             }
 
-
             if (
-                $item->quantity < 1 ||
-                $item->quantity >
-                $product->stock_quantity
+                $item->item_type === 'CUSTOM_DESIGN'
+                && $item->customDesign
+                && $item->customDesign->user_id === $request->user()->id
             ) {
-
-                return redirect()
-                    ->route('cart.index')
-                    ->with(
-                        'error',
-                        'Có sản phẩm không còn đủ số lượng tồn kho.'
+                try {
+                    $customDesignService->recalculate(
+                        $item->customDesign
                     );
+                } catch (ValidationException $exception) {
+                    return redirect()
+                        ->route('cart.index')
+                        ->with(
+                            'error',
+                            $exception->validator
+                                ->errors()
+                                ->first()
+                        );
+                }
+
+                continue;
             }
+
+            return redirect()
+                ->route('cart.index')
+                ->with(
+                    'error',
+                    'Có mục trong giỏ hàng không hợp lệ.'
+                );
         }
 
 
@@ -648,6 +682,76 @@ $paymentSettings =
 
         /*
         |--------------------------------------------------------------------------
+        | VOUCHER ĐÃ LƯU CỦA CUSTOMER
+        |--------------------------------------------------------------------------
+        |
+        | Hiển thị trong dropdown ở ô Voucher.
+        | Mỗi Voucher vẫn được kiểm tra lại theo
+        | subtotal hiện tại trước khi cho chọn.
+        |
+        */
+
+        $savedVouchers = $request->user()
+            ->savedVouchers()
+            ->orderByPivot(
+                'created_at',
+                'desc'
+            )
+            ->get();
+
+        $savedVouchers->each(
+            function ($voucher) use (
+                $request,
+                $voucherService,
+                $subtotal
+            ) {
+                try {
+                    $result = $voucherService
+                        ->validateAndCalculate(
+                            $request->user(),
+                            $voucher->code,
+                            $subtotal
+                        );
+
+                    $voucher->setAttribute(
+                        'checkout_eligible',
+                        true
+                    );
+
+                    $voucher->setAttribute(
+                        'checkout_discount_amount',
+                        $result['discount_amount']
+                    );
+
+                    $voucher->setAttribute(
+                        'checkout_error',
+                        null
+                    );
+                } catch (
+                    ValidationException $exception
+                ) {
+                    $voucher->setAttribute(
+                        'checkout_eligible',
+                        false
+                    );
+
+                    $voucher->setAttribute(
+                        'checkout_discount_amount',
+                        0
+                    );
+
+                    $voucher->setAttribute(
+                        'checkout_error',
+                        $exception->validator
+                            ->errors()
+                            ->first()
+                    );
+                }
+            }
+        );
+
+        /*
+        |--------------------------------------------------------------------------
         | VIEW
         |--------------------------------------------------------------------------
         */
@@ -665,7 +769,8 @@ $paymentSettings =
     'shippingFee',
     'total',
     'voucherError',
-    'paymentSettings'
+    'paymentSettings',
+    'savedVouchers'
             )
         );
     }
@@ -793,7 +898,8 @@ $paymentSettings =
 public function placeOrder(
     Request $request,
     OrderService $orderService,
-    OnePayService $onePayService
+    OnePayService $onePayService,
+    PayOSService $payOSService
 ): RedirectResponse {
 
     $validated = $request->validate(
@@ -852,6 +958,19 @@ if (
         ->with(
             'error',
             'Phương thức thanh toán này hiện không khả dụng. Vui lòng chọn phương thức khác.'
+        );
+}
+
+if (
+    $validated['payment_method'] === 'QR'
+    && !$payOSService->configured()
+) {
+    return redirect()
+        ->route('checkout.index')
+        ->withInput()
+        ->with(
+            'error',
+            'PayOS chưa được cấu hình. Vui lòng liên hệ Admin hoặc chọn phương thức thanh toán khác.'
         );
 }
 
@@ -986,12 +1105,28 @@ session()->forget([
 if (
     $order->payment_method === 'QR'
 ) {
+    try {
+        $checkoutUrl =
+            $payOSService->createCheckoutUrl(
+                $order
+            );
 
-    return redirect()
-        ->route(
-            'checkout.qr',
-            $order
+        return redirect()->away(
+            $checkoutUrl
         );
+    } catch (\Throwable $e) {
+        report($e);
+
+        return redirect()
+            ->route(
+                'checkout.qr',
+                $order
+            )
+            ->with(
+                'error',
+                'Chưa thể mở PayOS. Vui lòng thử lại từ trang thanh toán.'
+            );
+    }
 }
 
 
@@ -1031,7 +1166,7 @@ public function success(
     /*
      * Với QR:
      * chỉ được vào trang thành công
-     * sau khi Casso đã xác nhận Paid.
+     * sau khi PayOS đã xác nhận Paid.
      */
     if (
         $order->payment_method === 'QR'
@@ -1065,8 +1200,9 @@ public function success(
  */
 public function qr(
     Request $request,
-    Order $order
-): View {
+    Order $order,
+    PayOSService $payOSService
+): View|RedirectResponse {
 
     /*
      * Không được xem Order của người khác.
@@ -1087,11 +1223,45 @@ public function qr(
         404
     );
 
+    /*
+     * Nếu PayOS đã xác nhận trước lúc Customer
+     * mở/làm mới trang QR thì chuyển thẳng
+     * sang trang thanh toán thành công.
+     */
+    if ($order->payment_status === 'paid') {
+        return redirect()->route(
+            'checkout.success',
+            $order
+        );
+    }
+
 
     $payment =
         $order->payments()
             ->latest('id')
             ->firstOrFail();
+
+    /*
+     * Nếu Order cũ/chưa tạo được link PayOS,
+     * thử tạo lại khi Customer mở trang dự phòng.
+     */
+    if (
+        $payment->status !== 'paid'
+        && blank(
+            $payment->provider_checkout_url
+        )
+        && $payOSService->configured()
+    ) {
+        try {
+            $payOSService->createCheckoutUrl(
+                $order
+            );
+
+            $payment->refresh();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
 
 
     return view(
@@ -1102,11 +1272,88 @@ public function qr(
         )
     );
 }
+
+/**
+ * PayOS chuyển trình duyệt Customer về đây
+ * sau khi hoàn tất thanh toán.
+ *
+ * Query string từ trình duyệt không được dùng
+ * để tự đánh dấu Paid. MiniGrove luôn hỏi lại
+ * API PayOS trước khi xác nhận.
+ */
+public function payOSReturn(
+    Request $request,
+    Order $order,
+    PayOSService $payOSService
+): RedirectResponse {
+    abort_unless(
+        $order->user_id
+            === $request->user()->id,
+        403
+    );
+
+    abort_unless(
+        $order->payment_method === 'QR',
+        404
+    );
+
+    try {
+        $payOSService->syncOrderStatus(
+            $order
+        );
+    } catch (\Throwable $e) {
+        report($e);
+    }
+
+    $order->refresh();
+
+    if ($order->payment_status === 'paid') {
+        return redirect()->route(
+            'checkout.success',
+            $order
+        );
+    }
+
+    return redirect()
+        ->route('checkout.qr', $order)
+        ->with(
+            'error',
+            'PayOS chưa xác nhận thanh toán. Hệ thống sẽ tiếp tục kiểm tra tự động.'
+        );
+}
+
+/**
+ * Customer hủy/thoát PayOS.
+ * Order vẫn giữ Pending để có thể thanh toán lại.
+ */
+public function payOSCancel(
+    Request $request,
+    Order $order
+): RedirectResponse {
+    abort_unless(
+        $order->user_id
+            === $request->user()->id,
+        403
+    );
+
+    abort_unless(
+        $order->payment_method === 'QR',
+        404
+    );
+
+    return redirect()
+        ->route('checkout.qr', $order)
+        ->with(
+            'error',
+            'Bạn đã rời PayOS. Đơn hàng vẫn đang chờ thanh toán.'
+        );
+}
+
 /**
  * Kiểm tra trạng thái thanh toán QR.
  *
  * Được trang QR gọi định kỳ để biết
- * Casso Webhook đã xác nhận thanh toán hay chưa.
+ * PayOS Webhook đã xác nhận thanh toán hay chưa.
  */
 public function qrStatus(
     Request $request,
@@ -1131,6 +1378,13 @@ public function qrStatus(
         $order->payment_method === 'QR',
         404
     );
+
+    /*
+     * Luôn đọc lại trạng thái mới nhất từ DB.
+     * Webhook PayOS có thể cập nhật Order
+     * giữa hai lần polling của trình duyệt.
+     */
+    $order->refresh();
 
 
     /*

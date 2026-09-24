@@ -1,32 +1,146 @@
 @extends('layouts.customer')
 
-
 @section(
     'title',
-    'Thanh toán QR - MiniGrove'
+    'Thanh toán PayOS - MiniGrove'
 )
 
-
 @push('styles')
-
 <link
     rel="stylesheet"
     href="{{ asset('css/checkout.css') }}"
 >
 
+<style>
+    .payos-fallback {
+        max-width: 760px;
+        margin: 0 auto;
+    }
+
+    .payos-card {
+        padding: 34px;
+        border: 1px solid #dce6e0;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 14px 36px rgba(20, 72, 50, .08);
+    }
+
+    .payos-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+        color: #155b3b;
+        font-size: 24px;
+        font-weight: 800;
+    }
+
+    .payos-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 11px;
+        border-radius: 999px;
+        background: #fff4d8;
+        color: #8a6517;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .payos-info {
+        margin: 22px 0;
+        border-top: 1px solid #e2e9e5;
+    }
+
+    .payos-info-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 14px 0;
+        border-bottom: 1px solid #e2e9e5;
+    }
+
+    .payos-info-row span {
+        color: #738078;
+    }
+
+    .payos-info-row strong {
+        color: #163f2e;
+        text-align: right;
+    }
+
+    .payos-amount {
+        font-size: 22px;
+        color: #b64d32 !important;
+    }
+
+    .payos-note {
+        margin: 20px 0;
+        padding: 14px 16px;
+        border-radius: 10px;
+        background: #eaf4ed;
+        color: #245a3e;
+        line-height: 1.6;
+    }
+
+    .payos-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .payos-button {
+        min-height: 46px;
+        padding: 0 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #185b3d;
+        border-radius: 9px;
+        background: #185b3d;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .payos-button-secondary {
+        background: #fff;
+        color: #185b3d;
+    }
+
+    .payos-error {
+        margin-bottom: 18px;
+        padding: 12px 14px;
+        border: 1px solid #efc9bf;
+        border-radius: 9px;
+        background: #fff5f2;
+        color: #9a3f2c;
+    }
+
+    @media (max-width: 640px) {
+        .payos-card {
+            padding: 22px;
+        }
+
+        .payos-info-row {
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .payos-info-row strong {
+            text-align: left;
+        }
+
+        .payos-button {
+            width: 100%;
+        }
+    }
+</style>
 @endpush
 
-
 @section('content')
-
 <section class="checkout-page">
-
     <div class="customer-container">
-
-
-        {{-- =====================================================
-             BACK
-        ====================================================== --}}
 
         <a
             href="{{ route('home') }}"
@@ -35,486 +149,188 @@
             ← Về trang chủ
         </a>
 
+        <div class="payos-fallback">
+            <div class="payos-card">
 
-        {{-- =====================================================
-             QR PAYMENT
-        ====================================================== --}}
+                <div class="payos-brand">
+                    <span aria-hidden="true">▣</span>
+                    Thanh toán QR qua PayOS
+                </div>
 
-        <div class="checkout-qr-page">
+                <div class="payos-badge">
+                    <span aria-hidden="true">●</span>
+                    Đang chờ PayOS xác nhận
+                </div>
 
-
-            {{-- LEFT --}}
-            <div class="checkout-qr-main">
-
-
-                <div class="checkout-qr-heading">
-
-                    <div class="checkout-qr-heading-icon">
-                        ◈
+                @if (session('error'))
+                    <div class="payos-error">
+                        {{ session('error') }}
                     </div>
+                @endif
 
-
-                    <div>
-
-                        <h1>
-                            Thanh toán QR
-                        </h1>
-
-                        <p>
-                            Quét mã QR hoặc chuyển khoản theo đúng
-                            thông tin của đơn hàng bên dưới.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                {{-- =================================================
-                     VIETQR
-                ================================================== --}}
-
-                @php
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | BANK CODE
-                    |--------------------------------------------------------------------------
-                    |
-                    | MiniGrove hiện đang cấu hình MB Bank.
-                    | VietQR sử dụng mã ngân hàng MB.
-                    |
-                    */
-
-                    $bankCode = 'MB';
-
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | QR DATA
-                    |--------------------------------------------------------------------------
-                    */
-
-                    $qrAmount =
-                        (int) round(
-                            (float) $payment->amount
-                        );
-
-
-                    $qrContent =
-                        $payment->transfer_content
-                        ?: (
-                            'MINIGROVE '
-                            . $order->order_code
-                        );
-
-
-                    $qrAccountName =
-                        $payment->account_name
-                        ?: 'MINIGROVE';
-
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | VIETQR URL
-                    |--------------------------------------------------------------------------
-                    */
-
-                    $qrUrl =
-                        'https://img.vietqr.io/image/'
-                        . $bankCode
-                        . '-'
-                        . $payment->account_number
-                        . '-compact2.png'
-                        . '?amount='
-                        . $qrAmount
-                        . '&addInfo='
-                        . urlencode($qrContent)
-                        . '&accountName='
-                        . urlencode($qrAccountName);
-
-                @endphp
-
-
-                <div class="checkout-qr-code-area">
-
-                    <div class="checkout-qr-real">
-
-                        <img
-                            src="{{ $qrUrl }}"
-                            alt="QR thanh toán đơn {{ $order->order_code }}"
-                            class="checkout-qr-real-image"
-                        >
-
-                        <div class="checkout-qr-real-label">
-
-                            Quét QR để thanh toán
-
-                            <strong>
-                                {{
-                                    number_format(
-                                        $payment->amount,
-                                        0,
-                                        ',',
-                                        '.'
-                                    )
-                                }}đ
-                            </strong>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="checkout-qr-instruction">
-
-                    <strong>
-                        Hướng dẫn thanh toán
-                    </strong>
-
-                    <p>
-                        Mở ứng dụng ngân hàng, quét mã QR và kiểm tra
-                        số tiền cùng nội dung chuyển khoản trước khi
-                        xác nhận giao dịch.
-                    </p>
-
-                    <p>
-                        Vui lòng giữ nguyên nội dung chuyển khoản
-                        để MiniGrove đối chiếu đúng đơn hàng.
-                    </p>
-
-                    <p>
-                        Trang này sẽ tự động kiểm tra trạng thái.
-                        Khi Casso xác nhận giao dịch thành công,
-                        MiniGrove sẽ tự chuyển sang trang
-                        <strong>Đặt hàng thành công</strong>.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            {{-- RIGHT --}}
-            <div class="checkout-qr-detail">
-
-
-                <div
-                    class="checkout-qr-status"
-                    id="qrPaymentStatus"
-                >
-
-                    <span
-                        class="checkout-qr-status-dot"
-                        id="qrPaymentStatusDot"
-                    ></span>
-
-                    <span id="qrPaymentStatusText">
-                        @if ($order->payment_status === 'paid')
-                            Đã thanh toán
-                        @else
-                            Đang chờ Casso xác nhận tự động
-                        @endif
-                    </span>
-
-                </div>
-
-
-                <div class="checkout-qr-order-code">
-
-                    <span>
-                        Mã đơn hàng
-                    </span>
-
-                    <strong>
-                        {{ $order->order_code }}
-                    </strong>
-
-                </div>
-
-
-                <div class="checkout-qr-data">
-
-
-                    <div>
-
-                        <span>
-                            Ngân hàng
-                        </span>
-
+                <div class="payos-info">
+                    <div class="payos-info-row">
+                        <span>Mã đơn hàng</span>
                         <strong>
-                            {{
-                                $payment->bank_name
-                                ?: 'Chưa cấu hình'
-                            }}
+                            {{ $order->order_code }}
                         </strong>
-
                     </div>
 
-
-                    <div>
-
-                        <span>
-                            Chủ tài khoản
-                        </span>
-
-                        <strong>
-                            {{
-                                $payment->account_name
-                                ?: 'Chưa cấu hình'
-                            }}
-                        </strong>
-
-                    </div>
-
-
-                    <div>
-
-                        <span>
-                            Số tài khoản
-                        </span>
-
-                        <strong>
-                            {{
-                                $payment->account_number
-                                ?: 'Chưa cấu hình'
-                            }}
-                        </strong>
-
-                    </div>
-
-
-                    <div>
-
-                        <span>
-                            Số tiền
-                        </span>
-
-                        <strong class="checkout-qr-money">
+                    <div class="payos-info-row">
+                        <span>Số tiền</span>
+                        <strong class="payos-amount">
                             {{
                                 number_format(
-                                    $payment->amount,
+                                    (float) $order->total_amount,
                                     0,
                                     ',',
                                     '.'
                                 )
                             }}đ
                         </strong>
-
                     </div>
 
-
-                    <div>
-
-                        <span>
-                            Nội dung chuyển khoản
-                        </span>
-
-                        <strong class="checkout-qr-transfer">
-                            {{
-                                $payment->transfer_content
-                                ?: (
-                                    'MINIGROVE '
-                                    . $order->order_code
-                                )
-                            }}
-                        </strong>
-
+                    <div class="payos-info-row">
+                        <span>Cổng thanh toán</span>
+                        <strong>PayOS</strong>
                     </div>
 
+                    @if ($payment->provider_payment_id)
+                        <div class="payos-info-row">
+                            <span>Payment Link ID</span>
+                            <strong>
+                                {{ $payment->provider_payment_id }}
+                            </strong>
+                        </div>
+                    @endif
                 </div>
-
 
                 <div
-                    class="checkout-qr-warning"
-                    id="qrPaymentNotice"
+                    class="payos-note"
+                    id="payosPaymentNotice"
                 >
-
-                    @if ($order->payment_status === 'paid')
-
-                        Thanh toán đã được hệ thống xác nhận
-                        tự động qua Casso.
-
-                    @else
-
-                        MiniGrove đang chờ Casso Webhook
-                        xác nhận giao dịch.
-                        <strong>
-                            Admin và Staff không xác nhận
-                            thanh toán thủ công.
-                        </strong>
-
-                    @endif
-
+                    PayOS sẽ xác nhận tự động sau khi thanh toán thành công.
+                    Bạn không cần gửi ảnh chuyển khoản hoặc chờ Admin xác nhận thủ công.
                 </div>
 
-
-                <div class="checkout-qr-actions">
-
-                    <a
-                        href="{{ route('products.index') }}"
-                        class="checkout-secondary-button"
-                    >
-                        Tiếp tục mua sắm
-                    </a>
-
+                <div class="payos-actions">
+                    @if ($payment->provider_checkout_url)
+                        <a
+                            href="{{ $payment->provider_checkout_url }}"
+                            class="payos-button"
+                        >
+                            Tiếp tục thanh toán qua PayOS
+                        </a>
+                    @else
+                        <a
+                            href="{{ route('checkout.qr', $order) }}"
+                            class="payos-button"
+                        >
+                            Thử tạo lại PayOS
+                        </a>
+                    @endif
 
                     <a
                         href="{{ route('home') }}"
-                        class="checkout-success-main-button"
+                        class="
+                            payos-button
+                            payos-button-secondary
+                        "
                     >
                         Về trang chủ
                     </a>
-
                 </div>
 
             </div>
-
         </div>
 
     </div>
-
 </section>
+@endsection
 
-
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const statusUrl =
+        @json(route('checkout.qr.status', $order));
 
-    const statusUrl = @json(
-        route(
-            'checkout.qr.status',
-            $order
-        )
-    );
-
-    const initialPaid = @json(
-        $order->payment_status === 'paid'
-    );
-
-    const statusText =
-        document.getElementById(
-            'qrPaymentStatusText'
-        );
+    const successUrl =
+        @json(route('checkout.success', $order));
 
     const notice =
         document.getElementById(
-            'qrPaymentNotice'
+            'payosPaymentNotice'
         );
 
-    let isRedirecting = false;
-
-
-    function goToSuccess(url) {
-
-        if (isRedirecting) {
-            return;
-        }
-
-        isRedirecting = true;
-
-        if (statusText) {
-            statusText.textContent =
-                'Đã thanh toán - đang chuyển trang...';
-        }
-
-        if (notice) {
-            notice.innerHTML =
-                'Casso đã xác nhận giao dịch thành công. '
-                + '<strong>MiniGrove đang chuyển tới trang '
-                + 'Đặt hàng thành công.</strong>';
-        }
-
-        window.setTimeout(
-            function () {
-                window.location.href = url;
-            },
-            700
-        );
-    }
-
+    let redirecting = false;
 
     async function checkPaymentStatus() {
-
-        if (isRedirecting) {
+        if (redirecting) {
             return;
         }
 
         try {
-
-            const response =
-                await fetch(
-                    statusUrl,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'Accept':
-                                'application/json'
-                        },
-                        credentials:
-                            'same-origin',
-                        cache:
-                            'no-store'
-                    }
-                );
-
+            const response = await fetch(
+                statusUrl,
+                {
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                }
+            );
 
             if (!response.ok) {
                 return;
             }
 
+            const data = await response.json();
 
-            const data =
-                await response.json();
+            if (data.paid) {
+                redirecting = true;
 
+                if (notice) {
+                    notice.textContent =
+                        'PayOS đã xác nhận thanh toán. Đang chuyển sang trang thành công...';
+                }
 
-            if (
-                data.success
-                &&
-                data.paid
-                &&
-                data.success_url
-            ) {
-                goToSuccess(
-                    data.success_url
+                window.location.replace(
+                    data.success_url || successUrl
                 );
             }
-
         } catch (error) {
-
-            /*
-             * Nếu mất mạng tạm thời,
-             * giữ trang QR và thử lại ở lần polling sau.
-             */
-
+            // Giữ trang chờ nếu mạng tạm thời lỗi.
         }
     }
 
-
-    if (initialPaid) {
-
-        checkPaymentStatus();
-
-        return;
-    }
-
-
-    /*
-     * Kiểm tra ngay khi trang vừa mở.
-     */
     checkPaymentStatus();
 
-
-    /*
-     * Sau đó kiểm tra mỗi 3 giây.
-     */
-    window.setInterval(
+    const timer = window.setInterval(
         checkPaymentStatus,
-        3000
+        2000
     );
 
+    window.addEventListener(
+        'focus',
+        checkPaymentStatus
+    );
+
+    document.addEventListener(
+        'visibilitychange',
+        function () {
+            if (!document.hidden) {
+                checkPaymentStatus();
+            }
+        }
+    );
+
+    window.addEventListener(
+        'beforeunload',
+        function () {
+            window.clearInterval(timer);
+        }
+    );
 });
 </script>
-
-@endsection
+@endpush

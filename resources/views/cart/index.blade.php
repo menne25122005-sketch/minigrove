@@ -30,6 +30,14 @@
         }
     );
 
+    $designItems = $cart->items->filter(
+        function ($item) {
+            return
+                $item->item_type === 'CUSTOM_DESIGN'
+                && $item->customDesign;
+        }
+    );
+
 
     /*
      * Những CartItem Customer đã chọn
@@ -66,7 +74,7 @@
         </div>
 
 
-        @if ($productItems->isEmpty())
+        @if ($productItems->isEmpty() && $designItems->isEmpty())
 
 
             {{-- EMPTY CART --}}
@@ -183,6 +191,22 @@
     }}"
     data-quantity="{{
         $item->quantity
+    }}"
+    data-item-type="product"
+    data-product-id="{{ $product->id }}"
+    data-wishlisted="{{
+        in_array(
+            $product->id,
+            $wishlistProductIds ?? []
+        )
+            ? '1'
+            : '0'
+    }}"
+    data-wishlist-url="{{
+        route(
+            'wishlist.store',
+            $product
+        )
     }}"
     @checked(
         in_array(
@@ -424,6 +448,99 @@
 
                 @endforeach
 
+                @foreach ($designItems as $item)
+                    @php
+                        $design = $item->customDesign;
+                    @endphp
+
+                    <div class="cart-item-row">
+                        <div class="cart-checkbox-cell">
+                            <input
+                                type="checkbox"
+                                class="cart-checkbox cart-item-checkbox"
+                                value="{{ $item->id }}"
+                                data-subtotal="{{ (float) $item->subtotal }}"
+                                data-quantity="1"
+                                data-item-type="custom-design"
+                                @disabled(!empty($item->availability_error))
+                                @checked(
+                                    in_array(
+                                        $item->id,
+                                        $selectedCartItemIds
+                                    )
+                                )
+                            >
+                        </div>
+
+                        <div class="cart-product">
+                            <div class="cart-product-image">
+                                <div class="cart-product-no-image">🌿</div>
+                            </div>
+
+                            <div class="cart-product-info">
+                                <div class="cart-product-category">
+                                    MiniGrove Studio
+                                </div>
+
+                                <a
+                                    href="{{ route('designs.edit', $design) }}"
+                                    class="cart-product-name"
+                                >
+                                    {{ $design->name }}
+                                </a>
+
+                                <div class="cart-product-stock">
+                                    {{ $design->design_code }}
+                                    · {{ ucfirst($design->style) }}
+                                </div>
+
+                                @if (!empty($item->availability_error))
+                                    <div class="cart-product-stock">
+                                        {{ $item->availability_error }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="cart-price cart-center">
+                            @if (!empty($item->availability_error))
+                                —
+                            @else
+                                {{ number_format((float) $item->unit_price, 0, ',', '.') }}đ
+                            @endif
+                        </div>
+
+                        <div class="cart-center">
+                            1
+                        </div>
+
+                        <div class="cart-subtotal cart-center">
+                            @if (!empty($item->availability_error))
+                                —
+                            @else
+                                {{ number_format((float) $item->subtotal, 0, ',', '.') }}đ
+                            @endif
+                        </div>
+
+                        <div class="cart-center">
+                            <form
+                                method="POST"
+                                action="{{ route('cart.destroy', $item) }}"
+                            >
+                                @csrf
+                                @method('DELETE')
+
+                                <button
+                                    type="submit"
+                                    class="cart-delete-button"
+                                >
+                                    Xóa
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
+
             </div>
 
 
@@ -495,11 +612,9 @@
                             cart-bottom-action
                             cart-save-wishlist
                         "
+                        id="saveWishlistButton"
                         disabled
-                        title="
-                            Chức năng Wishlist
-                            sẽ được nối ở bước sau.
-                        "
+                        title="Chọn sản phẩm để lưu vào mục đã thích."
                     >
                         ♡ Lưu vào mục đã thích
                     </button>

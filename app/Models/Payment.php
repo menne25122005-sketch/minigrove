@@ -12,10 +12,13 @@ class Payment extends Model
     protected $fillable = [
         'order_id',
         'payment_method',
+        'payment_provider',
         'amount',
         'status',
         'transaction_code',
         'casso_transaction_id',
+        'provider_payment_id',
+        'provider_checkout_url',
         'bank_name',
         'account_name',
         'account_number',

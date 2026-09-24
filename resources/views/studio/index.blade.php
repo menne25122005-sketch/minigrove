@@ -11,7 +11,7 @@
     >
 
     <title>
-        MiniGrove Studio
+        Thiết kế của bạn - MiniGrove
     </title>
 
 
@@ -367,6 +367,304 @@
         }
 
 
+
+        /* =========================================================
+           THIẾT KẾ CỦA BẠN + TÌM SẢN PHẨM
+        ========================================================= */
+
+        .studio-builder-form {
+            display:grid;
+            grid-template-columns:minmax(0, 1fr) 330px;
+            gap:22px;
+            align-items:start;
+        }
+
+        .studio-builder-form > .studio-section,
+        .studio-builder-form > .studio-submit {
+            grid-column:1;
+        }
+
+        .studio-design-summary {
+            grid-column:2;
+            /*
+             * 6 bước chính, trong đó bước 2 tách 2A + 2B
+             * => tổng cộng 7 khối lựa chọn.
+             * Chỉ span tới hết bước 6 để không tạo hàng rỗng
+             * và kéo trang xuống quá dài.
+             */
+            grid-row:1 / span 7;
+            position:sticky;
+            top:22px;
+            padding:20px;
+            border:1px solid #d9e4de;
+            border-radius:16px;
+            background:#ffffff;
+            box-shadow:0 10px 28px rgba(24, 72, 51, .08);
+        }
+
+        .studio-design-summary h2 {
+            margin:0 0 6px;
+            color:#174d37;
+            font-size:21px;
+        }
+
+        .studio-design-summary > p {
+            margin:0 0 16px;
+            color:#69746c;
+            font-size:13px;
+            line-height:1.55;
+        }
+
+        .studio-summary-list {
+            display:grid;
+            border-top:1px solid #edf2ef;
+        }
+
+        .studio-summary-row {
+            display:grid;
+            grid-template-columns:82px minmax(0, 1fr);
+            gap:10px;
+            padding:11px 0;
+            border-bottom:1px solid #edf2ef;
+        }
+
+        .studio-summary-label {
+            color:#7b8780;
+            font-size:12px;
+        }
+
+        .studio-summary-value {
+            min-width:0;
+            color:#23372e;
+            font-size:13px;
+            font-weight:700;
+            text-align:right;
+        }
+
+        .studio-summary-empty {
+            color:#9aa39e;
+            font-weight:500;
+        }
+
+        .studio-summary-total {
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-end;
+            gap:12px;
+            margin-top:17px;
+            padding-top:16px;
+        }
+
+        .studio-summary-total span {
+            color:#69746c;
+            font-size:13px;
+        }
+
+        .studio-summary-total strong {
+            color:#b34e38;
+            font-size:22px;
+        }
+
+        .studio-summary-preview,
+        .preview-button {
+            width:100%;
+            min-height:46px;
+            margin-top:16px;
+            padding:0 18px;
+            border:0;
+            border-radius:9px;
+            background:#174d37;
+            color:#ffffff;
+            font-family:inherit;
+            font-size:14px;
+            font-weight:700;
+            cursor:pointer;
+            transition:.2s;
+        }
+
+        .studio-summary-preview:hover,
+        .preview-button:hover {
+            background:#216548;
+        }
+
+        .studio-preview-validation {
+            display:none;
+            margin:14px 0 0;
+            padding:12px 13px;
+            border:1px solid #efc9bf;
+            border-radius:9px;
+            background:#fff5f2;
+            color:#9a3f2c;
+            font-size:12px;
+            line-height:1.55;
+        }
+
+        .studio-preview-validation.is-visible {
+            display:block;
+        }
+
+        .studio-submit {
+            /* Giữ markup cũ để không mất logic form,
+               nhưng giao diện mới chỉ dùng nút trong bảng tóm tắt. */
+            display:none;
+            margin-top:2px;
+        }
+
+        .preview-button {
+            width:auto;
+            min-width:220px;
+            margin-top:0;
+        }
+
+        .studio-search-toolbar {
+            display:flex;
+            align-items:center;
+            gap:10px;
+            margin:14px 0 16px;
+        }
+
+        .studio-search-wrap {
+            position:relative;
+            flex:1;
+            min-width:0;
+        }
+
+        .studio-search-wrap span {
+            position:absolute;
+            left:12px;
+            top:50%;
+            transform:translateY(-50%);
+            pointer-events:none;
+        }
+
+        .studio-search-input {
+            width:100%;
+            height:42px;
+            padding:0 13px 0 37px;
+            border:1px solid #d7e1dc;
+            border-radius:9px;
+            background:#fff;
+            color:#23372e;
+            font-family:inherit;
+            outline:none;
+        }
+
+        .studio-search-input:focus {
+            border-color:#2f7a57;
+            box-shadow:0 0 0 3px rgba(47, 122, 87, .09);
+        }
+
+        .studio-show-all {
+            height:42px;
+            padding:0 13px;
+            border:1px solid #cfe0d5;
+            border-radius:9px;
+            background:#f2f8f4;
+            color:#174d37;
+            font-family:inherit;
+            font-size:12px;
+            font-weight:700;
+            cursor:pointer;
+            white-space:nowrap;
+        }
+
+        .studio-products-page-link {
+            height:42px;
+            padding:0 13px;
+
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+
+            border:1px solid #174d37;
+            border-radius:9px;
+
+            background:#ffffff;
+            color:#174d37;
+
+            text-decoration:none;
+            font-size:12px;
+            font-weight:700;
+            white-space:nowrap;
+
+            transition:.2s;
+        }
+
+        .studio-products-page-link:hover {
+            background:#174d37;
+            color:#ffffff;
+        }
+
+        .studio-search-empty {
+            display:none;
+            padding:14px;
+            border:1px dashed #cfdad4;
+            border-radius:9px;
+            color:#7a857f;
+            text-align:center;
+            font-size:13px;
+        }
+
+        .studio-home-link {
+            display:inline-flex;
+            align-items:center;
+            gap:7px;
+
+            margin-bottom:18px;
+
+            color:#174d37;
+            text-decoration:none;
+
+            font-size:14px;
+            font-weight:700;
+
+            transition:
+                color .2s ease,
+                transform .2s ease;
+        }
+
+        .studio-home-link:hover {
+            color:#216548;
+            transform:translateX(-2px);
+        }
+
+        .studio-home-link:focus-visible {
+            outline:2px solid currentColor;
+            outline-offset:4px;
+            border-radius:4px;
+        }
+
+        @media (max-width:1050px) {
+            .studio-builder-form {
+                grid-template-columns:1fr;
+            }
+
+            .studio-builder-form > .studio-section,
+            .studio-builder-form > .studio-submit,
+            .studio-design-summary {
+                grid-column:1;
+            }
+
+            .studio-design-summary {
+                grid-row:auto;
+                position:static;
+                order:-1;
+            }
+        }
+
+        @media (max-width:640px) {
+            .studio-search-toolbar {
+                align-items:stretch;
+                flex-direction:column;
+            }
+
+            .studio-show-all,
+            .studio-products-page-link,
+            .preview-button {
+                width:100%;
+            }
+        }
+
     </style>
 
 
@@ -395,7 +693,7 @@
 
 
         <div>
-            MiniGrove Studio
+            Thiết kế của bạn
         </div>
 
 
@@ -409,10 +707,19 @@
 <main class="studio-container">
 
 
+<a
+    href="{{ route('home') }}"
+    class="studio-home-link"
+>
+    <span aria-hidden="true">←</span>
+    Quay lại trang chủ
+</a>
+
+
 <div class="studio-title">
 
     <h1>
-        MiniGrove Studio
+        Thiết kế của bạn
     </h1>
 
 
@@ -453,9 +760,88 @@
 <form
     action="{{ route('studio.preview') }}"
     method="POST"
+    class="studio-builder-form"
 >
 
 @csrf
+
+@if ($editingDesign)
+    <input
+        type="hidden"
+        name="design_id"
+        value="{{ $editingDesign->id }}"
+    >
+@endif
+
+@php
+    $studioProductMeta = $products
+        ->mapWithKeys(function ($product) {
+            return [
+                (string) $product->id => [
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'type' => $product->product_type,
+                    'ecosystem' => $product->ecosystem_type,
+                    'price' => (float) (
+                        $product->sale_price
+                        ?? $product->list_price
+                    ),
+                ],
+            ];
+        })
+        ->all();
+@endphp
+
+<aside class="studio-design-summary" aria-live="polite">
+    <h2>Thiết kế của bạn</h2>
+
+    <p>
+        Theo dõi các lựa chọn và giá tạm tính trong lúc bạn thiết kế Terrarium.
+    </p>
+
+    <div class="studio-summary-list">
+        @foreach ([
+            'container_id' => 'Bình',
+            'plant_id' => 'Cây',
+            'moss_id' => 'Rêu',
+            'substrate_id' => 'Nền',
+            'stone_id' => 'Đá',
+            'accessory_id' => 'Phụ kiện',
+            'style' => 'Phong cách',
+        ] as $field => $label)
+            <div class="studio-summary-row">
+                <span class="studio-summary-label">
+                    {{ $label }}
+                </span>
+
+                <span
+                    class="studio-summary-value studio-summary-empty"
+                    data-summary-field="{{ $field }}"
+                >
+                    Chưa chọn
+                </span>
+            </div>
+        @endforeach
+    </div>
+
+    <div class="studio-summary-total">
+        <span>Tạm tính</span>
+        <strong data-studio-total>0đ</strong>
+    </div>
+
+    <button
+        type="submit"
+        class="studio-summary-preview"
+    >
+        Kiểm tra & Xem Preview
+    </button>
+
+    <div
+        class="studio-preview-validation"
+        data-preview-validation
+        role="alert"
+    ></div>
+</aside>
 
 
 
@@ -522,7 +908,10 @@ id="container_{{ $product->id }}"
 value="{{ $product->id }}"
 
 @checked(
-    old('container_id')
+    old(
+        'container_id',
+        $defaults['container_id'] ?? null
+    )
     ==
     $product->id
 )
@@ -657,7 +1046,7 @@ Còn
 
 
 <h2>
-    2. Chọn cây
+    2A. Chọn cây
 </h2>
 
 
@@ -683,7 +1072,12 @@ name="plant_id"
 
 value=""
 
-@checked(!old('plant_id'))
+@checked(
+    !old(
+        'plant_id',
+        $defaults['plant_id'] ?? null
+    )
+)
 
 >
 
@@ -738,7 +1132,10 @@ id="plant_{{ $product->id }}"
 value="{{ $product->id }}"
 
 @checked(
-    old('plant_id')
+    old(
+        'plant_id',
+        $defaults['plant_id'] ?? null
+    )
     ==
     $product->id
 )
@@ -888,7 +1285,7 @@ Còn
 
 <h2>
 
-3. Chọn rêu
+2B. Chọn rêu
 
 </h2>
 
@@ -908,7 +1305,12 @@ name="moss_id"
 
 value=""
 
-@checked(!old('moss_id'))
+@checked(
+    !old(
+        'moss_id',
+        $defaults['moss_id'] ?? null
+    )
+)
 
 >
 
@@ -979,7 +1381,7 @@ Không chọn rêu
 
 <h2>
 
-4. Chọn nền / giá thể
+3. Chọn nền / giá thể
 
 <span class="required">*</span>
 
@@ -1043,7 +1445,7 @@ Không chọn rêu
 
 <h2>
 
-5. Chọn đá
+4. Chọn đá
 
 </h2>
 
@@ -1064,7 +1466,12 @@ name="stone_id"
 
 value=""
 
-@checked(!old('stone_id'))
+@checked(
+    !old(
+        'stone_id',
+        $defaults['stone_id'] ?? null
+    )
+)
 
 >
 
@@ -1136,7 +1543,7 @@ Không chọn đá
 
 <h2>
 
-6. Chọn phụ kiện
+5. Chọn phụ kiện
 
 </h2>
 
@@ -1157,7 +1564,12 @@ name="accessory_id"
 
 value=""
 
-@checked(!old('accessory_id'))
+@checked(
+    !old(
+        'accessory_id',
+        $defaults['accessory_id'] ?? null
+    )
+)
 
 >
 
@@ -1228,7 +1640,7 @@ Không chọn phụ kiện
 
 <h2>
 
-7. Chọn phong cách
+6. Chọn phong cách
 
 <span class="required">*</span>
 
@@ -1284,7 +1696,10 @@ id="style_{{ $value }}"
 value="{{ $value }}"
 
 @checked(
-    old('style') === $value
+    old(
+        'style',
+        $defaults['style'] ?? null
+    ) === $value
 )
 
 >
@@ -1354,6 +1769,321 @@ Kiểm tra & Xem Preview
 </form>
 
 
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const productMeta = @json($studioProductMeta);
+    const productsIndexUrl = @json(route('products.index'));
+
+    const pickerConfigs = [
+        { field: 'container_id', label: 'bình', type: 'container' },
+        { field: 'plant_id', label: 'cây', type: 'plant' },
+        { field: 'moss_id', label: 'rêu', type: 'moss' },
+        { field: 'substrate_id', label: 'nền', type: 'substrate' },
+        { field: 'stone_id', label: 'đá', type: 'stone' },
+        { field: 'accessory_id', label: 'phụ kiện', type: 'accessory' },
+    ];
+
+    const formatMoney = function (value) {
+        return new Intl.NumberFormat('vi-VN')
+            .format(Math.round(value)) + 'đ';
+    };
+
+    const setupPicker = function (config) {
+        const firstRadio = document.querySelector(
+            'input[name="' + config.field + '"]'
+        );
+
+        if (!firstRadio) {
+            return;
+        }
+
+        const section = firstRadio.closest('.studio-section');
+        const grid = section?.querySelector('.product-grid');
+
+        if (!section || !grid) {
+            return;
+        }
+
+        const options = Array.from(
+            grid.querySelectorAll('.product-option')
+        );
+
+        if (!options.length) {
+            return;
+        }
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'studio-search-toolbar';
+        toolbar.innerHTML =
+            '<div class="studio-search-wrap">'
+            + '<span aria-hidden="true">🔍</span>'
+            + '<input type="search" class="studio-search-input" '
+            + 'placeholder="Tìm ' + config.label + '..." '
+            + 'aria-label="Tìm ' + config.label + '">'
+            + '</div>'
+            + '<button type="button" class="studio-show-all">'
+            + 'Xem tất cả ' + config.label
+            + '</button>'
+            + '<a class="studio-products-page-link" href="'
+            + productsIndexUrl
+            + '?type=' + encodeURIComponent(config.type)
+            + '">Trang sản phẩm →</a>';
+
+        const empty = document.createElement('div');
+        empty.className = 'studio-search-empty';
+        empty.textContent =
+            'Không tìm thấy ' + config.label + ' phù hợp.';
+
+        grid.before(toolbar);
+        grid.after(empty);
+
+        const searchInput =
+            toolbar.querySelector('.studio-search-input');
+        const toggleButton =
+            toolbar.querySelector('.studio-show-all');
+
+        let expanded = false;
+        const initialLimit = 4;
+
+        if (options.length <= initialLimit) {
+            toggleButton.style.display = 'none';
+        }
+
+        const render = function () {
+            const keyword = searchInput.value
+                .trim()
+                .toLocaleLowerCase('vi');
+
+            let visibleIndex = 0;
+            let visibleCount = 0;
+
+            options.forEach(function (option) {
+                const text = option.textContent
+                    .toLocaleLowerCase('vi');
+                const radio = option.querySelector(
+                    'input[type="radio"]'
+                );
+                const isSelected = Boolean(radio?.checked);
+                const matches =
+                    keyword === ''
+                    || text.includes(keyword);
+
+                const withinLimit =
+                    expanded
+                    || keyword !== ''
+                    || visibleIndex < initialLimit
+                    || isSelected;
+
+                const visible = matches && withinLimit;
+
+                option.style.display = visible ? '' : 'none';
+
+                if (matches) {
+                    visibleIndex++;
+                }
+
+                if (visible) {
+                    visibleCount++;
+                }
+            });
+
+            empty.style.display =
+                visibleCount > 0 ? 'none' : 'block';
+
+            toggleButton.textContent = expanded
+                ? 'Thu gọn'
+                : 'Xem tất cả ' + config.label;
+        };
+
+        searchInput.addEventListener('input', render);
+
+        toggleButton.addEventListener('click', function () {
+            expanded = !expanded;
+            render();
+        });
+
+        section.addEventListener('change', render);
+        render();
+    };
+
+    pickerConfigs.forEach(setupPicker);
+
+    const summaryFields = [
+        'container_id',
+        'plant_id',
+        'moss_id',
+        'substrate_id',
+        'stone_id',
+        'accessory_id',
+    ];
+
+    const updateSummary = function () {
+        let total = 0;
+
+        summaryFields.forEach(function (field) {
+            const target = document.querySelector(
+                '[data-summary-field="' + field + '"]'
+            );
+            const selected = document.querySelector(
+                'input[name="' + field + '"]:checked'
+            );
+
+            if (!target) {
+                return;
+            }
+
+            const product =
+                selected?.value
+                    ? productMeta[selected.value]
+                    : null;
+
+            if (product) {
+                target.textContent = product.name;
+                target.classList.remove(
+                    'studio-summary-empty'
+                );
+                total += Number(product.price || 0);
+            } else {
+                target.textContent = 'Chưa chọn';
+                target.classList.add(
+                    'studio-summary-empty'
+                );
+            }
+        });
+
+        const styleTarget = document.querySelector(
+            '[data-summary-field="style"]'
+        );
+        const selectedStyle = document.querySelector(
+            'input[name="style"]:checked'
+        );
+
+        if (styleTarget) {
+            if (selectedStyle) {
+                const label = document.querySelector(
+                    'label[for="' + selectedStyle.id + '"]'
+                );
+
+                styleTarget.textContent =
+                    label?.textContent.trim()
+                    || selectedStyle.value;
+
+                styleTarget.classList.remove(
+                    'studio-summary-empty'
+                );
+            } else {
+                styleTarget.textContent = 'Chưa chọn';
+                styleTarget.classList.add(
+                    'studio-summary-empty'
+                );
+            }
+        }
+
+        const totalTarget = document.querySelector(
+            '[data-studio-total]'
+        );
+
+        if (totalTarget) {
+            totalTarget.textContent = formatMoney(total);
+        }
+    };
+
+    document
+        .querySelector('.studio-builder-form')
+        ?.addEventListener('change', updateSummary);
+
+    const builderForm = document.querySelector(
+        '.studio-builder-form'
+    );
+
+    builderForm?.addEventListener('submit', function (event) {
+        const missing = [];
+
+        const selectedContainer = builderForm.querySelector(
+            'input[name="container_id"]:checked'
+        );
+        const selectedPlant = builderForm.querySelector(
+            'input[name="plant_id"]:checked'
+        );
+        const selectedMoss = builderForm.querySelector(
+            'input[name="moss_id"]:checked'
+        );
+        const selectedSubstrate = builderForm.querySelector(
+            'input[name="substrate_id"]:checked'
+        );
+        const selectedStyle = builderForm.querySelector(
+            'input[name="style"]:checked'
+        );
+
+        if (!selectedContainer?.value) {
+            missing.push({
+                field: 'container_id',
+                message: 'Chọn một bình.'
+            });
+        }
+
+        if (
+            !selectedPlant?.value
+            && !selectedMoss?.value
+        ) {
+            missing.push({
+                field: 'plant_id',
+                message: 'Chọn ít nhất một cây hoặc rêu.'
+            });
+        }
+
+        if (!selectedSubstrate?.value) {
+            missing.push({
+                field: 'substrate_id',
+                message: 'Chọn nền / giá thể.'
+            });
+        }
+
+        if (!selectedStyle?.value) {
+            missing.push({
+                field: 'style',
+                message: 'Chọn phong cách.'
+            });
+        }
+
+        const validationBox = document.querySelector(
+            '[data-preview-validation]'
+        );
+
+        if (!missing.length) {
+            validationBox?.classList.remove('is-visible');
+            return;
+        }
+
+        event.preventDefault();
+
+        if (validationBox) {
+            validationBox.innerHTML =
+                '<strong>Thiết kế chưa đủ thông tin:</strong><br>'
+                + missing
+                    .map(item => '• ' + item.message)
+                    .join('<br>');
+
+            validationBox.classList.add('is-visible');
+        }
+
+        const firstMissingInput = builderForm.querySelector(
+            'input[name="' + missing[0].field + '"]'
+        );
+
+        firstMissingInput
+            ?.closest('.studio-section')
+            ?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+    });
+
+    updateSummary();
+});
+</script>
 
 </main>
 

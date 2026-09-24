@@ -2,478 +2,219 @@
 
 namespace App\Http\Controllers;
 
-
+use App\Models\CustomDesign;
 use App\Models\Product;
-
 use App\Services\StudioCompatibilityService;
 use App\Services\StudioPricingService;
-
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-
-
 class StudioController extends Controller
 {
-
     public function __construct(
         private StudioPricingService $pricingService,
-
         private StudioCompatibilityService $compatibilityService
     ) {
-
     }
 
-
-
-
-
     /**
-     * Màn hình MiniGrove Studio.
+     * Màn hình tự thiết kế Terrarium bằng Product.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $products = Product::query()
+            ->with([
+                'images' => function ($query) {
+                    $query
+                        ->orderByDesc('is_primary')
+                        ->orderBy('sort_order')
+                        ->orderBy('id');
+                },
+            ])
+            ->where('is_active', true)
+            ->where('is_studio_item', true)
+            ->where('stock_quantity', '>', 0)
+            ->orderBy('product_type')
+            ->orderBy('name')
+            ->get();
 
-        $products = Product::with([
+        $containers = $products->where('product_type', 'container');
+        $plants = $products->where('product_type', 'plant');
+        $mosses = $products->where('product_type', 'moss');
+        $substrates = $products->where('product_type', 'substrate');
+        $stones = $products->where('product_type', 'stone');
+        $accessories = $products->where('product_type', 'accessory');
 
-            'images' => function ($query) {
+        $editingDesign = null;
+        $defaults = [];
 
-                $query
-                    ->orderByDesc('is_primary')
-                    ->orderBy('sort_order');
+        if ($request->filled('design')) {
+            if (!auth()->check()) {
+                return redirect()
+                    ->route('login')
+                    ->with('error', 'Vui lòng đăng nhập để chỉnh sửa thiết kế.');
+            }
 
-            },
+            $editingDesign = CustomDesign::query()
+                ->with('items.product')
+                ->where('user_id', auth()->id())
+                ->whereKey((int) $request->input('design'))
+                ->firstOrFail();
 
-        ])
+            if ($editingDesign->orderDetails()->exists()) {
+                return redirect()
+                    ->route('designs.index')
+                    ->with('error', 'Thiết kế đã phát sinh đơn hàng nên không thể chỉnh sửa.');
+            }
 
-        ->where(
-            'is_active',
-            true
-        )
+            foreach ($editingDesign->items as $item) {
+                $type = $item->product?->product_type;
 
-        ->where(
-            'stock_quantity',
-            '>',
-            0
-        )
+                if ($type) {
+                    $defaults[$type . '_id'] = $item->product_id;
+                }
+            }
 
-        ->orderBy(
-            'ecosystem_type'
-        )
+            $defaults['style'] = $editingDesign->style;
+        }
 
-        ->orderBy(
-            'name'
-        )
+        /*
+         * Cho phép trang Product truyền sẵn một lựa chọn vào Studio.
+         *
+         * Ví dụ:
+         * /studio?plant=4
+         * /studio?container=1
+         *
+         * Chỉ nhận Product đang hoạt động, còn hàng, thuộc Studio
+         * và đúng product_type tương ứng.
+         */
+        if (!$editingDesign) {
+            $queryTypeMap = [
+                'container' => 'container',
+                'plant' => 'plant',
+                'moss' => 'moss',
+                'substrate' => 'substrate',
+                'stone' => 'stone',
+                'accessory' => 'accessory',
+            ];
 
-        ->get();
+            foreach ($queryTypeMap as $queryKey => $productType) {
+                if (!$request->filled($queryKey)) {
+                    continue;
+                }
 
+                $productId = (int) $request->input($queryKey);
 
+                $selectedProduct = $products->first(
+                    fn (Product $product) =>
+                        $product->id === $productId
+                        && $product->product_type === $productType
+                );
 
+                if ($selectedProduct) {
+                    $defaults[$productType . '_id'] = $selectedProduct->id;
+                }
+            }
+        }
 
-
-        $containers = $products->where(
-            'ecosystem_type',
-            'container'
-        );
-
-
-        $plants = $products->where(
-            'ecosystem_type',
-            'plant'
-        );
-
-
-        $mosses = $products->where(
-            'ecosystem_type',
-            'moss'
-        );
-
-
-        $substrates = $products->where(
-            'ecosystem_type',
-            'substrate'
-        );
-
-
-        $stones = $products->where(
-            'ecosystem_type',
-            'stone'
-        );
-
-
-        $accessories = $products->where(
-            'ecosystem_type',
-            'accessory'
-        );
-
-
-
-
-
-        return view(
-            'studio.index',
-            compact(
-                'containers',
-                'plants',
-                'mosses',
-                'substrates',
-                'stones',
-                'accessories'
-            )
-        );
-
+        return view('studio.index', compact(
+            'products',
+            'containers',
+            'plants',
+            'mosses',
+            'substrates',
+            'stones',
+            'accessories',
+            'editingDesign',
+            'defaults'
+        ));
     }
 
-
-
-
-
     /**
-     * Kiểm tra cấu hình và tạo Preview.
+     * Kiểm tra cấu hình, tính giá hiện hành và hiển thị Preview.
      */
     public function preview(Request $request)
     {
-
         $validated = $request->validate(
-
             [
-
-                'container_id' => [
-
-                    'required',
-
-                    'integer',
-
-                    'exists:products,id',
-
-                ],
-
-
-
-                'plant_id' => [
-
-                    'nullable',
-
-                    'integer',
-
-                    'exists:products,id',
-
-                ],
-
-
-
-                'moss_id' => [
-
-                    'nullable',
-
-                    'integer',
-
-                    'exists:products,id',
-
-                ],
-
-
-
-                'substrate_id' => [
-
-                    'required',
-
-                    'integer',
-
-                    'exists:products,id',
-
-                ],
-
-
-
-                'stone_id' => [
-
-                    'nullable',
-
-                    'integer',
-
-                    'exists:products,id',
-
-                ],
-
-
-
-                'accessory_id' => [
-
-                    'nullable',
-
-                    'integer',
-
-                    'exists:products,id',
-
-                ],
-
-
-
+                'design_id' => ['nullable', 'integer', 'exists:custom_designs,id'],
+                'container_id' => ['required', 'integer', 'exists:products,id'],
+                'plant_id' => ['nullable', 'integer', 'exists:products,id'],
+                'moss_id' => ['nullable', 'integer', 'exists:products,id'],
+                'substrate_id' => ['required', 'integer', 'exists:products,id'],
+                'stone_id' => ['nullable', 'integer', 'exists:products,id'],
+                'accessory_id' => ['nullable', 'integer', 'exists:products,id'],
                 'style' => [
-
                     'required',
-
                     Rule::in([
-
                         'natural',
-
                         'forest',
-
                         'zen',
-
                         'fairy',
-
                         'tropical',
-
                         'minimal',
-
                     ]),
-
                 ],
-
-
             ],
-
-
             [
-
-                'container_id.required' =>
-
-                    'Bạn phải chọn bình.',
-
-
-
-                'substrate_id.required' =>
-
-                    'Bạn phải chọn nền / giá thể.',
-
-
-
-                'style.required' =>
-
-                    'Bạn phải chọn phong cách.',
-
-
-
-                'style.in' =>
-
-                    'Phong cách không hợp lệ.',
-
+                'container_id.required' => 'Bạn phải chọn bình.',
+                'substrate_id.required' => 'Bạn phải chọn nền / giá thể.',
+                'style.required' => 'Bạn phải chọn phong cách.',
+                'style.in' => 'Phong cách không hợp lệ.',
             ]
-
         );
 
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Phải chọn ít nhất Cây hoặc Rêu
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-
-            empty($validated['plant_id'])
-
-            &&
-
-            empty($validated['moss_id'])
-
-        ) {
-
-
+        if (empty($validated['plant_id']) && empty($validated['moss_id'])) {
             return back()
-
                 ->withErrors([
-
-                    'products' =>
-
-                        'Bạn phải chọn ít nhất một Cây hoặc Rêu.',
-
+                    'products' => 'Bạn phải chọn ít nhất một cây hoặc rêu.',
                 ])
-
                 ->withInput();
-
-
         }
 
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Gom các Product đã chọn
-        |--------------------------------------------------------------------------
-        */
-
-
-        $productIds = [
-
-            $validated['container_id'],
-
-            $validated['substrate_id'],
-
-        ];
-
-
-
-
+        $selectedItems = [];
 
         foreach (
-
             [
-
+                'container_id',
                 'plant_id',
-
                 'moss_id',
-
+                'substrate_id',
                 'stone_id',
-
                 'accessory_id',
-
-            ]
-
-            as $field
-
+            ] as $field
         ) {
-
-
-            if (
-
-                !empty($validated[$field])
-
-            ) {
-
-
-                $productIds[] =
-
-                    $validated[$field];
-
-
+            if (!empty($validated[$field])) {
+                $selectedItems[] = [
+                    'product_id' => (int) $validated[$field],
+                    'quantity' => 1,
+                ];
             }
-
         }
 
+        $compatibility = $this->compatibilityService->validate($selectedItems);
+        $pricing = $this->pricingService->calculate($selectedItems);
 
+        $editingDesign = null;
 
+        if (!empty($validated['design_id'])) {
+            abort_unless(auth()->check(), 403);
 
+            $editingDesign = CustomDesign::query()
+                ->where('user_id', auth()->id())
+                ->whereKey((int) $validated['design_id'])
+                ->firstOrFail();
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Kiểm tra tương thích
-        |--------------------------------------------------------------------------
-        */
-
-
-        $compatibility =
-
-            $this->compatibilityService
-
-                ->validate($productIds);
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Chuẩn bị dữ liệu tính giá
-        |--------------------------------------------------------------------------
-        */
-
-
-        $pricingItems = [];
-
-
-
-
-
-        foreach ($productIds as $productId) {
-
-
-            $pricingItems[] = [
-
-                'product_id' =>
-
-                    $productId,
-
-
-                'quantity' =>
-
-                    1,
-
-            ];
-
+            abort_if($editingDesign->orderDetails()->exists(), 403);
         }
 
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Tính giá
-        |--------------------------------------------------------------------------
-        */
-
-
-        $pricing =
-
-            $this->pricingService
-
-                ->calculate($pricingItems);
-
-
-
-
-
-
-
-        return view(
-
-            'studio.preview',
-
-            [
-
-                'style' =>
-
-                    $validated['style'],
-
-
-
-                'items' =>
-
-                    $pricing['items'],
-
-
-
-                'estimatedPrice' =>
-
-                    $pricing['estimated_price'],
-
-
-
-                'compatibility' =>
-
-                    $compatibility,
-
-            ]
-
-        );
-
+        return view('studio.preview', [
+            'style' => $validated['style'],
+            'items' => $pricing['items'],
+            'selectedItems' => $selectedItems,
+            'estimatedPrice' => $pricing['estimated_price'],
+            'compatibility' => $compatibility,
+            'editingDesign' => $editingDesign,
+        ]);
     }
-
-
 }

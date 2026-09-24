@@ -5,7 +5,15 @@
 @push('styles')
     <link
         rel="stylesheet"
-        href="{{ asset('css/checkout.css') }}"
+        href="{{
+            asset('css/checkout.css')
+            . '?v='
+            . filemtime(
+                public_path(
+                    'css/checkout.css'
+                )
+            )
+        }}"
     >
 @endpush
 
@@ -867,14 +875,19 @@
                 @php
 
                     $product = $item->product;
+                    $design = $item->custom_design ?? null;
 
                     $primaryImage =
-                        $product->images
-                            ->firstWhere(
-                                'is_primary',
-                                true
+                        $product
+                            ? (
+                                $product->images
+                                    ->firstWhere(
+                                        'is_primary',
+                                        true
+                                    )
+                                ?? $product->images->first()
                             )
-                        ?? $product->images->first();
+                            : null;
 
                 @endphp
 
@@ -888,7 +901,7 @@
 
                         <div class="checkout-product-image">
 
-                            @if ($primaryImage)
+                            @if ($primaryImage && $product)
 
                                 <img
                                     src="{{
@@ -915,20 +928,33 @@
                         <div>
 
                             <div class="checkout-category">
-
                                 {{
                                     $product
-                                        ->category
-                                        ?->name
-                                    ?? 'MiniGrove'
+                                        ? (
+                                            $product
+                                                ->category
+                                                ?->name
+                                            ?? 'MiniGrove'
+                                        )
+                                        : 'MiniGrove Studio'
                                 }}
-
                             </div>
 
 
                             <strong>
-                                {{ $product->name }}
+                                {{
+                                    $product
+                                        ? $product->name
+                                        : ($design?->name ?? 'Thiết kế Terrarium')
+                                }}
                             </strong>
+
+                            @if ($design)
+                                <div class="checkout-category">
+                                    {{ $design->design_code }}
+                                    · {{ ucfirst($design->style) }}
+                                </div>
+                            @endif
 
                         </div>
 
@@ -991,7 +1017,7 @@
              VOUCHER
         ====================================================== --}}
 
-        <div class="checkout-card">
+        <div class="checkout-card checkout-card-voucher">
 
             <div class="checkout-card-title">
                 🎟 Voucher MiniGrove
@@ -1062,18 +1088,166 @@
 
                     @csrf
 
-
-                    <input
-                        type="text"
-                        name="voucher_code"
-                        value="{{
-                            old(
-                                'voucher_code'
-                            )
-                        }}"
-                        maxlength="50"
-                        placeholder="Nhập mã Voucher"
+                    <div
+                        class="checkout-voucher-picker"
+                        id="checkoutVoucherPicker"
                     >
+                        <input
+                            type="text"
+                            id="checkoutVoucherInput"
+                            name="voucher_code"
+                            value="{{
+                                old(
+                                    'voucher_code'
+                                )
+                            }}"
+                            maxlength="50"
+                            placeholder="Nhập hoặc chọn Voucher đã lưu"
+                            autocomplete="off"
+                            aria-expanded="false"
+                            aria-controls="checkoutSavedVoucherList"
+                        >
+
+                        <div
+                            id="checkoutSavedVoucherList"
+                            class="checkout-saved-vouchers"
+                        >
+                            <div class="checkout-saved-vouchers-title">
+                                Voucher đã lưu
+                            </div>
+
+                            @forelse (
+                                $savedVouchers
+                                as $savedVoucher
+                            )
+
+                                <button
+                                    type="button"
+                                    class="
+                                        checkout-saved-voucher-option
+                                        {{
+                                            $savedVoucher
+                                                ->checkout_eligible
+                                                ? ''
+                                                : 'is-disabled'
+                                        }}
+                                    "
+                                    data-saved-voucher-option
+                                    data-voucher-code="{{
+                                        $savedVoucher->code
+                                    }}"
+                                    data-voucher-search="{{
+                                        strtolower(
+                                            $savedVoucher->code
+                                        )
+                                    }}"
+                                    onclick="
+                                        document
+                                            .getElementById(
+                                                'checkoutVoucherInput'
+                                            )
+                                            .value =
+                                            this.dataset.voucherCode;
+                                    "
+                                    @disabled(
+                                        !$savedVoucher
+                                            ->checkout_eligible
+                                    )
+                                >
+                                    <span class="checkout-saved-voucher-main">
+                                        <strong>
+                                            {{ $savedVoucher->code }}
+                                        </strong>
+
+                                        <span>
+                                            @if (
+                                                $savedVoucher
+                                                    ->discount_type
+                                                === 'percentage'
+                                            )
+                                                Giảm
+                                                {{
+                                                    rtrim(
+                                                        rtrim(
+                                                            number_format(
+                                                                $savedVoucher
+                                                                    ->discount_value,
+                                                                2,
+                                                                '.',
+                                                                ''
+                                                            ),
+                                                            '0'
+                                                        ),
+                                                        '.'
+                                                    )
+                                                }}%
+                                            @else
+                                                Giảm
+                                                {{
+                                                    number_format(
+                                                        $savedVoucher
+                                                            ->discount_value,
+                                                        0,
+                                                        ',',
+                                                        '.'
+                                                    )
+                                                }}đ
+                                            @endif
+                                        </span>
+                                    </span>
+
+                                    <span
+                                        class="
+                                            checkout-saved-voucher-status
+                                            {{
+                                                $savedVoucher
+                                                    ->checkout_eligible
+                                                    ? 'is-eligible'
+                                                    : ''
+                                            }}
+                                        "
+                                    >
+                                        @if (
+                                            $savedVoucher
+                                                ->checkout_eligible
+                                        )
+                                            Có thể dùng · giảm
+                                            {{
+                                                number_format(
+                                                    $savedVoucher
+                                                        ->checkout_discount_amount,
+                                                    0,
+                                                    ',',
+                                                    '.'
+                                                )
+                                            }}đ
+                                        @else
+                                            {{
+                                                $savedVoucher
+                                                    ->checkout_error
+                                            }}
+                                        @endif
+                                    </span>
+                                </button>
+
+                            @empty
+
+                                <div class="checkout-saved-vouchers-empty">
+                                    Bạn chưa lưu Voucher nào.
+                                    <a
+                                        href="{{
+                                            route(
+                                                'profile.vouchers'
+                                            )
+                                        }}"
+                                    >
+                                        Mở Kho Voucher
+                                    </a>
+                                </div>
+
+                            @endforelse
+                        </div>
+                    </div>
 
 
                     <button
@@ -1280,9 +1454,9 @@
 
                         <small>
 
-                            Sau khi đặt hàng,
-                            hệ thống sẽ hiển thị mã QR
-                            và nội dung chuyển khoản.
+                            Chuyển sang PayOS để quét QR.
+                            PayOS tự động xác nhận sau khi
+                            thanh toán thành công.
 
                         </small>
 
@@ -1520,6 +1694,18 @@
 
     <script
         src="{{ asset('js/checkout-address.js') }}"
+    ></script>
+
+    <script
+        src="{{
+            asset('js/checkout-voucher.js')
+            . '?v='
+            . filemtime(
+                public_path(
+                    'js/checkout-voucher.js'
+                )
+            )
+        }}"
     ></script>
 
 @endpush

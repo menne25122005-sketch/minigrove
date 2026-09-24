@@ -16,6 +16,19 @@ class ProductController extends Controller
         $ecosystem = $request->get('ecosystem');
         $care = $request->get('care');
         $sort = $request->get('sort', 'newest');
+        $type = trim((string) $request->get('type', ''));
+
+        $studioTypeLabels = [
+            'container' => 'Bình',
+            'plant' => 'Cây',
+            'moss' => 'Rêu',
+            'substrate' => 'Nền / giá thể',
+            'stone' => 'Đá',
+            'accessory' => 'Phụ kiện',
+        ];
+
+        $isStudioType =
+            array_key_exists($type, $studioTypeLabels);
 
         $categories = Category::query()
             ->where('is_active', true)
@@ -35,6 +48,14 @@ class ProductController extends Controller
             ])
             ->where('is_active', true);
 
+        if ($isStudioType) {
+            $query
+                ->where('is_studio_item', true)
+                ->where('product_type', $type);
+        } else {
+            $query->where('is_studio_item', false);
+        }
+
         if ($keyword !== '') {
             $query->where(function ($subQuery) use ($keyword) {
                 $subQuery
@@ -44,7 +65,7 @@ class ProductController extends Controller
             });
         }
 
-        if ($category) {
+        if ($category && !$isStudioType) {
             $query->whereHas('category', function ($subQuery) use ($category) {
                 $subQuery->where('slug', $category);
             });
@@ -93,24 +114,49 @@ class ProductController extends Controller
         $products = $query
             ->paginate(12)
             ->withQueryString();
+            $wishlistProductIds = [];
+
+if (
+    auth()->check()
+    && auth()->user()->role?->name === 'customer'
+) {
+    $wishlist = auth()
+        ->user()
+        ->wishlist()
+        ->first();
+
+    if ($wishlist) {
+        $wishlistProductIds = $wishlist
+            ->items()
+            ->pluck('product_id')
+            ->toArray();
+    }
+}
 
         return view(
             'products.index',
             compact(
-                'products',
-                'categories',
-                'keyword',
-                'category',
-                'ecosystem',
-                'care',
-                'sort'
-            )
+    'products',
+    'categories',
+    'keyword',
+    'category',
+    'ecosystem',
+    'care',
+    'sort',
+    'type',
+    'studioTypeLabels',
+    'isStudioType',
+    'wishlistProductIds'
+)
         );
     }
 
     public function show(Product $product)
     {
-        abort_unless($product->is_active, 404);
+        abort_unless(
+            $product->is_active,
+            404
+        );
 
         $product->load([
             'category',
@@ -148,6 +194,27 @@ class ProductController extends Controller
             : 0;
 
         $reviewCount = $product->reviews->count();
+        $isWishlisted = false;
+
+if (
+    auth()->check()
+    && auth()->user()->role?->name === 'customer'
+) {
+    $wishlist = auth()
+        ->user()
+        ->wishlist()
+        ->first();
+
+    if ($wishlist) {
+        $isWishlisted = $wishlist
+            ->items()
+            ->where(
+                'product_id',
+                $product->id
+            )
+            ->exists();
+    }
+}
 
         $relatedProducts = Product::query()
             ->with([
@@ -162,17 +229,26 @@ class ProductController extends Controller
             ->where('is_active', true)
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
+            ->when(
+                $product->is_studio_item,
+                fn ($query) => $query
+                    ->where('is_studio_item', true)
+                    ->where('product_type', $product->product_type),
+                fn ($query) => $query
+                    ->where('is_studio_item', false)
+            )
             ->take(4)
             ->get();
 
         return view(
-            'products.show',
-            compact(
-                'product',
-                'relatedProducts',
-                'averageRating',
-                'reviewCount'
-            )
-        );
+    'products.show',
+    compact(
+        'product',
+        'relatedProducts',
+        'averageRating',
+        'reviewCount',
+        'isWishlisted'
+    )
+);
     }
 }

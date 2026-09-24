@@ -6,6 +6,11 @@
     <meta charset="UTF-8">
 
     <meta
+        name="csrf-token"
+        content="{{ csrf_token() }}"
+    >
+
+    <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
@@ -238,36 +243,44 @@
             </a>
 
 
-            {{-- GROVE CỦA KHÁCH HÀNG --}}
+            {{-- CHAT --}}
             <a
-                href="{{ route('admin.groves.index') }}"
+                href="{{ route('admin.chat.index') }}"
                 class="
                     sidebar-link
                     {{
-                        request()->routeIs('admin.groves.*')
+                        request()->routeIs('admin.chat.*')
                             ? 'active'
                             : ''
                     }}
                 "
             >
 
-                <span class="sidebar-icon">
-                    ♧
-                </span>
-
-                Grove của khách hàng
-
-            </a>
-
-
-            {{-- CHAT --}}
-            <span class="sidebar-link sidebar-link-disabled">
-
                 <span class="sidebar-icon">◌</span>
 
-                Chat
+                <span class="sidebar-link-label">
+                    Chat
+                </span>
 
-            </span>
+                <span
+                    id="adminChatUnreadBadge"
+                    class="
+                        sidebar-unread-badge
+                        {{
+                            ($adminUnreadChatCount ?? 0) > 0
+                                ? ''
+                                : 'is-hidden'
+                        }}
+                    "
+                >
+                    {{
+                        ($adminUnreadChatCount ?? 0) > 99
+                            ? '99+'
+                            : ($adminUnreadChatCount ?? 0)
+                    }}
+                </span>
+
+            </a>
 
 
             {{-- ĐÁNH GIÁ SẢN PHẨM --}}
@@ -472,6 +485,79 @@
 
 </div>
 
+
+@vite(['resources/js/app.js'])
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const badge = document.getElementById(
+        'adminChatUnreadBadge'
+    );
+
+    if (!badge) {
+        return;
+    }
+
+    const unreadUrl =
+        @json(route('admin.chat.unread-count'));
+
+    const renderUnread = function (count) {
+        const safeCount = Math.max(
+            0,
+            Number(count) || 0
+        );
+
+        badge.textContent =
+            safeCount > 99
+                ? '99+'
+                : String(safeCount);
+
+        badge.classList.toggle(
+            'is-hidden',
+            safeCount === 0
+        );
+    };
+
+    const refreshUnread = async function () {
+        try {
+            const response = await fetch(
+                unreadUrl,
+                {
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                }
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            renderUnread(data.unread_count);
+        } catch (error) {
+            // Giữ số hiện tại nếu mạng tạm thời lỗi.
+        }
+    };
+
+    refreshUnread();
+
+    if (window.Echo) {
+        window.Echo
+            .private('chat.admin')
+            .listen(
+                '.chat.message.sent',
+                refreshUnread
+            )
+            .listen(
+                '.chat.conversation.updated',
+                refreshUnread
+            );
+    }
+});
+</script>
 
 @stack('scripts')
 

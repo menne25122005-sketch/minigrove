@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
@@ -131,16 +132,6 @@ class ProductController extends Controller
                     'size' =>
                         $validated['size'] ?? null,
 
-                    'container_diameter_cm' =>
-                        $validated[
-                            'container_diameter_cm'
-                        ] ?? null,
-
-                    'container_height_cm' =>
-                        $validated[
-                            'container_height_cm'
-                        ] ?? null,
-
                     'care_level' =>
                         $validated['care_level'],
 
@@ -185,32 +176,6 @@ class ProductController extends Controller
                             'is_grove_eligible'
                         ),
 
-                    'is_warranty_eligible' =>
-                        $request->boolean(
-                            'is_warranty_eligible'
-                        ),
-
-                    'warranty_days' =>
-                        $request->boolean(
-                            'is_warranty_eligible'
-                        )
-                            ? (
-                                $validated[
-                                    'warranty_days'
-                                ] ?? null
-                            )
-                            : null,
-
-                    'warranty_policy' =>
-                        $request->boolean(
-                            'is_warranty_eligible'
-                        )
-                            ? (
-                                $validated[
-                                    'warranty_policy'
-                                ] ?? null
-                            )
-                            : null,
                 ]);
 
                 /*
@@ -218,6 +183,10 @@ class ProductController extends Controller
                  * Ảnh đầu tiên là ảnh chính.
                  */
                 if ($request->hasFile('images')) {
+                    $primaryImageIndex = (int) (
+                        $validated['primary_image_index']
+                        ?? 0
+                    );
 
                     foreach (
                         $request->file('images')
@@ -230,7 +199,8 @@ class ProductController extends Controller
 
                         $product->images()->create([
                             'image_path' => $path,
-                            'is_primary' => $index === 0,
+                            'is_primary' =>
+                                $index === $primaryImageIndex,
                             'sort_order' => $index,
                         ]);
                     }
@@ -313,16 +283,6 @@ class ProductController extends Controller
                     'size' =>
                         $validated['size'] ?? null,
 
-                    'container_diameter_cm' =>
-                        $validated[
-                            'container_diameter_cm'
-                        ] ?? null,
-
-                    'container_height_cm' =>
-                        $validated[
-                            'container_height_cm'
-                        ] ?? null,
-
                     'care_level' =>
                         $validated['care_level'],
 
@@ -367,32 +327,6 @@ class ProductController extends Controller
                             'is_grove_eligible'
                         ),
 
-                    'is_warranty_eligible' =>
-                        $request->boolean(
-                            'is_warranty_eligible'
-                        ),
-
-                    'warranty_days' =>
-                        $request->boolean(
-                            'is_warranty_eligible'
-                        )
-                            ? (
-                                $validated[
-                                    'warranty_days'
-                                ] ?? null
-                            )
-                            : null,
-
-                    'warranty_policy' =>
-                        $request->boolean(
-                            'is_warranty_eligible'
-                        )
-                            ? (
-                                $validated[
-                                    'warranty_policy'
-                                ] ?? null
-                            )
-                            : null,
                 ]);
 
                 /*
@@ -407,6 +341,24 @@ class ProductController extends Controller
                                 true
                             )
                             ->exists();
+
+                    $newPrimaryImageIndex =
+                        array_key_exists(
+                            'primary_image_index',
+                            $validated
+                        )
+                            ? (int) $validated[
+                                'primary_image_index'
+                            ]
+                            : null;
+
+                    if ($newPrimaryImageIndex !== null) {
+                        $product->images()->update([
+                            'is_primary' => false,
+                        ]);
+
+                        $hasPrimaryImage = false;
+                    }
 
                     $currentMaxOrder =
                         $product->images()
@@ -425,8 +377,13 @@ class ProductController extends Controller
                             'image_path' => $path,
 
                             'is_primary' =>
-                                !$hasPrimaryImage &&
-                                $index === 0,
+                                $newPrimaryImageIndex !== null
+                                    ? $index ===
+                                        $newPrimaryImageIndex
+                                    : (
+                                        !$hasPrimaryImage &&
+                                        $index === 0
+                                    ),
 
                             'sort_order' =>
                                 $currentMaxOrder
@@ -493,6 +450,69 @@ class ProductController extends Controller
         return back()->with(
             'success',
             'Đã đặt ảnh đại diện sản phẩm.'
+        );
+    }
+
+    /**
+     * Thay file ảnh nhưng giữ nguyên vai trò
+     * ảnh chính và thứ tự hiển thị.
+     */
+    public function replaceImage(
+        Request $request,
+        Product $product,
+        int $image
+    ) {
+        $productImage = $product->images()
+            ->findOrFail($image);
+
+        $validated = $request->validate(
+            [
+                'image' => [
+                    'required',
+                    'image',
+                    'mimes:jpg,jpeg,png,webp',
+                    'max:4096',
+                ],
+            ],
+            [
+                'image.required' =>
+                    'Bạn phải chọn ảnh thay thế.',
+                'image.image' =>
+                    'File thay thế phải là hình ảnh.',
+                'image.mimes' =>
+                    'Ảnh chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.',
+                'image.max' =>
+                    'Ảnh thay thế không được vượt quá 4MB.',
+            ]
+        );
+
+        $oldPath = $productImage->image_path;
+
+        $newPath = $validated['image']->store(
+            'products',
+            'public'
+        );
+
+        try {
+            $productImage->update([
+                'image_path' => $newPath,
+            ]);
+        } catch (\Throwable $exception) {
+            Storage::disk('public')->delete($newPath);
+
+            throw $exception;
+        }
+
+        if (
+            $oldPath &&
+            Storage::disk('public')->exists($oldPath)
+        ) {
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        return back()->with(
+            'success',
+            'Đã thay ảnh sản phẩm.'
         );
     }
 
@@ -641,7 +661,7 @@ class ProductController extends Controller
         Request $request,
         ?Product $product = null
     ): array {
-        return $request->validate(
+        $validated = $request->validate(
             [
                 'category_id' => [
                     'required',
@@ -696,18 +716,6 @@ class ProductController extends Controller
                     'max:50',
                 ],
 
-                'container_diameter_cm' => [
-                    'nullable',
-                    'numeric',
-                    'gt:0',
-                ],
-
-                'container_height_cm' => [
-                    'nullable',
-                    'numeric',
-                    'gt:0',
-                ],
-
                 'care_level' => [
                     'required',
                     Rule::in([
@@ -760,27 +768,6 @@ class ProductController extends Controller
                     'min:0',
                 ],
 
-                /*
-                 * Nếu bật bảo hành,
-                 * bắt buộc nhập số ngày bảo hành.
-                 */
-                'warranty_days' => [
-                    Rule::requiredIf(
-                        fn () =>
-                            $request->boolean(
-                                'is_warranty_eligible'
-                            )
-                    ),
-                    'nullable',
-                    'integer',
-                    'min:1',
-                ],
-
-                'warranty_policy' => [
-                    'nullable',
-                    'string',
-                ],
-
                 'images' => [
                     'nullable',
                     'array',
@@ -791,6 +778,13 @@ class ProductController extends Controller
                     'image',
                     'mimes:jpg,jpeg,png,webp',
                     'max:4096',
+                ],
+
+                'primary_image_index' => [
+                    'nullable',
+                    'integer',
+                    'min:0',
+                    'max:7',
                 ],
             ],
             [
@@ -863,27 +857,6 @@ class ProductController extends Controller
                 'care_cycle_days.min' =>
                     'Chu kỳ chăm sóc phải từ 1 ngày trở lên.',
 
-                'warranty_days.required' =>
-                    'Sản phẩm có bảo hành phải nhập thời hạn bảo hành.',
-
-                'warranty_days.integer' =>
-                    'Thời hạn bảo hành phải là số nguyên.',
-
-                'warranty_days.min' =>
-                    'Thời hạn bảo hành phải từ 1 ngày trở lên.',
-
-                'container_diameter_cm.numeric' =>
-                    'Đường kính bình phải là số.',
-
-                'container_diameter_cm.gt' =>
-                    'Đường kính bình phải lớn hơn 0.',
-
-                'container_height_cm.numeric' =>
-                    'Chiều cao bình phải là số.',
-
-                'container_height_cm.gt' =>
-                    'Chiều cao bình phải lớn hơn 0.',
-
                 'images.max' =>
                     'Mỗi lần chỉ được tải tối đa 8 ảnh.',
 
@@ -895,7 +868,49 @@ class ProductController extends Controller
 
                 'images.*.max' =>
                     'Mỗi ảnh không được vượt quá 4MB.',
+
+                'primary_image_index.integer' =>
+                    'Ảnh chính được chọn không hợp lệ.',
             ]
         );
+
+        $newImages = $request->file(
+            'images',
+            []
+        );
+
+        $newImageCount = count($newImages);
+
+        if (
+            $product &&
+            $product->images()->count()
+                + $newImageCount > 8
+        ) {
+            throw ValidationException::withMessages([
+                'images' =>
+                    'Mỗi sản phẩm chỉ được có tối đa 8 ảnh. '
+                    . 'Hãy xóa hoặc thay thế ảnh hiện có trước khi thêm ảnh mới.',
+            ]);
+        }
+
+        if (
+            array_key_exists(
+                'primary_image_index',
+                $validated
+            ) &&
+            (
+                $newImageCount === 0 ||
+                (int) $validated[
+                    'primary_image_index'
+                ] >= $newImageCount
+            )
+        ) {
+            throw ValidationException::withMessages([
+                'primary_image_index' =>
+                    'Ảnh chính phải thuộc các ảnh mới bạn vừa chọn.',
+            ]);
+        }
+
+        return $validated;
     }
 }

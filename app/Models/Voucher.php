@@ -59,4 +59,15 @@ public function usages()
     return $this->hasMany(VoucherUsage::class);
 }
 
+/**
+ * Các Customer đã lưu Voucher này.
+ */
+public function savedByUsers()
+{
+    return $this->belongsToMany(
+        User::class,
+        'saved_vouchers'
+    )->withTimestamps();
+}
+
 }
