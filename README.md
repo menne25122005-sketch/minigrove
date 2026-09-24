@@ -1,66 +1,249 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MiniGrove
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+MiniGrove là hệ thống thương mại điện tử Terrarium kết hợp chức năng tự thiết kế Terrarium, quản lý sản phẩm, voucher, giỏ hàng, đặt hàng, thanh toán, đánh giá và tư vấn realtime.
 
-## About Laravel
+## Yêu cầu môi trường
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.1 trở lên
+- Composer 2
+- Node.js + npm
+- MySQL / MariaDB
+- Git
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Khuyến nghị trên Windows: XAMPP + PHP 8.2.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Cài đặt project trên máy mới
 
-## Learning Laravel
+### 1. Clone project
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```bash
+git clone https://github.com/menne25122005-sketch/minigrove.git
+cd minigrove
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 2. Cài dependency PHP và Node
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+composer install
+npm install
+```
 
-## Laravel Sponsors
+### 3. Tạo file môi trường
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Windows CMD:
 
-### Premium Partners
+```bat
+copy .env.example .env
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+PowerShell:
 
-## Contributing
+```powershell
+Copy-Item .env.example .env
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Sau đó:
 
-## Code of Conduct
+```bash
+php artisan key:generate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 4. Tạo database
 
-## Security Vulnerabilities
+Tạo một database MySQL, ví dụ:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```text
+laravel
+```
 
-## License
+Mặc định `.env.example` dùng:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```env
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Nếu máy sử dụng thông tin khác, sửa trong file `.env`.
+
+### 5. Tạo bảng và dữ liệu mẫu
+
+Trên database mới hoàn toàn:
+
+```bash
+php artisan migrate --seed
+```
+
+Lệnh này tạo role, tài khoản demo, phương thức thanh toán, danh mục, sản phẩm, sản phẩm Studio, voucher và dữ liệu chăm sóc.
+
+> Không dùng `migrate:fresh` trên database đang có dữ liệu cần giữ.
+
+Nếu chỉ cần cập nhật dữ liệu seed trên database đang dùng:
+
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+### 6. Tạo storage link
+
+```bash
+php artisan storage:link
+```
+
+### 7. Build frontend
+
+```bash
+npm run build
+```
+
+Trong lúc phát triển có thể dùng:
+
+```bash
+npm run dev
+```
+
+### 8. Chạy Laravel
+
+```bash
+php artisan serve
+```
+
+Mặc định truy cập:
+
+```text
+http://127.0.0.1:8000
+```
+
+## Chat realtime bằng Laravel Reverb
+
+Mở thêm một terminal tại project:
+
+```bash
+php artisan reverb:start
+```
+
+Các thông số Reverb local mẫu đã có trong `.env.example`.
+
+Nếu đang chạy `npm run dev`, giữ terminal Vite chạy song song.
+
+## Tài khoản demo sau khi seed
+
+### Admin
+
+```text
+Email: admin@minigrove.com
+Mật khẩu: Admin@12345
+```
+
+### Customer
+
+```text
+Email: customer@minigrove.com
+Mật khẩu: Customer@12345
+```
+
+Các tài khoản này chỉ dùng cho môi trường học tập/demo.
+
+## Dịch vụ bên thứ ba
+
+Các key thật **không được commit lên GitHub**.
+
+Sau khi copy `.env.example` sang `.env`, điền key riêng nếu cần kiểm thử các chức năng tương ứng.
+
+### Google Login
+
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://127.0.0.1:8000/auth/google/callback
+```
+
+Redirect URI trong Google Cloud phải trùng với URI trong `.env`.
+
+### PayOS
+
+```env
+PAYOS_CLIENT_ID=
+PAYOS_API_KEY=
+PAYOS_CHECKSUM_KEY=
+PAYOS_WEBHOOK_URL=
+```
+
+Nếu không có key PayOS, các phần khác của website vẫn có thể chạy; chỉ thanh toán PayOS không hoạt động.
+
+### GHN
+
+```env
+GHN_BASE_URL=https://online-gateway.ghn.vn/shiip/public-api
+GHN_TOKEN=
+GHN_SHOP_ID=
+```
+
+Nếu không cấu hình GHN, chức năng phụ thuộc API GHN có thể không lấy được dữ liệu/phí vận chuyển thực tế.
+
+## Đồng bộ sản phẩm và ảnh giữa các thành viên
+
+Dữ liệu sản phẩm mẫu được quản lý bằng Seeder:
+
+```text
+database/seeders/ProductSeeder.php
+database/seeders/StudioProductSeeder.php
+database/seeders/ProductImageSeeder.php
+```
+
+Ảnh mẫu dùng chung đặt tại:
+
+```text
+database/seeders/assets/products/<SKU>/
+```
+
+Ví dụ:
+
+```text
+database/seeders/assets/products/MG-GREEN-001/
+├── 01.jpg
+├── 02.jpg
+└── 03.jpg
+```
+
+Ảnh đầu tiên là ảnh chính. Tối đa 8 ảnh/sản phẩm.
+
+Sau khi pull dữ liệu sản phẩm/ảnh mới:
+
+```bash
+php artisan db:seed --class=ProductSeeder
+php artisan db:seed --class=StudioProductSeeder
+php artisan db:seed --class=ProductImageSeeder
+```
+
+Chi tiết xem:
+
+```text
+database/seeders/assets/products/README.md
+```
+
+## Các thư mục không commit
+
+Git cố ý không lưu:
+
+```text
+.env
+vendor/
+node_modules/
+public/storage/
+```
+
+Đây là đúng quy trình Laravel. Máy mới tạo/cài lại chúng bằng các bước ở trên.
+
+## Lệnh kiểm tra nhanh
+
+```bash
+php artisan route:list
+php artisan view:cache
+npm run build
+```
+
+Nếu các lệnh trên chạy thành công thì project đã được cài đúng ở mức source/build.
