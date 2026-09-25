@@ -359,57 +359,57 @@
 
 
                     {{-- TÀI KHOẢN --}}
+                    @php
+
+                        $headerUser = auth()->user();
+
+                        $headerAvatarUrl = null;
+
+                        if ($headerUser && $headerUser->avatar) {
+
+                            if (
+                                str_starts_with(
+                                    $headerUser->avatar,
+                                    'http://'
+                                )
+                                ||
+                                str_starts_with(
+                                    $headerUser->avatar,
+                                    'https://'
+                                )
+                            ) {
+
+                                /*
+                                 * Avatar Google.
+                                 */
+                                $headerAvatarUrl =
+                                    $headerUser->avatar;
+
+                            } else {
+
+                                /*
+                                 * Avatar upload local.
+                                 */
+                                $headerAvatarUrl =
+                                    asset(
+                                        'storage/' .
+                                        ltrim(
+                                            $headerUser->avatar,
+                                            '/'
+                                        )
+                                    );
+                            }
+                        }
+
+                    @endphp
+
                     <details class="header-account customer-details">
 
                         <summary
                             class="header-account-trigger"
                             aria-label="Menu tài khoản"
+                            title="{{ $headerUser?->name ?? 'Tài khoản' }}"
                         >
-
-                            @php
-
-                                $headerUser = auth()->user();
-
-                                $headerAvatarUrl = null;
-
-                                if ($headerUser->avatar) {
-
-                                    if (
-                                        str_starts_with(
-                                            $headerUser->avatar,
-                                            'http://'
-                                        )
-                                        ||
-                                        str_starts_with(
-                                            $headerUser->avatar,
-                                            'https://'
-                                        )
-                                    ) {
-
-                                        /*
-                                         * Avatar Google.
-                                         */
-                                        $headerAvatarUrl =
-                                            $headerUser->avatar;
-
-                                    } else {
-
-                                        /*
-                                         * Avatar upload local.
-                                         */
-                                        $headerAvatarUrl =
-                                            asset(
-                                                'storage/' .
-                                                ltrim(
-                                                    $headerUser->avatar,
-                                                    '/'
-                                                )
-                                            );
-                                    }
-                                }
-
-                            @endphp
-
 
                             <span class="header-account-avatar">
 
@@ -417,7 +417,7 @@
 
                                     <img
                                         src="{{ $headerAvatarUrl }}"
-                                        alt="{{ $headerUser->name }}"
+                                        alt="{{ $headerUser?->name ?? 'Tài khoản' }}"
                                     >
 
                                 @else
@@ -425,7 +425,7 @@
                                     {{
                                         strtoupper(
                                             mb_substr(
-                                                $headerUser->name,
+                                                $headerUser?->name ?? 'U',
                                                 0,
                                                 1
                                             )
@@ -437,7 +437,7 @@
                             </span>
 
                             <span class="header-account-name">
-                                {{ $headerUser->name }}
+                                {{ $headerUser?->name }}
                             </span>
 
                             <span class="header-account-arrow" aria-hidden="true">
@@ -454,10 +454,10 @@
                             {{-- User Info Header Snippet --}}
                             <div class="header-account-user-info">
                                 <div class="header-account-user-name">
-                                    {{ $headerUser->name }}
+                                    {{ $headerUser?->name }}
                                 </div>
                                 <div class="header-account-user-email">
-                                    {{ $headerUser->email }}
+                                    {{ $headerUser?->email }}
                                 </div>
                             </div>
 
@@ -562,6 +562,7 @@
         id="customer-mobile-drawer"
         class="customer-mobile-drawer"
         aria-hidden="true"
+        inert
     >
         <div class="customer-container customer-mobile-drawer-inner">
 
@@ -1032,6 +1033,11 @@
         toggle.setAttribute('aria-label', isOpen ? 'Mở menu điều hướng' : 'Đóng menu điều hướng');
         drawer.classList.toggle('is-open', !isOpen);
         drawer.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
+        if (isOpen) {
+            drawer.setAttribute('inert', '');
+        } else {
+            drawer.removeAttribute('inert');
+        }
     });
 
     document.addEventListener('keydown', function(e) {
@@ -1040,6 +1046,7 @@
             toggle.setAttribute('aria-label', 'Mở menu điều hướng');
             drawer.classList.remove('is-open');
             drawer.setAttribute('aria-hidden', 'true');
+            drawer.setAttribute('inert', '');
             toggle.focus();
         }
     });
