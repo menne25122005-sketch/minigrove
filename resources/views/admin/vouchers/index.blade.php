@@ -1,691 +1,303 @@
 @extends('layouts.admin')
 
 @section('title', 'Quản lý Voucher - MiniGrove')
-
-@section('page-title', 'Quản lý Voucher')
-
-
-@push('styles')
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/admin-vouchers.css') }}"
-    >
-@endpush
-
+@section('page-title', 'Voucher')
 
 @section('content')
-
-<div class="voucher-page">
-
+<div class="admin-list-page">
 
     {{-- =========================================================
-         TIÊU ĐỀ
+         PAGE HEADER
     ========================================================== --}}
-    <div class="voucher-heading">
-
-        <div>
-
-            <h1>
+    <div class="admin-index-header">
+        <div class="admin-index-heading">
+            <h1 class="admin-index-title">
                 Quản lý Voucher
             </h1>
-
-            <p>
-                Tạo và quản lý các chương trình giảm giá
-                áp dụng cho đơn hàng MiniGrove.
+            <p class="admin-index-subtitle">
+                Thiết lập mã khuyến mại, chiết khấu và theo dõi hạn sử dụng voucher toàn hệ thống.
             </p>
-
         </div>
 
-
-        <a
-            href="{{ route('admin.vouchers.create') }}"
-            class="btn btn-primary"
-        >
-            + Thêm Voucher
-        </a>
-
+        <div class="admin-index-actions">
+            <a href="{{ route('admin.vouchers.create') }}" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Thêm Voucher</span>
+            </a>
+        </div>
     </div>
 
 
     {{-- =========================================================
-         VALIDATION ERROR
+         QUICK STATS SUMMARY
     ========================================================== --}}
-    @if ($errors->any())
-
-        <div class="alert alert-danger">
-
-            <strong>
-                Không thể thực hiện thao tác:
-            </strong>
-
-            <ul class="voucher-error-list">
-
-                @foreach ($errors->all() as $error)
-
-                    <li>
-                        {{ $error }}
-                    </li>
-
-                @endforeach
-
-            </ul>
-
+    <div class="admin-stat-summary">
+        <div class="admin-stat-summary-card">
+            <div class="admin-stat-summary-title">Tổng Voucher</div>
+            <div class="admin-stat-summary-val">{{ number_format($totalCount) }}</div>
         </div>
 
-    @endif
-
-
-    {{-- =========================================================
-         THỐNG KÊ NHANH
-    ========================================================== --}}
-    <div class="voucher-stats">
-
-        <div class="voucher-stat-card">
-
-            <div class="voucher-stat-label">
-                Tổng Voucher
-            </div>
-
-            <div class="voucher-stat-value">
-                {{ $totalCount }}
-            </div>
-
+        <div class="admin-stat-summary-card">
+            <div class="admin-stat-summary-title">Active</div>
+            <div class="admin-stat-summary-val">{{ number_format($activeCount) }}</div>
         </div>
 
-
-        <div class="voucher-stat-card">
-
-            <div class="voucher-stat-label">
-                Active
-            </div>
-
-            <div class="voucher-stat-value">
-                {{ $activeCount }}
-            </div>
-
+        <div class="admin-stat-summary-card is-running">
+            <div class="admin-stat-summary-title">Đang áp dụng</div>
+            <div class="admin-stat-summary-val">{{ number_format($runningCount) }}</div>
         </div>
 
-
-        <div class="voucher-stat-card voucher-stat-running">
-
-            <div class="voucher-stat-label">
-                Đang áp dụng
-            </div>
-
-            <div class="voucher-stat-value">
-                {{ $runningCount }}
-            </div>
-
+        <div class="admin-stat-summary-card {{ $expiredCount > 0 ? 'is-danger' : '' }}">
+            <div class="admin-stat-summary-title">Hết hạn</div>
+            <div class="admin-stat-summary-val">{{ number_format($expiredCount) }}</div>
         </div>
-
-
-        <div class="voucher-stat-card voucher-stat-expired">
-
-            <div class="voucher-stat-label">
-                Hết hạn
-            </div>
-
-            <div class="voucher-stat-value">
-                {{ $expiredCount }}
-            </div>
-
-        </div>
-
     </div>
 
 
     {{-- =========================================================
-         BỘ LỌC
+         TOOLBAR / FILTER
     ========================================================== --}}
-    <div class="card voucher-filter-card">
-
-        <form
-            action="{{ route('admin.vouchers.index') }}"
-            method="GET"
-            class="voucher-filter-form"
-        >
-
-            <div class="voucher-filter-field">
-
-                <label for="keyword">
-                    Tìm kiếm
-                </label>
-
+    <div class="admin-toolbar">
+        <form action="{{ route('admin.vouchers.index') }}" method="GET" class="admin-toolbar-form">
+            <div class="admin-toolbar-search">
+                <span class="admin-toolbar-search-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
                 <input
                     type="text"
                     id="keyword"
                     name="keyword"
                     value="{{ $keyword }}"
                     placeholder="Nhập mã Voucher..."
+                    aria-label="Tìm kiếm voucher"
                 >
-
             </div>
 
-
-            <div class="voucher-filter-field">
-
-                <label for="active">
-                    Trạng thái
-                </label>
-
-                <select
-                    id="active"
-                    name="active"
-                >
-
-                    <option value="">
-                        Tất cả trạng thái
-                    </option>
-
-                    <option
-                        value="1"
-                        @selected($active === '1')
-                    >
-                        Active
-                    </option>
-
-                    <option
-                        value="0"
-                        @selected($active === '0')
-                    >
-                        Inactive
-                    </option>
-
+            <div class="admin-toolbar-select">
+                <select id="active" name="active" aria-label="Lọc trạng thái">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1" @selected($active === '1')>Active</option>
+                    <option value="0" @selected($active === '0')>Inactive</option>
                 </select>
-
             </div>
 
-
-            <div class="voucher-filter-field">
-
-                <label for="period">
-                    Thời gian
-                </label>
-
-                <select
-                    id="period"
-                    name="period"
-                >
-
-                    <option value="">
-                        Tất cả
-                    </option>
-
-                    <option
-                        value="upcoming"
-                        @selected($period === 'upcoming')
-                    >
-                        Sắp diễn ra
-                    </option>
-
-                    <option
-                        value="running"
-                        @selected($period === 'running')
-                    >
-                        Đang áp dụng
-                    </option>
-
-                    <option
-                        value="expired"
-                        @selected($period === 'expired')
-                    >
-                        Hết hạn
-                    </option>
-
+            <div class="admin-toolbar-select">
+                <select id="period" name="period" aria-label="Lọc thời gian">
+                    <option value="">Tất cả thời gian</option>
+                    <option value="upcoming" @selected($period === 'upcoming')>Sắp diễn ra</option>
+                    <option value="running" @selected($period === 'running')>Đang áp dụng</option>
+                    <option value="expired" @selected($period === 'expired')>Hết hạn</option>
                 </select>
-
             </div>
 
-
-            <div class="voucher-filter-actions">
-
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
+            <div class="admin-toolbar-actions">
+                <button type="submit" class="btn btn-primary">
                     Lọc
                 </button>
 
-                <a
-                    href="{{ route('admin.vouchers.index') }}"
-                    class="btn btn-secondary"
-                >
+                <a href="{{ route('admin.vouchers.index') }}" class="btn btn-secondary">
                     Đặt lại
                 </a>
-
             </div>
-
         </form>
-
     </div>
 
 
     {{-- =========================================================
-         DANH SÁCH
+         DATA TABLE CARD
     ========================================================== --}}
-    <div class="card">
+    <div class="card admin-table-card">
 
-        <div class="voucher-table-header">
-
+        <div class="admin-table-header">
             <div>
-
-                <h2>
+                <h2 class="admin-table-title">
                     Danh sách Voucher
                 </h2>
-
-                <p>
-                    Tổng {{ $vouchers->total() }} Voucher
+                <p class="admin-table-desc">
+                    Tổng cộng {{ $vouchers->total() }} Voucher
                 </p>
-
             </div>
-
         </div>
-
 
         <div class="table-wrapper">
-
-            <table class="voucher-table">
-
+            <table>
                 <thead>
-
-                <tr>
-                    <th>Mã Voucher</th>
-                    <th>Ưu đãi</th>
-                    <th>Đơn tối thiểu</th>
-                    <th>Thời gian</th>
-                    <th>Lượt sử dụng</th>
-                    <th>Mỗi Customer</th>
-                    <th>Tình trạng</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
-                </tr>
-
+                    <tr>
+                        <th scope="col">Mã Voucher</th>
+                        <th scope="col">Ưu đãi</th>
+                        <th scope="col">Đơn tối thiểu</th>
+                        <th scope="col">Hiệu lực</th>
+                        <th scope="col" style="text-align: center;">Đã dùng / Giới hạn</th>
+                        <th scope="col" style="text-align: center;">Mỗi khách</th>
+                        <th scope="col" style="text-align: center;">Tình trạng</th>
+                        <th scope="col" style="text-align: center;">Trạng thái</th>
+                        <th scope="col" style="text-align: right;">Thao tác</th>
+                    </tr>
                 </thead>
-
-
                 <tbody>
+                    @forelse ($vouchers as $voucher)
+                        @php
+                            $now = now();
 
-                @forelse ($vouchers as $voucher)
+                            if ($voucher->start_at->gt($now)) {
+                                $periodLabel = 'Sắp diễn ra';
+                                $periodBadge = 'badge-warning';
+                            } elseif ($voucher->end_at->lt($now)) {
+                                $periodLabel = 'Hết hạn';
+                                $periodBadge = 'badge-muted';
+                            } else {
+                                $periodLabel = 'Đang áp dụng';
+                                $periodBadge = 'badge-success';
+                            }
 
-                    @php
-
-                        $now = now();
-
-
-                        if ($voucher->start_at->gt($now)) {
-
-                            $periodLabel = 'Sắp diễn ra';
-                            $periodClass = 'upcoming';
-
-                        } elseif ($voucher->end_at->lt($now)) {
-
-                            $periodLabel = 'Hết hạn';
-                            $periodClass = 'expired';
-
-                        } else {
-
-                            $periodLabel = 'Đang áp dụng';
-                            $periodClass = 'running';
-
-                        }
-
-
-                        if (
-                            $voucher->usage_limit !== null
-                            &&
-                            $voucher->usage_count
-                                >= $voucher->usage_limit
-                        ) {
-
-                            $periodLabel = 'Hết lượt';
-                            $periodClass = 'expired';
-
-                        }
-
-                    @endphp
-
-
-                    <tr>
-
-                        {{-- MÃ --}}
-                        <td>
-
-                            <strong class="voucher-code">
-                                {{ $voucher->code }}
-                            </strong>
-
-                        </td>
-
-
-                        {{-- ƯU ĐÃI --}}
-                        <td>
-
-                            @if (
-                                $voucher->discount_type
-                                === 'percentage'
-                            )
-
-                                <strong>
-                                    {{
-                                        number_format(
-                                            $voucher->discount_value,
-                                            0,
-                                            ',',
-                                            '.'
-                                        )
-                                    }}%
+                            if ($voucher->usage_limit !== null && $voucher->usage_count >= $voucher->usage_limit) {
+                                $periodLabel = 'Hết lượt';
+                                $periodBadge = 'badge-danger';
+                            }
+                        @endphp
+                        <tr>
+                            <td>
+                                <strong class="admin-text-mono" style="font-size: 13.5px;">
+                                    {{ $voucher->code }}
                                 </strong>
+                            </td>
 
-                                @if (
-                                    $voucher->max_discount_amount
-                                    !== null
-                                )
-
-                                    <div class="voucher-subtext">
-
-                                        Tối đa
-
-                                        {{
-                                            number_format(
-                                                $voucher->max_discount_amount,
-                                                0,
-                                                ',',
-                                                '.'
-                                            )
-                                        }}đ
-
+                            <td>
+                                @if ($voucher->discount_type === 'percentage')
+                                    <div>
+                                        <strong class="admin-price-sale">
+                                            {{ number_format($voucher->discount_value, 0, ',', '.') }}%
+                                        </strong>
                                     </div>
-
+                                    @if ($voucher->max_discount_amount !== null)
+                                        <div style="font-size: 11.5px; color: var(--admin-text-muted);">
+                                            Tối đa {{ number_format($voucher->max_discount_amount, 0, ',', '.') }}đ
+                                        </div>
+                                    @endif
+                                @else
+                                    <strong class="admin-price-sale">
+                                        {{ number_format($voucher->discount_value, 0, ',', '.') }}đ
+                                    </strong>
                                 @endif
+                            </td>
 
-                            @else
-
-                                <strong>
-
-                                    {{
-                                        number_format(
-                                            $voucher->discount_value,
-                                            0,
-                                            ',',
-                                            '.'
-                                        )
-                                    }}đ
-
-                                </strong>
-
-                            @endif
-
-                        </td>
-
-
-                        {{-- ĐƠN TỐI THIỂU --}}
-                        <td>
-
-                            {{
-                                number_format(
-                                    $voucher->min_order_amount,
-                                    0,
-                                    ',',
-                                    '.'
-                                )
-                            }}đ
-
-                        </td>
-
-
-                        {{-- THỜI GIAN --}}
-                        <td class="voucher-date-cell">
-
-                            <div>
-                                {{
-                                    $voucher->start_at
-                                        ->format('d/m/Y H:i')
-                                }}
-                            </div>
-
-                            <div class="voucher-date-arrow">
-                                đến
-                            </div>
-
-                            <div>
-                                {{
-                                    $voucher->end_at
-                                        ->format('d/m/Y H:i')
-                                }}
-                            </div>
-
-                        </td>
-
-
-                        {{-- LƯỢT SỬ DỤNG --}}
-                        <td>
-
-                            <strong>
-                                {{ $voucher->usage_count }}
-                            </strong>
-
-                            <span class="voucher-subtext-inline">
-                                /
-                                {{
-                                    $voucher->usage_limit
-                                        ?? '∞'
-                                }}
-                            </span>
-
-                        </td>
-
-
-                        {{-- MỖI CUSTOMER --}}
-                        <td>
-
-                            {{
-                                $voucher->per_user_limit
-                                    ?? 'Không giới hạn'
-                            }}
-
-                        </td>
-
-
-                        {{-- TÌNH TRẠNG --}}
-                        <td>
-
-                            <span
-                                class="
-                                    voucher-period
-                                    voucher-period-{{ $periodClass }}
-                                "
-                            >
-                                {{ $periodLabel }}
-                            </span>
-
-                        </td>
-
-
-                        {{-- ACTIVE --}}
-                        <td>
-
-                            @if ($voucher->is_active)
-
-                                <span class="status status-active">
-                                    Active
+                            <td>
+                                <span class="admin-cell-number">
+                                    {{ number_format($voucher->min_order_amount, 0, ',', '.') }}đ
                                 </span>
+                            </td>
 
-                            @else
+                            <td>
+                                <div style="font-size: 12.5px; line-height: 1.4; color: var(--admin-text-secondary);">
+                                    <div>{{ $voucher->start_at->format('d/m/Y H:i') }}</div>
+                                    <div style="color: var(--admin-text-muted); font-size: 11px;">đến {{ $voucher->end_at->format('d/m/Y H:i') }}</div>
+                                </div>
+                            </td>
 
-                                <span class="status status-inactive">
-                                    Inactive
+                            <td style="text-align: center;">
+                                <span class="admin-cell-number">{{ $voucher->usage_count }}</span>
+                                <span style="color: var(--admin-text-muted); font-size: 12px;">
+                                    / {{ $voucher->usage_limit ?? '∞' }}
                                 </span>
+                            </td>
 
-                            @endif
+                            <td style="text-align: center;">
+                                <span style="font-size: 12.5px; color: var(--admin-text-secondary);">
+                                    {{ $voucher->per_user_limit ?? 'Không giới hạn' }}
+                                </span>
+                            </td>
 
-                        </td>
+                            <td style="text-align: center;">
+                                <span class="badge {{ $periodBadge }}">
+                                    {{ $periodLabel }}
+                                </span>
+                            </td>
 
+                            <td style="text-align: center;">
+                                @if ($voucher->is_active)
+                                    <span class="badge badge-success">
+                                        Active
+                                    </span>
+                                @else
+                                    <span class="badge badge-muted">
+                                        Inactive
+                                    </span>
+                                @endif
+                            </td>
 
-                        {{-- THAO TÁC --}}
-                        <td>
-
-                            <div class="voucher-actions">
-
-
-                                <a
-                                    href="{{
-                                        route(
-                                            'admin.vouchers.edit',
-                                            $voucher
-                                        )
-                                    }}"
-                                    class="btn btn-warning"
-                                >
-                                    Sửa
-                                </a>
-
-
-                                <form
-                                    action="{{
-                                        route(
-                                            'admin.vouchers.toggle-status',
-                                            $voucher
-                                        )
-                                    }}"
-                                    method="POST"
-                                >
-
-                                    @csrf
-                                    @method('PATCH')
-
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-status"
+                            <td style="text-align: right;">
+                                <div class="admin-table-actions">
+                                    <a
+                                        href="{{ route('admin.vouchers.edit', $voucher) }}"
+                                        class="btn btn-sm btn-secondary"
+                                        title="Chỉnh sửa voucher"
                                     >
+                                        Sửa
+                                    </a>
 
-                                        {{
-                                            $voucher->is_active
-                                                ? 'Inactive'
-                                                : 'Active'
-                                        }}
-
-                                    </button>
-
-                                </form>
-
-
-                                <a
-                                    href="{{
-                                        route(
-                                            'admin.vouchers.history',
-                                            $voucher
-                                        )
-                                    }}"
-                                    class="btn btn-secondary"
-                                >
-                                    Lịch sử
-                                </a>
-
-
-                                <form
-                                    action="{{
-                                        route(
-                                            'admin.vouchers.destroy',
-                                            $voucher
-                                        )
-                                    }}"
-                                    method="POST"
-                                    onsubmit="
-                                        return confirm(
-                                            'Bạn chắc chắn muốn xóa Voucher này?'
-                                        );
-                                    "
-                                >
-
-                                    @csrf
-                                    @method('DELETE')
-
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-danger"
+                                    <form
+                                        action="{{ route('admin.vouchers.toggle-status', $voucher) }}"
+                                        method="POST"
                                     >
-                                        Xóa
-                                    </button>
+                                        @csrf
+                                        @method('PATCH')
 
-                                </form>
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-status"
+                                            title="Thay đổi trạng thái"
+                                        >
+                                            {{ $voucher->is_active ? 'Ẩn' : 'Hiện' }}
+                                        </button>
+                                    </form>
 
-                            </div>
+                                    <a
+                                        href="{{ route('admin.vouchers.history', $voucher) }}"
+                                        class="btn btn-sm btn-secondary"
+                                        title="Lịch sử sử dụng voucher"
+                                    >
+                                        Lịch sử
+                                    </a>
 
-                        </td>
+                                    <form
+                                        action="{{ route('admin.vouchers.destroy', $voucher) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Bạn chắc chắn muốn xóa Voucher này?');"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
 
-                    </tr>
-
-                @empty
-
-                    <tr>
-
-                        <td
-                            colspan="9"
-                            class="empty"
-                        >
-                            Không tìm thấy Voucher phù hợp.
-                        </td>
-
-                    </tr>
-
-                @endforelse
-
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-danger"
+                                            title="Xóa voucher"
+                                        >
+                                            Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="empty">
+                                <p>Không tìm thấy Voucher phù hợp.</p>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
-
             </table>
-
         </div>
 
-
-        @if ($vouchers->hasPages())
-
-            <div class="voucher-pagination">
-
-                <span>
-                    Trang
-                    <strong>
-                        {{ $vouchers->currentPage() }}
-                    </strong>
-                    /
-                    {{ $vouchers->lastPage() }}
-                </span>
-
-
-                <div>
-
-                    @if (!$vouchers->onFirstPage())
-
-                        <a
-                            href="{{ $vouchers->previousPageUrl() }}"
-                            class="btn btn-secondary"
-                        >
-                            Trước
-                        </a>
-
-                    @endif
-
-
-                    @if ($vouchers->hasMorePages())
-
-                        <a
-                            href="{{ $vouchers->nextPageUrl() }}"
-                            class="btn btn-secondary"
-                        >
-                            Sau
-                        </a>
-
-                    @endif
-
-                </div>
-
-            </div>
-
-        @endif
+        @include('admin.partials.pagination', ['paginator' => $vouchers])
 
     </div>
 
 </div>
-
 @endsection

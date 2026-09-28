@@ -1474,11 +1474,11 @@
         <div class="report-card-header">
 
             <h2>
-                Grove
+                Tổng số thiết kế
             </h2>
 
             <p>
-                Tổng quan số lượng Grove của hệ thống.
+                Tổng quan số lượng thiết kế Studio đã được lưu trong hệ thống.
             </p>
 
         </div>
@@ -1490,7 +1490,7 @@
                 <div class="report-metric">
 
                     <div class="report-metric-label">
-                        Tổng số Grove
+                        Thiết kế Studio
                     </div>
 
                     <div class="report-metric-value">

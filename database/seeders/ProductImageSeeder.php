@@ -109,9 +109,11 @@ class ProductImageSeeder extends Seeder
                     . ' ảnh đầu tiên.'
                 );
 
-                $imageFiles = $imageFiles->take(
-                    self::MAX_IMAGES_PER_PRODUCT
-                );
+                $imageFiles = $imageFiles
+                    ->take(
+                        self::MAX_IMAGES_PER_PRODUCT
+                    )
+                    ->values();
             }
 
             $storageFolder =
@@ -119,8 +121,8 @@ class ProductImageSeeder extends Seeder
                 . Str::slug($sku);
 
             /*
-             * Chỉ đồng bộ các ảnh do Seeder quản lý.
-             * Ảnh Admin upload thủ công ở đường dẫn khác
+             * Chỉ xóa ảnh do Seeder quản lý.
+             * Ảnh được Admin upload thủ công
              * sẽ không bị xóa.
              */
             $product->images()
@@ -132,59 +134,67 @@ class ProductImageSeeder extends Seeder
                 ->delete();
 
             Storage::disk('public')
-                ->deleteDirectory($storageFolder);
+                ->deleteDirectory(
+                    $storageFolder
+                );
 
             /*
-             * Khi một SKU có bộ ảnh seed, ảnh đầu tiên
-             * của bộ seed sẽ trở thành ảnh chính.
+             * Kiểm tra xem sản phẩm hiện đang có
+             * ảnh chính thủ công hay không.
              */
-            $product->images()->update([
-                'is_primary' => false,
-            ]);
+            $hasExistingPrimary =
+                $product->images()
+                    ->where(
+                        'is_primary',
+                        true
+                    )
+                    ->exists();
+
+            $currentMaxSortOrder =
+                (int) (
+                    $product->images()
+                        ->max('sort_order')
+                    ?? 0
+                );
 
             foreach (
-                $imageFiles as $index => $imageFile
+                $imageFiles
+                as $index => $imageFile
             ) {
                 $extension = strtolower(
                     $imageFile->getExtension()
                 );
 
-                $baseName = Str::slug(
-                    pathinfo(
-                        $imageFile->getFilename(),
-                        PATHINFO_FILENAME
-                    )
+                $fileName = sprintf(
+                    '%02d.%s',
+                    $index + 1,
+                    $extension
                 );
 
-                if ($baseName === '') {
-                    $baseName = 'image';
-                }
-
-                $destinationPath =
+                $storagePath =
                     $storageFolder
                     . '/'
-                    . str_pad(
-                        (string) ($index + 1),
-                        2,
-                        '0',
-                        STR_PAD_LEFT
-                    )
-                    . '-'
-                    . $baseName
-                    . '.'
-                    . $extension;
+                    . $fileName;
 
                 Storage::disk('public')->put(
-                    $destinationPath,
+                    $storagePath,
                     File::get(
                         $imageFile->getPathname()
                     )
                 );
 
                 $product->images()->create([
-                    'image_path' => $destinationPath,
-                    'is_primary' => $index === 0,
-                    'sort_order' => $index,
+                    'image_path' =>
+                        $storagePath,
+
+                    'is_primary' =>
+                        ! $hasExistingPrimary
+                        && $index === 0,
+
+                    'sort_order' =>
+                        $currentMaxSortOrder
+                        + $index
+                        + 1,
                 ]);
             }
 

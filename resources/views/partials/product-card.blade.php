@@ -213,8 +213,13 @@
 
         @else
 
-            <div class="product-no-image">
-                🌱
+            <div class="product-no-image" aria-hidden="true">
+                <svg class="product-fallback-motif" width="56" height="56" viewBox="0 0 56 56" fill="none">
+                    <path d="M28 8C18 20 12 32 12 44C24 44 36 38 44 26C44 14 38 8 28 8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M28 8V44" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 2"/>
+                    <path d="M20 25C25 27 28 31 28 31" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M36 21C31 23 28 27 28 27" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
             </div>
 
         @endif
@@ -244,9 +249,9 @@
         </div>
 
 
-        <div class="product-name">
+        <h3 class="product-name">
             {{ $product->name }}
-        </div>
+        </h3>
 
 
         <div class="product-meta">
@@ -380,16 +385,17 @@
 
 
             <a
-    href="{{
-        route(
-            'products.show',
-            $product
-        )
-    }}"
-    class="product-view"
->
-    Xem chi tiết →
-</a>
+                href="{{
+                    route(
+                        'products.show',
+                        $product
+                    )
+                }}"
+                class="product-view"
+            >
+                <span>Xem chi tiết</span>
+                <span class="product-view-arrow" aria-hidden="true">→</span>
+            </a>
 
         </div>
 

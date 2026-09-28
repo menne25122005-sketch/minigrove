@@ -1,1127 +1,320 @@
 @extends('layouts.admin')
 
 @section('title', 'Quản lý tồn kho - MiniGrove')
-
-@section('page-title', 'Quản lý tồn kho')
-
-
-@push('styles')
-
-<link
-    rel="stylesheet"
-    href="{{ asset('css/admin-stocks.css') }}"
->
-
-@endpush
-
-
+@section('page-title', 'Tồn kho')
 
 @section('content')
-
-
-<div class="stock-page">
-
+<div class="admin-list-page">
 
     {{-- =========================================================
-         TIÊU ĐỀ
+         PAGE HEADER
     ========================================================== --}}
-
-    <div class="stock-heading">
-
-        <div>
-
-            <h1>
+    <div class="admin-index-header">
+        <div class="admin-index-heading">
+            <h1 class="admin-index-title">
                 Quản lý tồn kho
             </h1>
-
-
-            <p>
-                Theo dõi và điều chỉnh tồn kho sản phẩm.
+            <p class="admin-index-subtitle">
+                Theo dõi số lượng hàng tồn, thiết lập ngưỡng an toàn và quản lý luồng nhập/xuất kho.
             </p>
-
-
         </div>
-
-
     </div>
 
 
-
-
-
     {{-- =========================================================
-         VALIDATION ERROR
+         QUICK STATS SUMMARY
     ========================================================== --}}
-
-
-    @if ($errors->any())
-
-
-        <div class="alert alert-danger">
-
-
-            <strong>
-                Không thể thực hiện thao tác:
-            </strong>
-
-
-            <ul class="stock-error-list">
-
-
-                @foreach ($errors->all() as $error)
-
-
-                    <li>
-                        {{ $error }}
-                    </li>
-
-
-                @endforeach
-
-
-            </ul>
-
-
+    <div class="admin-stat-summary">
+        <div class="admin-stat-summary-card">
+            <div class="admin-stat-summary-title">Tổng sản phẩm</div>
+            <div class="admin-stat-summary-val">{{ number_format($productCount) }}</div>
         </div>
 
-
-    @endif
-
-
-
-
-
-    {{-- =========================================================
-         THỐNG KÊ NHANH
-    ========================================================== --}}
-
-
-    <div class="stock-stats">
-
-
-        <div class="stock-stat-card">
-
-
-            <div class="stock-stat-label">
-                Sản phẩm
-            </div>
-
-
-            <div class="stock-stat-value">
-
-                {{ $productCount }}
-
-            </div>
-
-
+        <div class="admin-stat-summary-card {{ $lowStockCount > 0 ? 'is-warning' : '' }}">
+            <div class="admin-stat-summary-title">Sắp hết hàng</div>
+            <div class="admin-stat-summary-val">{{ number_format($lowStockCount) }}</div>
         </div>
 
-
-
-
-
-        <div class="stock-stat-card stock-stat-warning">
-
-
-            <div class="stock-stat-label">
-                Sắp hết hàng
-            </div>
-
-
-            <div class="stock-stat-value">
-
-                {{ $lowStockCount }}
-
-            </div>
-
-
+        <div class="admin-stat-summary-card {{ $outOfStockCount > 0 ? 'is-danger' : '' }}">
+            <div class="admin-stat-summary-title">Hết hàng</div>
+            <div class="admin-stat-summary-val">{{ number_format($outOfStockCount) }}</div>
         </div>
-
-
-
-
-
-        <div class="stock-stat-card stock-stat-danger">
-
-
-            <div class="stock-stat-label">
-                Hết hàng
-            </div>
-
-
-            <div class="stock-stat-value">
-
-                {{ $outOfStockCount }}
-
-            </div>
-
-
-        </div>
-
-
-
     </div>
 
 
-
-
-
-
     {{-- =========================================================
-         BỘ LỌC
+         TOOLBAR / FILTER
     ========================================================== --}}
-
-
-    <div class="card stock-filter-card">
-
-
-        <form
-
-            action="{{ route('admin.stocks.index') }}"
-
-            method="GET"
-
-            class="stock-filter-form"
-
-        >
-
-
-
-            <div class="stock-filter-field">
-
-
-                <label for="keyword">
-                    Tìm kiếm
-                </label>
-
-
+    <div class="admin-toolbar">
+        <form action="{{ route('admin.stocks.index') }}" method="GET" class="admin-toolbar-form">
+            <div class="admin-toolbar-search">
+                <span class="admin-toolbar-search-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
                 <input
-
                     type="text"
-
                     id="keyword"
-
                     name="keyword"
-
                     value="{{ $keyword }}"
-
                     placeholder="Tên hoặc SKU..."
-
+                    aria-label="Tìm kiếm tồn kho"
                 >
-
-
             </div>
 
-
-
-
-
-
-            <div class="stock-filter-field">
-
-
-                <label for="status">
-                    Trạng thái
-                </label>
-
-
-                <select
-
-                    id="status"
-
-                    name="status"
-
-                >
-
-
-                    <option
-
-                        value=""
-
-                        @selected($status === '')
-
-                    >
-
-                        Tất cả trạng thái
-
-                    </option>
-
-
-
-
-                    <option
-
-                        value="in_stock"
-
-                        @selected($status === 'in_stock')
-
-                    >
-
-                        Còn hàng
-
-                    </option>
-
-
-
-
-                    <option
-
-                        value="low_stock"
-
-                        @selected($status === 'low_stock')
-
-                    >
-
-                        Sắp hết hàng
-
-                    </option>
-
-
-
-
-                    <option
-
-                        value="out_of_stock"
-
-                        @selected($status === 'out_of_stock')
-
-                    >
-
-                        Hết hàng
-
-                    </option>
-
-
-
+            <div class="admin-toolbar-select">
+                <select id="status" name="status" aria-label="Lọc theo trạng thái tồn">
+                    <option value="" @selected($status === '')>Tất cả trạng thái</option>
+                    <option value="in_stock" @selected($status === 'in_stock')>Còn hàng</option>
+                    <option value="low_stock" @selected($status === 'low_stock')>Sắp hết hàng</option>
+                    <option value="out_of_stock" @selected($status === 'out_of_stock')>Hết hàng</option>
                 </select>
-
-
             </div>
 
-
-
-
-
-
-            <div class="stock-filter-actions">
-
-
-                <button
-
-                    type="submit"
-
-                    class="btn btn-primary"
-
-                >
-
+            <div class="admin-toolbar-actions">
+                <button type="submit" class="btn btn-primary">
                     Lọc
-
                 </button>
 
-
-
-
-
-                <a
-
-                    href="{{ route('admin.stocks.index') }}"
-
-                    class="btn btn-secondary"
-
-                >
-
+                <a href="{{ route('admin.stocks.index') }}" class="btn btn-secondary">
                     Đặt lại
-
                 </a>
-
-
             </div>
-
-
-
         </form>
-
-
     </div>
-
-
-
 
 
     {{-- =========================================================
-         DANH SÁCH TỒN KHO
+         DATA TABLE CARD
     ========================================================== --}}
+    <div class="card admin-table-card">
 
-
-    <div class="card">
-
-
-        <div class="stock-table-header">
-
-
+        <div class="admin-table-header">
             <div>
-
-
-                <h2>
+                <h2 class="admin-table-title">
                     Danh sách tồn kho
                 </h2>
-
-
-                <p>
-
-                    Tổng {{ $stocks->total() }} mục
-
+                <p class="admin-table-desc">
+                    Tổng cộng {{ $stocks->total() }} mặt hàng
                 </p>
-
-
             </div>
-
-
         </div>
-
-
-
-
 
         <div class="table-wrapper">
-
-
-            <table class="stock-table">
-
-
+            <table>
                 <thead>
-
-
                     <tr>
-
-                        <th>
-                            SKU
-                        </th>
-
-
-                        <th>
-                            Tên
-                        </th>
-
-
-                        <th>
-                            Tồn kho
-                        </th>
-
-
-                        <th>
-                            Ngưỡng cảnh báo
-                        </th>
-
-
-                        <th>
-                            Trạng thái
-                        </th>
-
-
-                        <th>
-                            Hoạt động
-                        </th>
-
-
-                        <th>
-                            Thao tác
-                        </th>
-
-
+                        <th scope="col" style="width: 120px;">SKU</th>
+                        <th scope="col">Tên sản phẩm</th>
+                        <th scope="col" style="text-align: right; width: 100px;">Tồn kho</th>
+                        <th scope="col" style="width: 170px;">Ngưỡng cảnh báo</th>
+                        <th scope="col" style="text-align: center; width: 110px;">Tình trạng</th>
+                        <th scope="col" style="text-align: center; width: 100px;">Kinh doanh</th>
+                        <th scope="col" style="text-align: right;">Thao tác</th>
                     </tr>
-
-
                 </thead>
-
-
-
                 <tbody>
-
-
-
-                @forelse ($stocks as $stock)
-
-
-                    @php
-
-
-                        $quantity =
-                            (int) $stock->stock_quantity;
-
-
-
-                        $threshold =
-                            (int) $stock->low_stock_threshold;
-
-
-
-                        if ($quantity === 0) {
-
-
-                            $stockStatus = 'out';
-
-
-                            $stockStatusLabel =
-                                'Hết hàng';
-
-
-                        } elseif ($quantity <= $threshold) {
-
-
-                            $stockStatus = 'low';
-
-
-                            $stockStatusLabel =
-                                'Sắp hết';
-
-
-                        } else {
-
-
-                            $stockStatus = 'normal';
-
-
-                            $stockStatusLabel =
-                                'Còn hàng';
-
-
-                        }
-
-
-                    @endphp
-
-
-
-                    <tr>
-
-
-                        <td>
-
-                            <strong>
-
-                                {{ $stock->sku }}
-
-                            </strong>
-
-                        </td>
-
-
-
-                        <td>
-
-
-                            <div class="stock-item-name">
-
-                                {{ $stock->name }}
-
-                            </div>
-
-
-                            <div class="stock-item-unit">
-
-                                Đơn vị:
-                                Sản phẩm
-
-
-                            </div>
-
-
-                        </td>
-
-
-
-                        <td>
-
-                            <strong class="stock-quantity">
-
-                                {{ number_format($quantity,0,',','.') }}
-
-                            </strong>
-
-
-                        </td>
-
-
-
-                        <td>
-
-
-                            <form
-
-                                action="{{ route(
-                                    'admin.stocks.threshold.update',
-                                    [
-                                        'stockType'=>'PRODUCT',
-                                        'itemId'=>$stock->item_id
-                                    ]
-                                ) }}"
-
-                                method="POST"
-
-                                class="stock-threshold-form"
-
-                            >
-
-                                @csrf
-
-                                @method('PATCH')
-
-
-
-                                <input
-
-                                    type="number"
-
-                                    name="low_stock_threshold"
-
-                                    value="{{ $threshold }}"
-
-                                    min="0"
-
-                                    required
-
-                                >
-
-
-
-                                <button
-
-                                    type="submit"
-
-                                    class="stock-small-button"
-
-                                >
-
-                                    Lưu
-
-                                </button>
-
-
-                            </form>
-
-
-                        </td>
-
-
-
-                        <td>
-
-                            <span class="
-                                stock-status
-                                stock-status-{{ $stockStatus }}
-                            ">
-
-
-                                {{ $stockStatusLabel }}
-
-
-                            </span>
-
-
-                        </td>
-                                                </td>
-
-
-
-
-                        <td>
-
-
-                            @if($stock->is_active)
-
-
-                                <span class="stock-active">
-
-                                    Đang bán
-
+                    @forelse ($stocks as $stock)
+                        @php
+                            $quantity = (int) $stock->stock_quantity;
+                            $threshold = (int) $stock->low_stock_threshold;
+
+                            if ($quantity === 0) {
+                                $badgeClass = 'badge-danger';
+                                $stockStatusLabel = 'Hết hàng';
+                            } elseif ($quantity <= $threshold) {
+                                $badgeClass = 'badge-warning';
+                                $stockStatusLabel = 'Sắp hết';
+                            } else {
+                                $badgeClass = 'badge-success';
+                                $stockStatusLabel = 'Còn hàng';
+                            }
+                        @endphp
+                        <tr>
+                            <td>
+                                <span class="admin-text-mono">{{ $stock->sku }}</span>
+                            </td>
+
+                            <td>
+                                <div>
+                                    <strong class="admin-text-strong">{{ $stock->name }}</strong>
+                                </div>
+                            </td>
+
+                            <td style="text-align: right;">
+                                <span class="admin-cell-number" style="font-size: 15px;">
+                                    {{ number_format($quantity, 0, ',', '.') }}
                                 </span>
+                            </td>
 
+                            <td>
+                                <form
+                                    action="{{ route('admin.stocks.threshold.update', ['stockType'=>'PRODUCT', 'itemId'=>$stock->item_id]) }}"
+                                    method="POST"
+                                    class="stock-threshold-form"
+                                >
+                                    @csrf
+                                    @method('PATCH')
 
-                            @else
+                                    <input
+                                        type="number"
+                                        name="low_stock_threshold"
+                                        value="{{ $threshold }}"
+                                        min="0"
+                                        required
+                                        aria-label="Ngưỡng cảnh báo"
+                                    >
 
+                                    <button type="submit" class="stock-small-button" title="Lưu ngưỡng cảnh báo mới">
+                                        Lưu
+                                    </button>
+                                </form>
+                            </td>
 
-                                <span class="stock-inactive">
-
-                                    Ngừng bán
-
+                            <td style="text-align: center;">
+                                <span class="badge {{ $badgeClass }}">
+                                    {{ $stockStatusLabel }}
                                 </span>
-
-
-                            @endif
-
-
-                        </td>
-
-
-
-
-
-
-                        <td>
-
-
-                            <div class="stock-actions">
-
-
-
-                                <button
-
-                                    type="button"
-
-                                    class="btn btn-sm btn-success"
-
-                                    onclick="openStockModal(
-                                        'PRODUCT',
-                                        '{{ $stock->item_id }}',
-                                        '{{ $stock->name }}',
-                                        'import'
-                                    )"
-
-                                >
-
-                                    Nhập
-
-                                </button>
-
-
-
-
-
-                                <button
-
-                                    type="button"
-
-                                    class="btn btn-sm btn-warning"
-
-                                    onclick="openStockModal(
-                                        'PRODUCT',
-                                        '{{ $stock->item_id }}',
-                                        '{{ $stock->name }}',
-                                        'export'
-                                    )"
-
-                                >
-
-                                    Xuất
-
-                                </button>
-
-
-
-
-
-                                <button
-
-                                    type="button"
-
-                                    class="btn btn-sm btn-primary"
-
-                                    onclick="openStockModal(
-                                        'PRODUCT',
-                                        '{{ $stock->item_id }}',
-                                        '{{ $stock->name }}',
-                                        'adjust'
-                                    )"
-
-                                >
-
-                                    Điều chỉnh
-
-                                </button>
-
-
-
-
-
-                                <a
-
-                                    href="{{ route(
-                                        'admin.stocks.history',
-                                        [
-                                            'stockType'=>'PRODUCT',
-                                            'itemId'=>$stock->item_id
-                                        ]
-                                    ) }}"
-
-                                    class="btn btn-sm btn-secondary"
-
-                                >
-
-                                    Lịch sử
-
-                                </a>
-
-
-
-                            </div>
-
-
-                        </td>
-
-
-                    </tr>
-
-
-
-                @empty
-
-
-                    <tr>
-
-
-                        <td
-
-                            colspan="7"
-
-                            class="empty-row"
-
-                        >
-
-
-                            Không có dữ liệu tồn kho.
-
-
-                        </td>
-
-
-                    </tr>
-
-
-                @endforelse
-
-
-
+                            </td>
+
+                            <td style="text-align: center;">
+                                @if($stock->is_active)
+                                    <span class="badge badge-success">
+                                        Đang bán
+                                    </span>
+                                @else
+                                    <span class="badge badge-muted">
+                                        Ngừng bán
+                                    </span>
+                                @endif
+                            </td>
+
+                            <td style="text-align: right;">
+                                <div class="admin-table-actions">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-secondary"
+                                        style="color: var(--admin-success); border-color: var(--admin-success-border);"
+                                        onclick="openStockModal('PRODUCT', '{{ $stock->item_id }}', '{{ addslashes($stock->name) }}', 'import')"
+                                        title="Nhập thêm hàng vào kho"
+                                    >
+                                        Nhập
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-secondary"
+                                        style="color: var(--admin-warning); border-color: var(--admin-warning-border);"
+                                        onclick="openStockModal('PRODUCT', '{{ $stock->item_id }}', '{{ addslashes($stock->name) }}', 'export')"
+                                        title="Xuất hàng khỏi kho"
+                                    >
+                                        Xuất
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-secondary"
+                                        onclick="openStockModal('PRODUCT', '{{ $stock->item_id }}', '{{ addslashes($stock->name) }}', 'adjust')"
+                                        title="Cân chỉnh số lượng tồn kho thực tế"
+                                    >
+                                        Chỉnh
+                                    </button>
+
+                                    <a
+                                        href="{{ route('admin.stocks.history', ['stockType'=>'PRODUCT', 'itemId'=>$stock->item_id]) }}"
+                                        class="btn btn-sm btn-secondary"
+                                        title="Xem lịch sử biến động kho"
+                                    >
+                                        Lịch sử
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="empty">
+                                <p>Không có dữ liệu tồn kho phù hợp.</p>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
-
-
             </table>
-
-
         </div>
 
-
-
-
-
-        <div class="stock-pagination">
-
-
-            {{ $stocks->links() }}
-
-
-        </div>
-
+        @include('admin.partials.pagination', ['paginator' => $stocks])
 
     </div>
 
-
-
-
-
 </div>
-
-
-
-
-
 
 
 {{-- =========================================================
      MODAL THAY ĐỔI TỒN KHO
 ========================================================== --}}
-
-
-
-<div
-
-    id="stockModal"
-
-    class="stock-modal"
-
-    style="display:none"
-
->
-
-
-
+<div id="stockModal" class="stock-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="stockModalTitle">
     <div class="stock-modal-box">
-
-
-
         <div class="stock-modal-header">
-
-
-            <h3>
-
-                Điều chỉnh tồn kho
-
-            </h3>
-
-
-            <button
-
-                type="button"
-
-                onclick="closeStockModal()"
-
-                class="stock-modal-close"
-
-            >
-
-                ×
-
+            <h3 id="stockModalTitle">Điều chỉnh tồn kho</h3>
+            <button type="button" onclick="closeStockModal()" class="stock-modal-close" aria-label="Đóng cửa sổ">
+                &times;
             </button>
-
-
         </div>
 
-
-
-
-
-        <form
-
-            id="stockChangeForm"
-
-            method="POST"
-
-        >
-
-
+        <form id="stockChangeForm" method="POST">
             @csrf
 
-
-
-
-
             <div class="form-group">
-
-
-                <label>
-
-                    Sản phẩm
-
-                </label>
-
-
-                <input
-
-                    type="text"
-
-                    id="stockItemName"
-
-                    readonly
-
-                >
-
-
+                <label for="stockItemName">Sản phẩm</label>
+                <input type="text" id="stockItemName" readonly style="background: var(--admin-canvas);">
             </div>
 
-
-
-
-
             <div class="form-group">
-
-
-                <label>
-
-                    Số lượng
-
-                </label>
-
-
-                <input
-
-                    type="number"
-
-                    name="quantity"
-
-                    min="0"
-
-                    required
-
-                >
-
-
+                <label for="stockQuantity">Số lượng</label>
+                <input type="number" id="stockQuantity" name="quantity" min="0" required>
             </div>
 
-
-
-
-
             <div class="form-group">
-
-
-                <label>
-
-                    Ghi chú
-
-                </label>
-
-
-                <textarea
-
-                    name="note"
-
-                    rows="3"
-
-                    required
-
-                ></textarea>
-
-
+                <label for="stockNote">Ghi chú</label>
+                <textarea id="stockNote" name="note" rows="3" required placeholder="Nhập lý do nhập / xuất / điều chỉnh..."></textarea>
             </div>
 
-
-
-
-            <input
-
-                type="hidden"
-
-                name="operation"
-
-                id="stockOperation"
-
-            >
-
-
-
-
-
+            <input type="hidden" name="operation" id="stockOperation">
 
             <div class="stock-modal-actions">
-
-
-                <button
-
-                    type="button"
-
-                    onclick="closeStockModal()"
-
-                    class="btn btn-secondary"
-
-                >
-
+                <button type="button" onclick="closeStockModal()" class="btn btn-secondary">
                     Hủy
-
                 </button>
-
-
-
-
-
-                <button
-
-                    type="submit"
-
-                    class="btn btn-primary"
-
-                >
-
+                <button type="submit" class="btn btn-primary">
                     Xác nhận
-
                 </button>
-
-
             </div>
-
-
-
-
         </form>
-
-
-
     </div>
-
-
-
 </div>
 
-
-
-
-
-
-
 @push('scripts')
-
-
 <script>
-
-
-function openStockModal(
-    type,
-    id,
-    name,
-    operation
-)
-{
-
-
-    const modal =
-        document.getElementById(
-            'stockModal'
-        );
-
-
-    const form =
-        document.getElementById(
-            'stockChangeForm'
-        );
-
-
-
-    document.getElementById(
-        'stockItemName'
-    ).value = name;
-
-
-
-    document.getElementById(
-        'stockOperation'
-    ).value = operation;
-
-
-
-
-
-    form.action =
-        `/admin/stocks/${type}/${id}/change`;
-
-
-
-    modal.style.display =
-        'flex';
-
-
-
+function openStockModal(type, id, name, operation) {
+    const modal = document.getElementById('stockModal');
+    const form = document.getElementById('stockChangeForm');
+    document.getElementById('stockItemName').value = name;
+    document.getElementById('stockOperation').value = operation;
+    form.action = `/admin/stocks/${type}/${id}/change`;
+    modal.style.display = 'flex';
 }
 
-
-
-
-
-function closeStockModal()
-{
-
-    document.getElementById(
-        'stockModal'
-    ).style.display =
-        'none';
-
+function closeStockModal() {
+    document.getElementById('stockModal').style.display = 'none';
 }
 
-
-
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeStockModal();
+    }
+});
 </script>
-
-
 @endpush
-
-
-
 @endsection

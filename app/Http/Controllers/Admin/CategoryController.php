@@ -64,7 +64,7 @@ class CategoryController extends Controller
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048',
+                'max:5120',
             ],
 
             'display_order' => [
@@ -78,7 +78,7 @@ class CategoryController extends Controller
 
             'image.image' => 'File tải lên phải là hình ảnh.',
             'image.mimes' => 'Ảnh chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.',
-            'image.max' => 'Dung lượng ảnh không được vượt quá 2MB.',
+            'image.max' => 'Dung lượng ảnh không được vượt quá 5MB.',
 
             'display_order.integer' => 'Thứ tự hiển thị phải là số nguyên.',
             'display_order.min' => 'Thứ tự hiển thị không được âm.',
@@ -148,7 +148,7 @@ class CategoryController extends Controller
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048',
+                'max:5120',
             ],
 
             'display_order' => [
@@ -162,7 +162,7 @@ class CategoryController extends Controller
 
             'image.image' => 'File tải lên phải là hình ảnh.',
             'image.mimes' => 'Ảnh chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.',
-            'image.max' => 'Dung lượng ảnh không được vượt quá 2MB.',
+            'image.max' => 'Dung lượng ảnh không được vượt quá 5MB.',
 
             'display_order.integer' => 'Thứ tự hiển thị phải là số nguyên.',
             'display_order.min' => 'Thứ tự hiển thị không được âm.',
