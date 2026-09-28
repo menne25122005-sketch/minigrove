@@ -21,7 +21,6 @@ class ProductController extends Controller
         $keyword = trim((string) $request->keyword);
         $categoryId = $request->category_id;
         $status = $request->status;
-
         $products = Product::with([
             'category',
             'images' => function ($query) {
@@ -34,12 +33,12 @@ class ProductController extends Controller
                     $q->where(
                         'name',
                         'like',
-                        '%' . $keyword . '%'
+                        '%'.$keyword.'%'
                     )
                         ->orWhere(
                             'sku',
                             'like',
-                            '%' . $keyword . '%'
+                            '%'.$keyword.'%'
                         );
                 });
             })
@@ -64,7 +63,6 @@ class ProductController extends Controller
             ->orderBy('id', 'asc')
             ->paginate(10)
             ->withQueryString();
-
         $categories = Category::orderBy('display_order')
             ->orderBy('name')
             ->get();
@@ -107,75 +105,46 @@ class ProductController extends Controller
     {
         $validated = $this->validateProduct($request);
 
+        $studioProductType = $this->resolveStudioProductType(
+            (int) $validated['category_id']
+        );
+
         DB::transaction(
-            function () use ($request, $validated) {
-
+            function () use (
+                $request,
+                $validated,
+                $studioProductType
+            ) {
                 $product = Product::create([
-                    'category_id' =>
-                        $validated['category_id'],
+                    'category_id' => $validated['category_id'],
 
-                    'name' =>
-                        $validated['name'],
+                    // Danh mục Studio tự quyết định loại thành phần.
+                    'product_type' => $studioProductType,
+                    'is_studio_item' => $studioProductType !== null,
 
-                    'sku' =>
-                        strtoupper($validated['sku']),
+                    // Bình mới mặc định sức chứa 8 thành phần.
+                    'studio_capacity' => $studioProductType === 'container'
+                            ? 8
+                            : null,
 
-                    'ecosystem_type' =>
-                        $validated['ecosystem_type'],
+                    'name' => $validated['name'],
+                    'sku' => strtoupper($validated['sku']),
+                    'ecosystem_type' => $validated['ecosystem_type'],
+                    'list_price' => $validated['list_price'],
+                    'sale_price' => $validated['sale_price'] ?? null,
+                    'size' => $validated['size'] ?? null,
+                    'care_level' => $validated['care_level'],
+                    'light_requirement' => $validated['light_requirement'] ?? null,
+                    'care_cycle_days' => $validated['care_cycle_days'] ?? null,
+                    'description' => $validated['description'] ?? null,
+                    'concept_story' => $validated['concept_story'] ?? null,
+                    'care_instructions' => $validated['care_instructions'] ?? null,
+                    'stock_quantity' => $validated['stock_quantity'],
+                    'is_active' => $request->boolean('is_active'),
+                    'is_featured' => $request->boolean('is_featured'),
 
-                    'list_price' =>
-                        $validated['list_price'],
-
-                    'sale_price' =>
-                        $validated['sale_price'] ?? null,
-
-                    'size' =>
-                        $validated['size'] ?? null,
-
-                    'care_level' =>
-                        $validated['care_level'],
-
-                    'light_requirement' =>
-                        $validated[
-                            'light_requirement'
-                        ] ?? null,
-
-                    'care_cycle_days' =>
-                        $validated[
-                            'care_cycle_days'
-                        ] ?? null,
-
-                    'description' =>
-                        $validated['description'] ?? null,
-
-                    'concept_story' =>
-                        $validated[
-                            'concept_story'
-                        ] ?? null,
-
-                    'care_instructions' =>
-                        $validated[
-                            'care_instructions'
-                        ] ?? null,
-
-                    'stock_quantity' =>
-                        $validated['stock_quantity'],
-
-                    'is_active' =>
-                        $request->boolean(
-                            'is_active'
-                        ),
-
-                    'is_featured' =>
-                        $request->boolean(
-                            'is_featured'
-                        ),
-
-                    'is_grove_eligible' =>
-                        $request->boolean(
-                            'is_grove_eligible'
-                        ),
-
+                    // Chọn danh mục Studio thì tự động được dùng trong Studio.
+                    'is_grove_eligible' => $studioProductType !== null,
                 ]);
 
                 /*
@@ -184,13 +153,11 @@ class ProductController extends Controller
                  */
                 if ($request->hasFile('images')) {
                     $primaryImageIndex = (int) (
-                        $validated['primary_image_index']
-                        ?? 0
+                        $validated['primary_image_index'] ?? 0
                     );
 
                     foreach (
-                        $request->file('images')
-                        as $index => $image
+                        $request->file('images') as $index => $image
                     ) {
                         $path = $image->store(
                             'products',
@@ -199,8 +166,7 @@ class ProductController extends Controller
 
                         $product->images()->create([
                             'image_path' => $path,
-                            'is_primary' =>
-                                $index === $primaryImageIndex,
+                            'is_primary' => $index === $primaryImageIndex,
                             'sort_order' => $index,
                         ]);
                     }
@@ -227,7 +193,6 @@ class ProductController extends Controller
                     ->orderBy('sort_order');
             },
         ]);
-
         $categories = Category::orderBy(
             'display_order'
         )
@@ -255,85 +220,54 @@ class ProductController extends Controller
             $product
         );
 
+        $studioProductType = $this->resolveStudioProductType(
+            (int) $validated['category_id']
+        );
+
         DB::transaction(
             function () use (
                 $request,
                 $validated,
-                $product
+                $product,
+                $studioProductType
             ) {
                 $product->update([
-                    'category_id' =>
-                        $validated['category_id'],
+                    'category_id' => $validated['category_id'],
 
-                    'name' =>
-                        $validated['name'],
+                    // Danh mục Studio tự quyết định loại thành phần.
+                    'product_type' => $studioProductType,
+                    'is_studio_item' => $studioProductType !== null,
 
-                    'sku' =>
-                        strtoupper($validated['sku']),
+                    // Nếu vẫn là Bình thì giữ capacity cũ;
+                    // nếu vừa chuyển sang Bình thì mặc định 8.
+                    'studio_capacity' => $studioProductType === 'container'
+                            ? ($product->studio_capacity ?: 8)
+                            : null,
 
-                    'ecosystem_type' =>
-                        $validated['ecosystem_type'],
+                    'name' => $validated['name'],
+                    'sku' => strtoupper($validated['sku']),
+                    'ecosystem_type' => $validated['ecosystem_type'],
+                    'list_price' => $validated['list_price'],
+                    'sale_price' => $validated['sale_price'] ?? null,
+                    'size' => $validated['size'] ?? null,
+                    'care_level' => $validated['care_level'],
+                    'light_requirement' => $validated['light_requirement'] ?? null,
+                    'care_cycle_days' => $validated['care_cycle_days'] ?? null,
+                    'description' => $validated['description'] ?? null,
+                    'concept_story' => $validated['concept_story'] ?? null,
+                    'care_instructions' => $validated['care_instructions'] ?? null,
+                    'stock_quantity' => $validated['stock_quantity'],
+                    'is_active' => $request->boolean('is_active'),
+                    'is_featured' => $request->boolean('is_featured'),
 
-                    'list_price' =>
-                        $validated['list_price'],
-
-                    'sale_price' =>
-                        $validated['sale_price'] ?? null,
-
-                    'size' =>
-                        $validated['size'] ?? null,
-
-                    'care_level' =>
-                        $validated['care_level'],
-
-                    'light_requirement' =>
-                        $validated[
-                            'light_requirement'
-                        ] ?? null,
-
-                    'care_cycle_days' =>
-                        $validated[
-                            'care_cycle_days'
-                        ] ?? null,
-
-                    'description' =>
-                        $validated['description'] ?? null,
-
-                    'concept_story' =>
-                        $validated[
-                            'concept_story'
-                        ] ?? null,
-
-                    'care_instructions' =>
-                        $validated[
-                            'care_instructions'
-                        ] ?? null,
-
-                    'stock_quantity' =>
-                        $validated['stock_quantity'],
-
-                    'is_active' =>
-                        $request->boolean(
-                            'is_active'
-                        ),
-
-                    'is_featured' =>
-                        $request->boolean(
-                            'is_featured'
-                        ),
-
-                    'is_grove_eligible' =>
-                        $request->boolean(
-                            'is_grove_eligible'
-                        ),
-
+                    // Chọn danh mục Studio thì tự động được dùng trong Studio.
+                    'is_grove_eligible' => $studioProductType !== null,
                 ]);
 
                 /*
                  * Upload thêm ảnh.
                  */
                 if ($request->hasFile('images')) {
-
                     $hasPrimaryImage =
                         $product->images()
                             ->where(
@@ -365,8 +299,7 @@ class ProductController extends Controller
                             ->max('sort_order') ?? -1;
 
                     foreach (
-                        $request->file('images')
-                        as $index => $image
+                        $request->file('images') as $index => $image
                     ) {
                         $path = $image->store(
                             'products',
@@ -376,17 +309,15 @@ class ProductController extends Controller
                         $product->images()->create([
                             'image_path' => $path,
 
-                            'is_primary' =>
-                                $newPrimaryImageIndex !== null
+                            'is_primary' => $newPrimaryImageIndex !== null
                                     ? $index ===
                                         $newPrimaryImageIndex
                                     : (
-                                        !$hasPrimaryImage &&
+                                        ! $hasPrimaryImage &&
                                         $index === 0
                                     ),
 
-                            'sort_order' =>
-                                $currentMaxOrder
+                            'sort_order' => $currentMaxOrder
                                 + $index
                                 + 1,
                         ]);
@@ -407,20 +338,20 @@ class ProductController extends Controller
      * Ẩn / hiện Product.
      */
     public function toggleStatus(Product $product)
-{
-    $product->update([
-        'is_active' => !$product->is_active,
-    ]);
+    {
+        $product->update([
+            'is_active' => ! $product->is_active,
+        ]);
 
-    return redirect()
-        ->route('admin.products.index')
-        ->with(
-            'success',
-            $product->is_active
-                ? 'Đã chuyển sản phẩm sang Active.'
-                : 'Đã chuyển sản phẩm sang Inactive.'
-        );
-}
+        return redirect()
+            ->route('admin.products.index')
+            ->with(
+                'success',
+                $product->is_active
+                    ? 'Đã chuyển sản phẩm sang Active.'
+                    : 'Đã chuyển sản phẩm sang Inactive.'
+            );
+    }
 
     /**
      * Đặt một ảnh làm ảnh chính.
@@ -431,7 +362,6 @@ class ProductController extends Controller
     ) {
         $productImage = $product->images()
             ->findOrFail($image);
-
         DB::transaction(
             function () use (
                 $product,
@@ -440,7 +370,6 @@ class ProductController extends Controller
                 $product->images()->update([
                     'is_primary' => false,
                 ]);
-
                 $productImage->update([
                     'is_primary' => true,
                 ]);
@@ -464,7 +393,6 @@ class ProductController extends Controller
     ) {
         $productImage = $product->images()
             ->findOrFail($image);
-
         $validated = $request->validate(
             [
                 'image' => [
@@ -475,34 +403,25 @@ class ProductController extends Controller
                 ],
             ],
             [
-                'image.required' =>
-                    'Bạn phải chọn ảnh thay thế.',
-                'image.image' =>
-                    'File thay thế phải là hình ảnh.',
-                'image.mimes' =>
-                    'Ảnh chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.',
-                'image.max' =>
-                    'Ảnh thay thế không được vượt quá 4MB.',
+                'image.required' => 'Bạn phải chọn ảnh thay thế.',
+                'image.image' => 'File thay thế phải là hình ảnh.',
+                'image.mimes' => 'Ảnh chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.',
+                'image.max' => 'Ảnh thay thế không được vượt quá 4MB.',
             ]
         );
-
         $oldPath = $productImage->image_path;
-
         $newPath = $validated['image']->store(
             'products',
             'public'
         );
-
         try {
             $productImage->update([
                 'image_path' => $newPath,
             ]);
         } catch (\Throwable $exception) {
             Storage::disk('public')->delete($newPath);
-
             throw $exception;
         }
-
         if (
             $oldPath &&
             Storage::disk('public')->exists($oldPath)
@@ -525,9 +444,7 @@ class ProductController extends Controller
     ) {
         $productImage = $product->images()
             ->findOrFail($image);
-
         $wasPrimary = $productImage->is_primary;
-
         DB::transaction(
             function () use (
                 $product,
@@ -545,21 +462,17 @@ class ProductController extends Controller
                             $productImage->image_path
                         );
                 }
-
                 $productImage->delete();
-
                 /*
                  * Nếu xóa ảnh chính,
                  * lấy ảnh đầu tiên còn lại
                  * làm ảnh chính.
                  */
                 if ($wasPrimary) {
-
                     $nextImage =
                         $product->images()
                             ->orderBy('sort_order')
                             ->first();
-
                     if ($nextImage) {
                         $nextImage->update([
                             'is_primary' => true,
@@ -585,7 +498,6 @@ class ProductController extends Controller
          * thì không xóa cứng.
          */
         if ($product->orderDetails()->exists()) {
-
             $product->update([
                 'is_active' => false,
             ]);
@@ -597,7 +509,6 @@ class ProductController extends Controller
                     'Sản phẩm đã phát sinh đơn hàng nên không thể xóa. Sản phẩm đã được chuyển sang trạng thái không hoạt động.'
                 );
         }
-
         /*
          * Nếu Product đang có dữ liệu nghiệp vụ
          * liên quan thì cũng không xóa cứng.
@@ -622,12 +533,9 @@ class ProductController extends Controller
                     'Sản phẩm đang có dữ liệu liên quan nên không thể xóa cứng. Sản phẩm đã được chuyển sang trạng thái không hoạt động.'
                 );
         }
-
         DB::transaction(
             function () use ($product) {
-
                 foreach ($product->images as $image) {
-
                     if (
                         Storage::disk('public')
                             ->exists(
@@ -640,7 +548,6 @@ class ProductController extends Controller
                             );
                     }
                 }
-
                 $product->delete();
             }
         );
@@ -653,10 +560,26 @@ class ProductController extends Controller
             );
     }
 
+    private function resolveStudioProductType(int $categoryId): ?string
+    {
+        $slug = Category::query()
+            ->whereKey($categoryId)
+            ->value('slug');
+
+        return [
+            'binh' => 'container',
+            'cay' => 'plant',
+            'reu' => 'moss',
+            'nen' => 'substrate',
+            'da' => 'stone',
+            'phu-kien' => 'accessory',
+        ][$slug] ?? null;
+    }
+
     /**
      * Validation dùng chung
      * cho Store + Update.
-     */
+     *  */
     private function validateProduct(
         Request $request,
         ?Product $product = null
@@ -668,26 +591,22 @@ class ProductController extends Controller
                     'integer',
                     'exists:categories,id',
                 ],
-
                 'name' => [
                     'required',
                     'string',
                     'min:5',
                     'max:150',
                 ],
-
                 'sku' => [
                     'required',
                     'string',
                     'max:50',
                     'regex:/^[A-Za-z0-9-]+$/',
-
                     Rule::unique(
                         'products',
                         'sku'
                     )->ignore($product?->id),
                 ],
-
                 'ecosystem_type' => [
                     'required',
                     Rule::in([
@@ -696,26 +615,22 @@ class ProductController extends Controller
                         'dry',
                     ]),
                 ],
-
                 'list_price' => [
                     'required',
                     'numeric',
                     'gt:0',
                 ],
-
                 'sale_price' => [
                     'nullable',
                     'numeric',
                     'gte:0',
                     'lt:list_price',
                 ],
-
                 'size' => [
                     'nullable',
                     'string',
                     'max:50',
                 ],
-
                 'care_level' => [
                     'required',
                     Rule::in([
@@ -724,62 +639,54 @@ class ProductController extends Controller
                         'high',
                     ]),
                 ],
-
                 'light_requirement' => [
                     'nullable',
                     'string',
                     'max:150',
                 ],
-
                 /*
-                 * Nếu bật My Grove,
+                 * Sản phẩm thuộc một trong 6 danh mục Studio
                  * bắt buộc có chu kỳ chăm sóc.
                  */
                 'care_cycle_days' => [
                     Rule::requiredIf(
-                        fn () =>
-                            $request->boolean(
-                                'is_grove_eligible'
+                        fn () => $this->resolveStudioProductType(
+                            (int) $request->input(
+                                'category_id'
                             )
+                        ) !== null
                     ),
                     'nullable',
                     'integer',
                     'min:1',
                 ],
-
                 'description' => [
                     'nullable',
                     'string',
                 ],
-
                 'concept_story' => [
                     'nullable',
                     'string',
                 ],
-
                 'care_instructions' => [
                     'nullable',
                     'string',
                 ],
-
                 'stock_quantity' => [
                     'required',
                     'integer',
                     'min:0',
                 ],
-
                 'images' => [
                     'nullable',
                     'array',
                     'max:8',
                 ],
-
                 'images.*' => [
                     'image',
                     'mimes:jpg,jpeg,png,webp',
                     'max:4096',
                 ],
-
                 'primary_image_index' => [
                     'nullable',
                     'integer',
@@ -788,111 +695,51 @@ class ProductController extends Controller
                 ],
             ],
             [
-                'category_id.required' =>
-                    'Bạn phải chọn danh mục.',
-
-                'category_id.exists' =>
-                    'Danh mục không tồn tại.',
-
-                'name.required' =>
-                    'Tên sản phẩm không được để trống.',
-
-                'name.min' =>
-                    'Tên sản phẩm phải có ít nhất 5 ký tự.',
-
-                'name.max' =>
-                    'Tên sản phẩm không được vượt quá 150 ký tự.',
-
-                'sku.required' =>
-                    'SKU không được để trống.',
-
-                'sku.unique' =>
-                    'SKU đã tồn tại.',
-
-                'sku.regex' =>
-                    'SKU chỉ được chứa chữ, số và dấu gạch ngang (-).',
-
-                'ecosystem_type.required' =>
-                    'Bạn phải chọn loại hệ sinh thái.',
-
-                'ecosystem_type.in' =>
-                    'Loại hệ sinh thái không hợp lệ.',
-
-                'list_price.required' =>
-                    'Giá niêm yết không được để trống.',
-
-                'list_price.numeric' =>
-                    'Giá niêm yết phải là số.',
-
-                'list_price.gt' =>
-                    'Giá niêm yết phải lớn hơn 0.',
-
-                'sale_price.numeric' =>
-                    'Giá khuyến mãi phải là số.',
-
-                'sale_price.gte' =>
-                    'Giá khuyến mãi không được âm.',
-
-                'sale_price.lt' =>
-                    'Giá khuyến mãi phải nhỏ hơn giá niêm yết.',
-
-                'stock_quantity.required' =>
-                    'Tồn kho không được để trống.',
-
-                'stock_quantity.integer' =>
-                    'Tồn kho phải là số nguyên.',
-
-                'stock_quantity.min' =>
-                    'Tồn kho không được âm.',
-
-                'care_level.required' =>
-                    'Bạn phải chọn mức độ chăm sóc.',
-
-                'care_cycle_days.required' =>
-                    'Product bật My Grove phải có chu kỳ chăm sóc.',
-
-                'care_cycle_days.integer' =>
-                    'Chu kỳ chăm sóc phải là số nguyên.',
-
-                'care_cycle_days.min' =>
-                    'Chu kỳ chăm sóc phải từ 1 ngày trở lên.',
-
-                'images.max' =>
-                    'Mỗi lần chỉ được tải tối đa 8 ảnh.',
-
-                'images.*.image' =>
-                    'File tải lên phải là hình ảnh.',
-
-                'images.*.mimes' =>
-                    'Ảnh chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.',
-
-                'images.*.max' =>
-                    'Mỗi ảnh không được vượt quá 4MB.',
-
-                'primary_image_index.integer' =>
-                    'Ảnh chính được chọn không hợp lệ.',
+                'category_id.required' => 'Bạn phải chọn danh mục.',
+                'category_id.exists' => 'Danh mục không tồn tại.',
+                'name.required' => 'Tên sản phẩm không được để trống.',
+                'name.min' => 'Tên sản phẩm phải có ít nhất 5 ký tự.',
+                'name.max' => 'Tên sản phẩm không được vượt quá 150 ký tự.',
+                'sku.required' => 'SKU không được để trống.',
+                'sku.unique' => 'SKU đã tồn tại.',
+                'sku.regex' => 'SKU chỉ được chứa chữ, số và dấu gạch ngang (-).',
+                'ecosystem_type.required' => 'Bạn phải chọn loại hệ sinh thái.',
+                'ecosystem_type.in' => 'Loại hệ sinh thái không hợp lệ.',
+                'list_price.required' => 'Giá niêm yết không được để trống.',
+                'list_price.numeric' => 'Giá niêm yết phải là số.',
+                'list_price.gt' => 'Giá niêm yết phải lớn hơn 0.',
+                'sale_price.numeric' => 'Giá khuyến mãi phải là số.',
+                'sale_price.gte' => 'Giá khuyến mãi không được âm.',
+                'sale_price.lt' => 'Giá khuyến mãi phải nhỏ hơn giá niêm yết.',
+                'stock_quantity.required' => 'Tồn kho không được để trống.',
+                'stock_quantity.integer' => 'Tồn kho phải là số nguyên.',
+                'stock_quantity.min' => 'Tồn kho không được âm.',
+                'care_level.required' => 'Bạn phải chọn mức độ chăm sóc.',
+                'care_cycle_days.required' => 'Sản phẩm dùng trong Studio phải có chu kỳ chăm sóc.',
+                'care_cycle_days.integer' => 'Chu kỳ chăm sóc phải là số nguyên.',
+                'care_cycle_days.min' => 'Chu kỳ chăm sóc phải từ 1 ngày trở lên.',
+                'images.max' => 'Mỗi lần chỉ được tải tối đa 8 ảnh.',
+                'images.*.image' => 'File tải lên phải là hình ảnh.',
+                'images.*.mimes' => 'Ảnh chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.',
+                'images.*.max' => 'Mỗi ảnh không được vượt quá 4MB.',
+                'primary_image_index.integer' => 'Ảnh chính được chọn không hợp lệ.',
             ]
         );
-
         $newImages = $request->file(
             'images',
             []
         );
-
         $newImageCount = count($newImages);
-
         if (
             $product &&
             $product->images()->count()
                 + $newImageCount > 8
         ) {
             throw ValidationException::withMessages([
-                'images' =>
-                    'Mỗi sản phẩm chỉ được có tối đa 8 ảnh. '
-                    . 'Hãy xóa hoặc thay thế ảnh hiện có trước khi thêm ảnh mới.',
+                'images' => 'Mỗi sản phẩm chỉ được có tối đa 8 ảnh. '
+                    .'Hãy xóa hoặc thay thế ảnh hiện có trước khi thêm ảnh mới.',
             ]);
         }
-
         if (
             array_key_exists(
                 'primary_image_index',
@@ -906,8 +753,7 @@ class ProductController extends Controller
             )
         ) {
             throw ValidationException::withMessages([
-                'primary_image_index' =>
-                    'Ảnh chính phải thuộc các ảnh mới bạn vừa chọn.',
+                'primary_image_index' => 'Ảnh chính phải thuộc các ảnh mới bạn vừa chọn.',
             ]);
         }
 

@@ -3363,3 +3363,57 @@ td:last-child {
     font-size: 12px;
     font-weight: 600;
 }
+/* Product form - new image upload preview */
+.new-image-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.new-image-card {
+    min-width: 0;
+    padding: 10px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-sm);
+}
+
+.new-image-card > img {
+    display: block;
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--admin-border);
+}
+
+.new-image-name {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--admin-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.new-image-primary {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+@media (max-width: 640px) {
+    .new-image-preview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .new-image-card > img {
+        height: 140px;
+    }
+}

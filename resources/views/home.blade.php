@@ -220,7 +220,7 @@
         </div>
 
 
-        <div class="category-grid">
+        <div class="category-grid" id="categoryGrid">
 
             @forelse ($categories as $category)
 
@@ -238,7 +238,12 @@
                         {{ $category->image
                             ? 'has-image'
                             : 'no-image' }}
+                        {{ $loop->iteration > 5 ? 'category-card--extra' : '' }}
                     "
+                    @if ($loop->iteration > 5)
+                        aria-hidden="true"
+                        tabindex="-1"
+                    @endif
                 >
 
                     @if ($category->image)
@@ -297,6 +302,34 @@
             @endforelse
 
         </div>
+
+        @if ($categories->count() > 5)
+            <div class="category-toggle-wrap">
+                <button
+                    type="button"
+                    class="category-toggle-btn"
+                    id="categoryToggleBtn"
+                    aria-expanded="false"
+                    aria-controls="categoryGrid"
+                >
+                    <span class="category-toggle-text">Xem thêm danh mục</span>
+                    <svg
+                        class="category-toggle-icon"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+            </div>
+        @endif
 
     </div>
 
@@ -586,8 +619,9 @@
     // 5: Clone Slide 1
     var currentTrackIndex = 1;
     var timer = null;
-    var intervalMs = 5000;
-    var isPaused = false;
+    var intervalMs = 2000; // Autoplay delay: exactly 2000ms
+    var isHovered = false;
+    var isFocused = false;
     var isAnimating = false;
     var animationFallbackTimer = null;
     var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -702,9 +736,13 @@
         moveToTrackIndex(currentTrackIndex - 1, false);
     }
 
+    function shouldAutoplay() {
+        return !isHovered && !isFocused && !document.hidden;
+    }
+
     function startAutoplay() {
-        if (prefersReducedMotion || isPaused) return;
         stopAutoplay();
+        if (!shouldAutoplay()) return;
         timer = setInterval(function () {
             nextSlide();
         }, intervalMs);
@@ -717,14 +755,11 @@
         }
     }
 
-    function pause() {
-        isPaused = true;
+    function resetAutoplay() {
         stopAutoplay();
-    }
-
-    function resume() {
-        isPaused = false;
-        startAutoplay();
+        if (shouldAutoplay()) {
+            startAutoplay();
+        }
     }
 
     // Previous / Next controls
@@ -733,7 +768,7 @@
             e.preventDefault();
             if (isAnimating) return;
             nextSlide();
-            startAutoplay();
+            resetAutoplay();
         });
     }
 
@@ -742,7 +777,7 @@
             e.preventDefault();
             if (isAnimating) return;
             prevSlide();
-            startAutoplay();
+            resetAutoplay();
         });
     }
 
@@ -756,18 +791,38 @@
                 var targetTrack = targetRealIndex + 1;
                 if (targetTrack !== currentTrackIndex) {
                     moveToTrackIndex(targetTrack, false);
-                    startAutoplay();
                 }
+                resetAutoplay();
             }
         });
     });
 
     // Pause on hover and focus
     if (heroBox) {
-        heroBox.addEventListener('mouseenter', pause);
-        heroBox.addEventListener('mouseleave', resume);
-        heroBox.addEventListener('focusin', pause);
-        heroBox.addEventListener('focusout', resume);
+        heroBox.addEventListener('mouseenter', function () {
+            isHovered = true;
+            stopAutoplay();
+        });
+
+        heroBox.addEventListener('mouseleave', function () {
+            isHovered = false;
+            if (shouldAutoplay()) {
+                startAutoplay();
+            }
+        });
+
+        heroBox.addEventListener('focusin', function () {
+            isFocused = true;
+            stopAutoplay();
+        });
+
+        heroBox.addEventListener('focusout', function (e) {
+            if (heroBox.contains(e.relatedTarget)) return;
+            isFocused = false;
+            if (shouldAutoplay()) {
+                startAutoplay();
+            }
+        });
 
         // Keyboard navigation (ArrowLeft & ArrowRight)
         heroBox.addEventListener('keydown', function (e) {
@@ -775,12 +830,12 @@
                 e.preventDefault();
                 if (isAnimating) return;
                 prevSlide();
-                startAutoplay();
+                resetAutoplay();
             } else if (e.key === 'ArrowRight') {
                 e.preventDefault();
                 if (isAnimating) return;
                 nextSlide();
-                startAutoplay();
+                resetAutoplay();
             }
         });
 
@@ -794,7 +849,7 @@
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
                 touchStartTime = Date.now();
-                pause();
+                stopAutoplay();
             }
         }, { passive: true });
 
@@ -815,13 +870,87 @@
                     }
                 }
             }
-            resume();
+            if (shouldAutoplay()) {
+                startAutoplay();
+            }
         }, { passive: true });
     }
+
+    // Page visibility (tab switch / background)
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            stopAutoplay();
+        } else {
+            if (shouldAutoplay()) {
+                startAutoplay();
+            }
+        }
+    });
+
+    window.addEventListener('blur', function () {
+        stopAutoplay();
+    });
+
+    window.addEventListener('focus', function () {
+        if (shouldAutoplay()) {
+            startAutoplay();
+        }
+    });
 
     // Set initial position to Real Slide 1 (track index 1)
     moveToTrackIndex(1, true);
     startAutoplay();
+})();
+
+// Category Section Expand / Collapse Controller
+(function () {
+    'use strict';
+
+    var toggleBtn = document.getElementById('categoryToggleBtn');
+    var categoryGrid = document.getElementById('categoryGrid');
+    var categoriesSection = document.getElementById('categories');
+
+    if (!toggleBtn || !categoryGrid) return;
+
+    var toggleText = toggleBtn.querySelector('.category-toggle-text');
+    var extraCards = categoryGrid.querySelectorAll('.category-card--extra');
+
+    toggleBtn.addEventListener('click', function () {
+        var isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+
+        if (!isExpanded) {
+            // Expand remaining categories
+            categoryGrid.classList.add('is-expanded');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+            if (toggleText) {
+                toggleText.textContent = 'Thu gọn danh mục';
+            }
+            extraCards.forEach(function (card) {
+                card.removeAttribute('aria-hidden');
+                card.removeAttribute('tabindex');
+            });
+        } else {
+            // Check position before collapsing
+            var sectionRect = categoriesSection ? categoriesSection.getBoundingClientRect() : null;
+            var btnRect = toggleBtn.getBoundingClientRect();
+
+            // Collapse to first 5 categories
+            categoryGrid.classList.remove('is-expanded');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            if (toggleText) {
+                toggleText.textContent = 'Xem thêm danh mục';
+            }
+            extraCards.forEach(function (card) {
+                card.setAttribute('aria-hidden', 'true');
+                card.setAttribute('tabindex', '-1');
+            });
+
+            // Smooth scroll back to category section header if scrolled past
+            if (categoriesSection && (sectionRect.top < 30 || btnRect.top > window.innerHeight)) {
+                categoriesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    });
 })();
 </script>
 @endpush

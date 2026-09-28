@@ -829,10 +829,11 @@
             </div>
 
             <p class="footer-description">
-                Không chỉ bán một Terrarium,
-                MiniGrove đồng hành cùng hệ sinh thái
-                của bạn trong suốt hành trình chăm sóc
-                và phát triển.
+                Terrarium không chỉ là vật trang trí,
+                mà còn là món quà mang thông điệp
+                “trao tặng sự sống”. Mỗi bình chứa
+                đựng cả một hệ sinh thái, tượng trưng
+                cho sự khởi đầu, may mắn và bình an.
             </p>
 
         </div>
