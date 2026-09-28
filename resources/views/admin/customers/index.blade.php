@@ -1,532 +1,235 @@
 @extends('layouts.admin')
 
-@section('title', 'Quản lý khách hàng')
-
-
-@push('styles')
-
-    <link
-        rel="stylesheet"
-        href="{{ asset('css/admin-customers.css') }}"
-    >
-
-@endpush
-
+@section('title', 'Quản lý khách hàng - MiniGrove')
+@section('page-title', 'Khách hàng')
 
 @section('content')
-
-
-<div class="customer-page">
-
+<div class="admin-list-page">
 
     {{-- =========================================================
-         HEADER
+         PAGE HEADER
     ========================================================== --}}
-    <div class="customer-header">
-
-        <div>
-
-            <h1>
+    <div class="admin-index-header">
+        <div class="admin-index-heading">
+            <h1 class="admin-index-title">
                 Khách hàng
             </h1>
-
-            <p>
-                Quản lý tài khoản Customer theo mã định danh,
-                trạng thái và lịch sử giao dịch.
+            <p class="admin-index-subtitle">
+                Quản lý tài khoản Customer theo mã định danh, trạng thái hoạt động và lịch sử giao dịch.
             </p>
-
         </div>
-
     </div>
 
 
-
     {{-- =========================================================
-         THỐNG KÊ
+         QUICK STATS SUMMARY
     ========================================================== --}}
-    <div class="customer-stats">
-
-
-        <div class="customer-stat-card">
-
-            <div class="customer-stat-title">
-                Tổng Customer
-            </div>
-
-            <div class="customer-stat-number">
-                {{ $totalCustomers }}
-            </div>
-
+    <div class="admin-stat-summary">
+        <div class="admin-stat-summary-card">
+            <div class="admin-stat-summary-title">Tổng Customer</div>
+            <div class="admin-stat-summary-val">{{ number_format($totalCustomers) }}</div>
         </div>
 
-
-        <div class="customer-stat-card">
-
-            <div class="customer-stat-title">
-                Active
-            </div>
-
-            <div class="customer-stat-number">
-                {{ $activeCustomers }}
-            </div>
-
+        <div class="admin-stat-summary-card is-running">
+            <div class="admin-stat-summary-title">Active</div>
+            <div class="admin-stat-summary-val">{{ number_format($activeCustomers) }}</div>
         </div>
 
-
-        <div class="customer-stat-card">
-
-            <div class="customer-stat-title">
-                Inactive
-            </div>
-
-            <div class="customer-stat-number">
-                {{ $inactiveCustomers }}
-            </div>
-
+        <div class="admin-stat-summary-card {{ $inactiveCustomers > 0 ? 'is-warning' : '' }}">
+            <div class="admin-stat-summary-title">Inactive</div>
+            <div class="admin-stat-summary-val">{{ number_format($inactiveCustomers) }}</div>
         </div>
 
-
-        <div class="customer-stat-card">
-
-            <div class="customer-stat-title">
-                Customer mới tháng này
-            </div>
-
-            <div class="customer-stat-number">
-                {{ $newCustomersThisMonth }}
-            </div>
-
+        <div class="admin-stat-summary-card">
+            <div class="admin-stat-summary-title">Mới trong tháng</div>
+            <div class="admin-stat-summary-val">{{ number_format($newCustomersThisMonth) }}</div>
         </div>
-
-
     </div>
 
 
+    {{-- =========================================================
+         PRIVACY NOTICE
+    ========================================================== --}}
+    <div class="admin-privacy-note">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <span>
+            <strong>Chính sách bảo mật:</strong> Khu vực quản trị chỉ định danh qua Customer ID. Thông tin nhận dạng cá nhân không được hiển thị để đảm bảo tính riêng tư.
+        </span>
+    </div>
+
 
     {{-- =========================================================
-         DANH SÁCH CUSTOMER
+         TOOLBAR / FILTER
     ========================================================== --}}
-    <div class="customer-section">
+    <div class="admin-toolbar">
+        <form method="GET" action="{{ route('admin.customers.index') }}" class="admin-toolbar-form">
+            <div class="admin-toolbar-search">
+                <span class="admin-toolbar-search-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input
+                    type="text"
+                    name="keyword"
+                    value="{{ $keyword }}"
+                    placeholder="Nhập Customer ID (ví dụ: 5)..."
+                    inputmode="numeric"
+                    autocomplete="off"
+                    aria-label="Tìm kiếm theo Customer ID"
+                >
+            </div>
+
+            <div class="admin-toolbar-select">
+                <select name="status" aria-label="Lọc theo trạng thái">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active" @selected($status === 'active')>Active</option>
+                    <option value="inactive" @selected($status === 'inactive')>Inactive</option>
+                </select>
+            </div>
+
+            <div class="admin-toolbar-actions">
+                <button type="submit" class="btn btn-primary">
+                    Lọc
+                </button>
+
+                <a href="{{ route('admin.customers.index') }}" class="btn btn-secondary">
+                    Đặt lại
+                </a>
+            </div>
+        </form>
+    </div>
 
 
-        <div class="customer-section-heading">
+    {{-- =========================================================
+         DATA TABLE CARD
+    ========================================================== --}}
+    <div class="card admin-table-card">
 
+        <div class="admin-table-header">
             <div>
-
-                <h2>
+                <h2 class="admin-table-title">
                     Danh sách khách hàng
                 </h2>
-
-                <p>
-                    Customer được quản lý bằng mã định danh.
-                    Thông tin cá nhân không hiển thị trong khu vực Admin.
+                <p class="admin-table-desc">
+                    Tổng cộng {{ $customers->total() }} tài khoản
                 </p>
-
             </div>
-
         </div>
 
-
-
-        {{-- =====================================================
-             FILTER
-        ====================================================== --}}
-        <form
-            method="GET"
-            action="{{ route('admin.customers.index') }}"
-            class="customer-filter"
-        >
-
-
-            <input
-                type="text"
-                name="keyword"
-                value="{{ $keyword }}"
-                placeholder="Nhập Customer ID, ví dụ: 5"
-                inputmode="numeric"
-                autocomplete="off"
-            >
-
-
-            <select name="status">
-
-                <option value="">
-                    Tất cả trạng thái
-                </option>
-
-
-                <option
-                    value="active"
-                    {{
-                        $status === 'active'
-                            ? 'selected'
-                            : ''
-                    }}
-                >
-                    Active
-                </option>
-
-
-                <option
-                    value="inactive"
-                    {{
-                        $status === 'inactive'
-                            ? 'selected'
-                            : ''
-                    }}
-                >
-                    Inactive
-                </option>
-
-            </select>
-
-
-            <button
-                type="submit"
-                class="
-                    customer-btn
-                    customer-btn-primary
-                "
-            >
-                Lọc
-            </button>
-
-
-            <a
-                href="{{ route('admin.customers.index') }}"
-                class="
-                    customer-btn
-                    customer-btn-secondary
-                "
-            >
-                Đặt lại
-            </a>
-
-
-        </form>
-
-
-
-        {{-- =====================================================
-             PRIVACY NOTE
-        ====================================================== --}}
-        <div class="customer-privacy-note customer-list-privacy-note">
-
-            Khu vực quản trị chỉ sử dụng Customer ID.
-            Họ tên, Email, số điện thoại, Avatar và thông tin nhận hàng
-            của Customer không được hiển thị.
-
-        </div>
-
-
-
-        {{-- =====================================================
-             TABLE
-        ====================================================== --}}
-        <div class="customer-table-wrapper">
-
-
-            <table class="customer-table">
-
-
+        <div class="table-wrapper">
+            <table>
                 <thead>
-
                     <tr>
-
-                        <th>
-                            Customer ID
-                        </th>
-
-                        <th>
-                            Đơn hàng
-                        </th>
-
-                        <th>
-                            Tổng chi tiêu
-                        </th>
-
-                        <th>
-                            Ngày tham gia
-                        </th>
-
-                        <th>
-                            Trạng thái
-                        </th>
-
-                        <th>
-                            Thao tác
-                        </th>
-
+                        <th scope="col">Customer ID</th>
+                        <th scope="col" style="text-align: center;">Đơn hàng</th>
+                        <th scope="col" style="text-align: right;">Tổng chi tiêu</th>
+                        <th scope="col">Ngày tham gia</th>
+                        <th scope="col" style="text-align: center;">Trạng thái</th>
+                        <th scope="col" style="text-align: right;">Thao tác</th>
                     </tr>
-
                 </thead>
-
-
                 <tbody>
-
-
                     @forelse ($customers as $customer)
-
-
                         @php
-
-                            $completedSpending =
-                                (float) (
-                                    $customer->completed_spending
-                                    ?? 0
-                                );
-
-                            $refundedAmount =
-                                (float) (
-                                    $customer->refunded_amount
-                                    ?? 0
-                                );
-
-                            $actualSpending =
-                                max(
-                                    0,
-                                    $completedSpending
-                                    -
-                                    $refundedAmount
-                                );
-
+                            $completedSpending = (float) ($customer->completed_spending ?? 0);
+                            $refundedAmount = (float) ($customer->refunded_amount ?? 0);
+                            $actualSpending = max(0, $completedSpending - $refundedAmount);
                         @endphp
-
-
                         <tr>
-
-
-                            {{-- CUSTOMER ID --}}
                             <td>
-
-                                <div class="customer-anonymous-info">
-
-
-                                    <div class="customer-anonymous-icon">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="admin-privacy-avatar" aria-hidden="true">
                                         C
-                                    </div>
-
-
+                                    </span>
                                     <div>
-
-                                        <strong>
+                                        <strong class="admin-text-strong">
                                             Customer #{{ $customer->id }}
                                         </strong>
-
-                                        <small>
-                                            ID #{{ $customer->id }}
-                                        </small>
-
+                                        <div style="font-size: 11.5px; color: var(--admin-text-muted);">
+                                            Mã định danh #{{ $customer->id }}
+                                        </div>
                                     </div>
-
-
                                 </div>
-
                             </td>
 
-
-
-                            {{-- ORDER COUNT --}}
-                            <td>
-
-                                <strong>
-                                    {{ $customer->orders_count }}
-                                </strong>
-
-                                <span class="customer-muted">
-                                    đơn
+                            <td style="text-align: center;">
+                                <span class="badge badge-muted">
+                                    {{ $customer->orders_count }} đơn
                                 </span>
-
                             </td>
 
-
-
-                            {{-- TOTAL SPENDING --}}
-                            <td class="customer-money">
-
-                                {{
-                                    number_format(
-                                        $actualSpending,
-                                        0,
-                                        ',',
-                                        '.'
-                                    )
-                                }}đ
-
+                            <td style="text-align: right;">
+                                <span class="admin-cell-number">
+                                    {{ number_format($actualSpending, 0, ',', '.') }}đ
+                                </span>
                             </td>
 
-
-
-                            {{-- CREATED AT --}}
                             <td>
-
-                                {{
-                                    optional(
-                                        $customer->created_at
-                                    )->format(
-                                        'd/m/Y H:i'
-                                    )
-                                }}
-
+                                <span style="font-size: 12.5px; color: var(--admin-text-secondary);">
+                                    {{ optional($customer->created_at)->format('d/m/Y H:i') ?: '—' }}
+                                </span>
                             </td>
 
-
-
-                            {{-- STATUS --}}
-                            <td>
-
+                            <td style="text-align: center;">
                                 @if ($customer->is_active)
-
-                                    <span
-                                        class="
-                                            customer-status
-                                            customer-status-active
-                                        "
-                                    >
+                                    <span class="badge badge-success">
                                         Active
                                     </span>
-
                                 @else
-
-                                    <span
-                                        class="
-                                            customer-status
-                                            customer-status-inactive
-                                        "
-                                    >
+                                    <span class="badge badge-muted">
                                         Inactive
                                     </span>
-
                                 @endif
-
                             </td>
 
-
-
-                            {{-- ACTION --}}
-                            <td>
-
-                                <div class="customer-actions">
-
-
+                            <td style="text-align: right;">
+                                <div class="admin-table-actions">
                                     <a
-                                        href="{{
-                                            route(
-                                                'admin.customers.show',
-                                                $customer->id
-                                            )
-                                        }}"
-                                        class="
-                                            customer-btn
-                                            customer-btn-small
-                                        "
+                                        href="{{ route('admin.customers.show', $customer->id) }}"
+                                        class="btn btn-sm btn-secondary"
+                                        title="Xem chi tiết khách hàng"
                                     >
-                                        Xem chi tiết
+                                        Chi tiết
                                     </a>
-
 
                                     <form
                                         method="POST"
-                                        action="{{
-                                            route(
-                                                'admin.customers.toggle-status',
-                                                $customer->id
-                                            )
-                                        }}"
+                                        action="{{ route('admin.customers.toggle-status', $customer->id) }}"
                                     >
-
                                         @csrf
                                         @method('PATCH')
 
-
                                         <button
                                             type="submit"
-                                            class="
-                                                customer-btn
-                                                {{
-                                                    $customer->is_active
-                                                        ? 'customer-btn-inactive'
-                                                        : 'customer-btn-active'
-                                                }}
-                                            "
-                                            onclick="
-                                                return confirm(
-                                                    '{{ $customer->is_active
-                                                        ? 'Bạn có chắc muốn khóa Customer #' . $customer->id . '?'
-                                                        : 'Bạn có chắc muốn kích hoạt Customer #' . $customer->id . '?'
-                                                    }}'
-                                                );
-                                            "
+                                            class="btn btn-sm {{ $customer->is_active ? 'btn-status' : 'btn-primary' }}"
+                                            onclick="return confirm('{{ $customer->is_active ? 'Bạn có chắc muốn khóa Customer #' . $customer->id . '?' : 'Bạn có chắc muốn kích hoạt Customer #' . $customer->id . '?' }}');"
+                                            title="Thay đổi trạng thái tài khoản"
                                         >
-
-                                            {{
-                                                $customer->is_active
-                                                    ? 'Inactive'
-                                                    : 'Active'
-                                            }}
-
+                                            {{ $customer->is_active ? 'Khóa' : 'Kích hoạt' }}
                                         </button>
-
-
                                     </form>
-
-
                                 </div>
-
                             </td>
-
-
                         </tr>
-
-
                     @empty
-
-
                         <tr>
-
-                            <td
-                                colspan="6"
-                                class="customer-empty"
-                            >
-                                Không có Customer phù hợp.
+                            <td colspan="6" class="empty">
+                                <p>Không tìm thấy Customer phù hợp.</p>
                             </td>
-
                         </tr>
-
-
                     @endforelse
-
-
                 </tbody>
-
-
             </table>
-
-
         </div>
 
-
-
-        {{-- =====================================================
-             PAGINATION
-        ====================================================== --}}
-        @if ($customers->hasPages())
-
-
-            <div class="customer-pagination">
-
-                {{ $customers->links() }}
-
-            </div>
-
-
-        @endif
-
+        @include('admin.partials.pagination', ['paginator' => $customers])
 
     </div>
 
-
 </div>
-
-
 @endsection

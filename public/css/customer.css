@@ -272,40 +272,7 @@ img {
 }
 
 .customer-topbar {
-    background: var(--mg-primary);
-    color: rgba(255, 255, 255, 0.88);
-
-    font-size: var(--text-xs);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.customer-topbar-inner {
-    min-height: 34px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: var(--space-5);
-    font-weight: 500;
-    letter-spacing: 0.2px;
-}
-
-.topbar-links {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-}
-
-.topbar-link {
-    color: rgba(255, 255, 255, 0.85);
-
-    text-decoration: none;
-    transition: color var(--duration-fast) var(--ease-default);
-}
-
-.topbar-link:hover {
-    color: #ffffff;
+    display: none !important;
 }
 
 
@@ -1063,10 +1030,11 @@ img {
     }
 }
 
-/* ── Banner Image Visual & Gradients ────────────────────────── */
+/* ── Banner Image Visual & Multi-Banner Carousel ────────────── */
 
 .hero-visual,
-.hero-banner-visual {
+.hero-banner-visual,
+.hero-carousel {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -1075,15 +1043,47 @@ img {
     overflow: hidden;
 }
 
+.hero-carousel-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transform: translate3d(-100%, 0, 0);
+    transition: transform 750ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+.hero-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-slide-img,
 .hero-banner-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center center;
     display: block;
-    transform: scale(1);
+}
 
-    animation: heroBannerFadeIn 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+/* Specific object-position controls per slide */
+.hero-slide-1 .hero-slide-img {
+    object-position: center center;
+}
+
+.hero-slide-2 .hero-slide-img {
+    object-position: center center;
+}
+
+.hero-slide-3 .hero-slide-img {
+    object-position: center center;
+}
+
+.hero-slide-4 .hero-slide-img {
+    object-position: center center;
 }
 
 .hero-banner-overlay {
@@ -1091,19 +1091,19 @@ img {
     inset: 0;
     width: 100%;
     height: 100%;
-
+    z-index: 3;
     background:
         linear-gradient(
             90deg,
-            rgba(15, 47, 40, 0.92) 0%,
-            rgba(15, 47, 40, 0.82) 28%,
-            rgba(15, 47, 40, 0.48) 46%,
-            rgba(15, 47, 40, 0.10) 64%,
-            rgba(15, 47, 40, 0) 80%
+            rgba(15, 47, 40, 0.94) 0%,
+            rgba(15, 47, 40, 0.86) 30%,
+            rgba(15, 47, 40, 0.52) 48%,
+            rgba(15, 47, 40, 0.12) 66%,
+            rgba(15, 47, 40, 0) 82%
         ),
         linear-gradient(
             0deg,
-            rgba(15, 47, 40, 0.28) 0%,
+            rgba(15, 47, 40, 0.32) 0%,
             transparent 35%
         );
     pointer-events: none;
@@ -1114,7 +1114,7 @@ img {
 .hero-content,
 .hero-banner-content {
     position: relative;
-    z-index: 2;
+    z-index: 4;
     max-width: 540px;
 
     padding: var(--space-8, 32px) var(--space-6, 24px) var(--space-8, 32px) var(--space-12, 48px);
@@ -1122,6 +1122,110 @@ img {
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+/* ── Carousel Controls (Prev / Next Buttons) ─────────────────── */
+
+.hero-carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(15, 47, 40, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    color: #FBF8F2;
+    cursor: pointer;
+    padding: 0;
+    transition:
+        background var(--duration-fast) var(--ease-default),
+        border-color var(--duration-fast) var(--ease-default),
+        color var(--duration-fast) var(--ease-default),
+        transform var(--duration-fast) var(--ease-default),
+        box-shadow var(--duration-fast) var(--ease-default);
+}
+
+.hero-carousel-btn:hover {
+    background: rgba(15, 47, 40, 0.85);
+    border-color: rgba(200, 169, 107, 0.6);
+    color: #FFFFFF;
+    transform: translateY(-50%) scale(1.06);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.hero-carousel-btn:active {
+    transform: translateY(-50%) scale(0.96);
+}
+
+.hero-carousel-btn:focus-visible {
+    outline: 2px solid #C8A96B;
+    outline-offset: 3px;
+}
+
+.hero-carousel-prev {
+    left: clamp(14px, 1.8vw, 24px);
+}
+
+.hero-carousel-next {
+    right: clamp(14px, 1.8vw, 24px);
+}
+
+/* ── Pagination Dots ────────────────────────────────────────── */
+
+.hero-carousel-dots {
+    position: absolute;
+    bottom: clamp(16px, 2vw, 24px);
+    right: clamp(20px, 3vw, 36px);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hero-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(251, 248, 242, 0.4);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition:
+        width 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        background 300ms ease,
+        box-shadow 300ms ease;
+}
+
+.hero-dot::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+}
+
+.hero-dot:hover {
+    background: rgba(251, 248, 242, 0.75);
+}
+
+.hero-dot.active {
+    width: 24px;
+    background: #C8A96B;
+    box-shadow: 0 0 10px rgba(200, 169, 107, 0.55);
+}
+
+.hero-dot:focus-visible {
+    outline: 2px solid #C8A96B;
+    outline-offset: 3px;
 }
 
 .hero-eyebrow {
@@ -1288,11 +1392,19 @@ img {
 
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
+    .hero-carousel-track {
+        transition: none !important;
+    }
+
+    .hero-slide,
+    .hero-slide-img,
     .hero-banner-img,
     .hero-content,
     .hero-banner-content,
     .hero-button,
-    .hero-button-arrow {
+    .hero-button-arrow,
+    .hero-carousel-btn,
+    .hero-dot {
         animation: none !important;
         transition: none !important;
         transform: none !important;
@@ -2296,11 +2408,10 @@ section.home-section#products .customer-container {
     z-index: 1;
 }
 
-/* Signature Deep Forest Panel */
+/* Signature Deep Forest Panel with Real Background Image */
 .studio-panel {
     position: relative;
     border-radius: clamp(24px, 2.5vw, 36px);
-    background: linear-gradient(145deg, #102F28 0%, #173F35 45%, #214B40 100%);
     border: 1px solid rgba(201, 166, 107, 0.22);
     box-shadow:
         0 24px 64px -12px rgba(13, 38, 32, 0.35),
@@ -2308,42 +2419,69 @@ section.home-section#products .customer-container {
         inset 0 1px 0 rgba(255, 255, 255, 0.12);
     padding: clamp(38px, 4.5vw, 64px) clamp(24px, 4vw, 56px);
     overflow: hidden;
+    min-height: clamp(480px, 46vw, 580px);
+    display: flex;
+    align-items: center;
 }
 
-/* Atmospheric Background Aura */
-.studio-bg-aura {
+/* Background Image Layer & Editorial Gradient Overlay */
+.studio-bg-layer {
     position: absolute;
     inset: 0;
-    pointer-events: none;
-    background:
-        radial-gradient(ellipse 650px 450px at 75% 30%, rgba(129, 199, 132, 0.14) 0%, transparent 70%),
-        radial-gradient(circle 420px at 20% 80%, rgba(196, 111, 74, 0.10) 0%, transparent 65%);
+    width: 100%;
+    height: 100%;
     z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
 }
 
-.studio-leaf-motif {
+.studio-bg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 55% center;
+    display: block;
+}
+
+.studio-bg-overlay {
     position: absolute;
-    top: -20px;
-    right: -20px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(12, 42, 35, 0.94) 0%,
+            rgba(12, 42, 35, 0.88) 28%,
+            rgba(12, 42, 35, 0.66) 48%,
+            rgba(12, 42, 35, 0.28) 68%,
+            rgba(12, 42, 35, 0.08) 100%
+        ),
+        linear-gradient(
+            0deg,
+            rgba(10, 32, 27, 0.32) 0%,
+            transparent 30%
+        );
     pointer-events: none;
-    opacity: 0.65;
-    z-index: 0;
 }
 
 /* Split Composition Grid */
 .studio-grid {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.22fr);
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr);
     align-items: center;
-    gap: clamp(36px, 4.2vw, 68px);
+    gap: clamp(32px, 3.8vw, 64px);
+    width: 100%;
 }
 
 /* Left: Info & Workshop Steps */
 .studio-info {
     display: flex;
     flex-direction: column;
+    max-width: 540px;
 }
 
 .studio-eyebrow {
@@ -2389,7 +2527,7 @@ section.home-section#products .customer-container {
     font-weight: 700;
     line-height: 1.15;
     color: #FBF9F5;
-    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.25);
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
     letter-spacing: -0.01em;
 }
 
@@ -2397,7 +2535,7 @@ section.home-section#products .customer-container {
     margin: 0 0 clamp(24px, 2.5vw, 30px);
     font-size: clamp(0.92rem, 1.05vw, 1.02rem);
     line-height: 1.7;
-    color: rgba(245, 241, 232, 0.85);
+    color: rgba(245, 241, 232, 0.90);
     max-width: 52ch;
 }
 
@@ -2405,8 +2543,10 @@ section.home-section#products .customer-container {
 .studio-process {
     margin-bottom: clamp(26px, 2.6vw, 32px);
     padding: clamp(14px, 1.5vw, 18px);
-    background: rgba(10, 32, 27, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(8, 35, 29, 0.76);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 16px;
 }
 
@@ -2442,14 +2582,14 @@ section.home-section#products .customer-container {
     align-items: center;
     gap: 8px;
     padding: 7px 11px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     transition: background 200ms ease, border-color 200ms ease, transform 200ms ease;
 }
 
 .studio-step-chip:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.10);
     border-color: rgba(201, 166, 107, 0.35);
     transform: translateY(-1px);
 }
@@ -2489,7 +2629,7 @@ section.home-section#products .customer-container {
     font-weight: 600;
     font-size: 14.5px;
     letter-spacing: 0.02em;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.15);
     transition:
         transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
         background 250ms ease,
@@ -2501,7 +2641,7 @@ section.home-section#products .customer-container {
     transform: translateY(-2px);
     background: #FFFFFF;
     color: #0C231E;
-    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
 }
 
 .studio-button:focus-visible {
@@ -2520,164 +2660,76 @@ section.home-section#products .customer-container {
 
 .studio-note {
     font-size: 12.5px;
-    color: rgba(237, 233, 224, 0.65);
+    color: rgba(237, 233, 224, 0.70);
     font-style: italic;
 }
 
-/* Right: Visual Terrarium Area */
-.studio-visual-area {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 440px;
-}
-
-.studio-terrarium-display {
-    position: relative;
-    width: 100%;
-    max-width: 440px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.studio-vessel-glow {
-    position: absolute;
-    top: 15%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 290px;
-    height: 330px;
-    background: radial-gradient(ellipse, rgba(129, 199, 132, 0.25) 0%, rgba(201, 166, 107, 0.12) 45%, transparent 70%);
-    filter: blur(34px);
-    pointer-events: none;
-    z-index: 0;
-}
-
-.studio-terrarium-art {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 380px;
-}
-
-.studio-terrarium-svg {
-    width: 100%;
-    height: auto;
+/* Right: Focal Area for Real Terrarium Image */
+.studio-focal-area {
+    min-height: 380px;
     display: block;
-    filter: drop-shadow(0 18px 38px rgba(0, 0, 0, 0.4));
-    animation: studioVesselFloat 14s ease-in-out infinite alternate;
-}
-
-@keyframes studioVesselFloat {
-    0% {
-        transform: translateY(0);
-    }
-    100% {
-        transform: translateY(-7px);
-    }
-}
-
-/* Floating Material Indicators (Editorial Chips) */
-.studio-chip {
-    position: absolute;
-    z-index: 2;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 6px 13px;
-    background: rgba(16, 47, 40, 0.88);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 999px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
-    pointer-events: none;
-}
-
-.chip-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.chip-label {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #FAF7F2;
-    white-space: nowrap;
-    letter-spacing: 0.01em;
-}
-
-.chip-glass {
-    top: 6%;
-    right: -10px;
-}
-.chip-glass .chip-dot {
-    background: #A9DFBF;
-    box-shadow: 0 0 6px #A9DFBF;
-}
-
-.chip-plants {
-    top: 36%;
-    left: -20px;
-}
-.chip-plants .chip-dot {
-    background: #81C784;
-    box-shadow: 0 0 6px #81C784;
-}
-
-.chip-stone {
-    top: 62%;
-    right: -24px;
-}
-.chip-stone .chip-dot {
-    background: #B0BEC5;
-    box-shadow: 0 0 6px #B0BEC5;
-}
-
-.chip-strata {
-    bottom: 5%;
-    left: 8px;
-}
-.chip-strata .chip-dot {
-    background: #D7CCC8;
-    box-shadow: 0 0 6px #D7CCC8;
 }
 
 /* Responsive: Tablet (768px - 1023px) */
 @media (max-width: 1023px) {
+    .studio-bg-img {
+        object-position: 60% center;
+    }
+
+    .studio-bg-overlay {
+        background:
+            linear-gradient(
+                90deg,
+                rgba(12, 42, 35, 0.95) 0%,
+                rgba(12, 42, 35, 0.90) 45%,
+                rgba(12, 42, 35, 0.65) 75%,
+                rgba(12, 42, 35, 0.25) 100%
+            ),
+            linear-gradient(
+                0deg,
+                rgba(10, 32, 27, 0.36) 0%,
+                transparent 30%
+            );
+    }
+
     .studio-grid {
         grid-template-columns: 1fr;
-        gap: clamp(36px, 4vw, 48px);
+        gap: 0;
     }
 
-    .studio-visual-area {
+    .studio-info {
+        max-width: 100%;
+    }
+
+    .studio-focal-area {
+        display: none;
+    }
+
+    .studio-panel {
         min-height: auto;
-    }
-
-    .studio-chip.chip-glass {
-        right: 4%;
-    }
-    .studio-chip.chip-plants {
-        left: 4%;
-    }
-    .studio-chip.chip-stone {
-        right: 4%;
-    }
-    .studio-chip.chip-strata {
-        left: 8%;
     }
 }
 
 /* Responsive: Mobile (< 640px) */
 @media (max-width: 640px) {
+    .studio-bg-img {
+        object-position: 62% center;
+    }
+
+    .studio-bg-overlay {
+        background:
+            linear-gradient(
+                180deg,
+                rgba(12, 42, 35, 0.94) 0%,
+                rgba(12, 42, 35, 0.96) 50%,
+                rgba(12, 42, 35, 0.90) 100%
+            );
+    }
+
     .studio-panel {
         padding: 32px 18px;
         border-radius: 20px;
+        min-height: auto;
     }
 
     .studio-eyebrow {
@@ -2716,14 +2768,6 @@ section.home-section#products .customer-container {
 
     .studio-note {
         text-align: center;
-    }
-
-    .studio-terrarium-display {
-        max-width: 290px;
-    }
-
-    .studio-chip {
-        display: none;
     }
 }
 
@@ -2825,36 +2869,41 @@ section.studio-promo + .home-section .customer-container {
     margin: 0;
 }
 
-/* New Products Staggered Editorial Rail Grid */
+/* New Products Aligned Grid */
 #new-products .new-products-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: clamp(18px, 2vw, 26px);
-    align-items: start;
+    align-items: stretch;
 }
 
-.new-product-slot {
+#new-products .new-product-slot {
     display: flex;
     flex-direction: column;
-    transition: margin-top 300ms ease;
+    height: 100%;
+    margin-top: 0;
 }
 
-.new-product-slot .product-card {
+#new-products .new-product-slot > .product-card {
     height: 100%;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-/* Alternating Floating Rhythm on Desktop */
-@media (min-width: 1200px) {
-    .new-product-slot--anchor,
-    .new-product-slot:nth-child(odd) {
-        margin-top: 0;
-    }
+#new-products .new-product-slot .product-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
 
-    .new-product-slot--offset,
-    .new-product-slot:nth-child(even) {
-        margin-top: 18px;
-    }
+#new-products .new-product-slot .product-price-row {
+    margin-top: auto;
+}
+
+#new-products .new-product-slot .product-card-footer {
+    margin-top: 0;
 }
 
 /* Small Desktop: 3 columns */
@@ -2862,15 +2911,7 @@ section.studio-promo + .home-section .customer-container {
     #new-products .new-products-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 18px;
-    }
-
-    .new-product-slot:nth-child(3n + 2) {
-        margin-top: 14px;
-    }
-
-    .new-product-slot:nth-child(3n + 1),
-    .new-product-slot:nth-child(3n + 3) {
-        margin-top: 0;
+        align-items: stretch;
     }
 }
 
@@ -2905,13 +2946,6 @@ section.studio-promo + .home-section .customer-container {
 @media (min-width: 1024px) {
     #new-products .new-products-grid:has(> .new-product-slot:first-child:nth-last-child(6)) {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-    #new-products .new-products-grid:has(> .new-product-slot:first-child:nth-last-child(6)) .new-product-slot:nth-child(3n + 2) {
-        margin-top: 16px;
-    }
-    #new-products .new-products-grid:has(> .new-product-slot:first-child:nth-last-child(6)) .new-product-slot:nth-child(3n + 1),
-    #new-products .new-products-grid:has(> .new-product-slot:first-child:nth-last-child(6)) .new-product-slot:nth-child(3n + 3) {
-        margin-top: 0;
     }
 }
 
@@ -3539,14 +3573,12 @@ section.studio-promo + .home-section .customer-container {
     #new-products .new-products-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 16px;
+        align-items: stretch;
     }
 
     #new-products .new-product-slot {
         margin-top: 0 !important;
-    }
-
-    #new-products .new-product-slot:nth-child(even) {
-        margin-top: 8px !important;
+        height: 100%;
     }
 
     .category-grid {
@@ -3599,6 +3631,26 @@ section.studio-promo + .home-section .customer-container {
     .hero-banner-content {
         max-width: 480px;
         padding: var(--space-8) var(--space-6);
+    }
+
+    .hero-carousel-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .hero-carousel-prev {
+        left: 12px;
+    }
+
+    .hero-carousel-next {
+        right: 12px;
+    }
+
+    .hero-carousel-dots {
+        bottom: 16px;
+        right: 24px;
     }
 
     .studio-promo-box {
@@ -3664,11 +3716,6 @@ section.studio-promo + .home-section .customer-container {
         gap: 4px;
     }
 
-    .customer-topbar-inner {
-        flex-direction: column;
-        justify-content: center;
-        padding: var(--space-2) 0;
-    }
 
     .product-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3857,6 +3904,28 @@ section.studio-promo + .home-section .customer-container {
     .hero-banner-content {
         max-width: 100%;
         padding: var(--space-6) var(--space-5) var(--space-6);
+    }
+
+    .hero-carousel-btn {
+        top: 35%;
+        width: 38px;
+        height: 38px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .hero-carousel-prev {
+        left: 10px;
+    }
+
+    .hero-carousel-next {
+        right: 10px;
+    }
+
+    .hero-carousel-dots {
+        top: 18px;
+        right: 18px;
+        bottom: auto;
     }
 
     .hero-title {
@@ -4503,6 +4572,14 @@ html.js-motion-ready .reveal-on-scroll.is-revealed .product-grid > *:nth-child(n
         transition: none !important;
     }
 
+    .hero-carousel-track {
+        transition: none !important;
+    }
+
+    .hero-slide,
+    .hero-slide-img,
+    .hero-carousel-btn,
+    .hero-dot,
     .hero-banner-img,
     .hero-eyebrow,
     .hero-title,

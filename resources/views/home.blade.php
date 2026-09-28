@@ -17,18 +17,114 @@
 
         <div class="hero-box hero-banner-box">
 
-            {{-- Real Photographic Banner Visual --}}
-            <div class="hero-visual hero-banner-visual">
-                <img
-                    src="{{ asset('images/banner/banner.png') }}"
-                    alt="MiniGrove Terrarium Banner"
-                    class="hero-banner-img"
-                    width="2149"
-                    height="732"
-                    loading="eager"
-                    fetchpriority="high"
-                >
+            {{-- Multi-Banner Carousel Visual --}}
+            <div class="hero-visual hero-banner-visual hero-carousel" role="region" aria-roledescription="carousel" aria-label="Bộ sưu tập Banner MiniGrove">
+                <div class="hero-carousel-track" id="hero-carousel-track">
+                    {{-- Clone Slide 4 (for seamless infinite loop backward) --}}
+                    <div class="hero-slide hero-slide-clone hero-slide-4" data-track-index="0" aria-hidden="true" tabindex="-1">
+                        <img
+                            src="{{ asset('images/banner/banner4.png') }}"
+                            alt=""
+                            class="hero-banner-img hero-slide-img"
+                            width="2148"
+                            height="732"
+                            loading="lazy"
+                        >
+                    </div>
+
+                    {{-- Real Slide 1 --}}
+                    <div class="hero-slide hero-slide-1 active" data-track-index="1" data-real-index="0" aria-hidden="false">
+                        <img
+                            src="{{ asset('images/banner/banner.png') }}"
+                            alt="MiniGrove Terrarium Banner 1"
+                            class="hero-banner-img hero-slide-img"
+                            width="2149"
+                            height="732"
+                            fetchpriority="high"
+                        >
+                    </div>
+
+                    {{-- Real Slide 2 --}}
+                    <div class="hero-slide hero-slide-2" data-track-index="2" data-real-index="1" aria-hidden="true">
+                        <img
+                            src="{{ asset('images/banner/banner2.png') }}"
+                            alt="MiniGrove Terrarium Banner 2"
+                            class="hero-banner-img hero-slide-img"
+                            width="2149"
+                            height="732"
+                            loading="lazy"
+                        >
+                    </div>
+
+                    {{-- Real Slide 3 --}}
+                    <div class="hero-slide hero-slide-3" data-track-index="3" data-real-index="2" aria-hidden="true">
+                        <img
+                            src="{{ asset('images/banner/banner3.png') }}"
+                            alt="MiniGrove Terrarium Banner 3"
+                            class="hero-banner-img hero-slide-img"
+                            width="2149"
+                            height="732"
+                            loading="lazy"
+                        >
+                    </div>
+
+                    {{-- Real Slide 4 --}}
+                    <div class="hero-slide hero-slide-4" data-track-index="4" data-real-index="3" aria-hidden="true">
+                        <img
+                            src="{{ asset('images/banner/banner4.png') }}"
+                            alt="MiniGrove Terrarium Banner 4"
+                            class="hero-banner-img hero-slide-img"
+                            width="2148"
+                            height="732"
+                            loading="lazy"
+                        >
+                    </div>
+
+                    {{-- Clone Slide 1 (for seamless infinite loop forward) --}}
+                    <div class="hero-slide hero-slide-clone hero-slide-1" data-track-index="5" aria-hidden="true" tabindex="-1">
+                        <img
+                            src="{{ asset('images/banner/banner.png') }}"
+                            alt=""
+                            class="hero-banner-img hero-slide-img"
+                            width="2149"
+                            height="732"
+                            loading="lazy"
+                        >
+                    </div>
+                </div>
+
+                {{-- Unified Gradient Overlay --}}
                 <div class="hero-banner-overlay" aria-hidden="true"></div>
+
+                {{-- Previous / Next Controls --}}
+                <button
+                    type="button"
+                    class="hero-carousel-btn hero-carousel-prev"
+                    id="hero-carousel-prev"
+                    aria-label="Ảnh trước"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <button
+                    type="button"
+                    class="hero-carousel-btn hero-carousel-next"
+                    id="hero-carousel-next"
+                    aria-label="Ảnh tiếp theo"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+
+                {{-- Pagination Dots --}}
+                <div class="hero-carousel-dots" id="hero-carousel-dots" role="tablist" aria-label="Chọn slide banner">
+                    <button type="button" class="hero-dot active" data-slide-to="0" role="tab" aria-selected="true" aria-current="true" aria-label="Chuyển đến banner 1"></button>
+                    <button type="button" class="hero-dot" data-slide-to="1" role="tab" aria-selected="false" aria-label="Chuyển đến banner 2"></button>
+                    <button type="button" class="hero-dot" data-slide-to="2" role="tab" aria-selected="false" aria-label="Chuyển đến banner 3"></button>
+                    <button type="button" class="hero-dot" data-slide-to="3" role="tab" aria-selected="false" aria-label="Chuyển đến banner 4"></button>
+                </div>
             </div>
 
             {{-- Editorial Text Overlay Content --}}
@@ -281,14 +377,17 @@
 <section class="studio-promo reveal-on-scroll" id="studio">
     <div class="customer-container">
         <div class="studio-panel">
-            {{-- Atmospheric organic blobs --}}
-            <div class="studio-bg-aura" aria-hidden="true"></div>
-            <div class="studio-leaf-motif" aria-hidden="true">
-                <svg width="280" height="280" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M40 240C40 240 70 120 180 80C140 130 130 190 40 240Z" stroke="rgba(201, 166, 107, 0.14)" stroke-width="1.5" stroke-dasharray="4 4" />
-                    <path d="M180 80C220 60 250 40 250 40C250 40 240 90 200 130C160 170 110 200 40 240" stroke="rgba(111, 138, 110, 0.16)" stroke-width="1.5" />
-                    <circle cx="180" cy="80" r="3" fill="rgba(201, 166, 107, 0.3)" />
-                </svg>
+            {{-- Real Terrarium Background Image Layer & Editorial Gradient Overlay --}}
+            <div class="studio-bg-layer" aria-hidden="true">
+                <img
+                    src="{{ asset('images/studio/anh1.png') }}"
+                    alt=""
+                    class="studio-bg-img"
+                    width="1672"
+                    height="941"
+                    loading="lazy"
+                >
+                <div class="studio-bg-overlay"></div>
             </div>
 
             <div class="studio-grid">
@@ -354,174 +453,8 @@
                     </div>
                 </div>
 
-                {{-- Right: Signature Terrarium Visual --}}
-                <div class="studio-visual-area">
-                    <div class="studio-terrarium-display">
-                        {{-- Ambient Aura behind vessel --}}
-                        <div class="studio-vessel-glow" aria-hidden="true"></div>
-
-                        {{-- Bespoke Crafted Inline SVG Terrarium Vessel --}}
-                        <div class="studio-terrarium-art" aria-hidden="true">
-                            <svg class="studio-terrarium-svg" viewBox="0 0 460 520" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <linearGradient id="stGlassGrad" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22" />
-                                        <stop offset="35%" stop-color="#E8F5E9" stop-opacity="0.08" />
-                                        <stop offset="70%" stop-color="#81C784" stop-opacity="0.04" />
-                                        <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.16" />
-                                    </linearGradient>
-
-                                    <linearGradient id="stDrainageGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stop-color="#A1887F" />
-                                        <stop offset="100%" stop-color="#5D4037" />
-                                    </linearGradient>
-
-                                    <linearGradient id="stCarbonGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stop-color="#3E2723" />
-                                        <stop offset="100%" stop-color="#212121" />
-                                    </linearGradient>
-
-                                    <linearGradient id="stSoilGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stop-color="#556B2F" />
-                                        <stop offset="30%" stop-color="#3D3028" />
-                                        <stop offset="100%" stop-color="#271C16" />
-                                    </linearGradient>
-
-                                    <linearGradient id="stMossGrad" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stop-color="#8FBC8F" />
-                                        <stop offset="50%" stop-color="#4F7942" />
-                                        <stop offset="100%" stop-color="#2D5A27" />
-                                    </linearGradient>
-
-                                    <linearGradient id="stFoliageGrad1" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stop-color="#A9DFBF" />
-                                        <stop offset="100%" stop-color="#1E8449" />
-                                    </linearGradient>
-
-                                    <linearGradient id="stFoliageGrad2" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stop-color="#7DCEA0" />
-                                        <stop offset="100%" stop-color="#145A32" />
-                                    </linearGradient>
-
-                                    <linearGradient id="stStoneGrad" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stop-color="#8C92AC" />
-                                        <stop offset="50%" stop-color="#5A6275" />
-                                        <stop offset="100%" stop-color="#373B47" />
-                                    </linearGradient>
-
-                                    <linearGradient id="stWoodGrad" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stop-color="#A0522D" />
-                                        <stop offset="100%" stop-color="#5C2914" />
-                                    </linearGradient>
-
-                                    <linearGradient id="stSpecularGrad" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.45" />
-                                        <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0" />
-                                    </linearGradient>
-                                </defs>
-
-                                {{-- Pedestal Base shadow --}}
-                                <ellipse cx="230" cy="486" rx="140" ry="18" fill="rgba(6, 20, 16, 0.45)" />
-
-                                {{-- Cork / Wooden Lid --}}
-                                <path d="M190 48 C190 44 200 40 230 40 C260 40 270 44 270 48 L266 64 C266 68 256 72 230 72 C204 72 194 68 194 64 Z" fill="#B38B6D" />
-                                <ellipse cx="230" cy="46" rx="36" ry="7" fill="#C9A683" />
-                                <ellipse cx="230" cy="46" rx="10" ry="3" fill="#8D684B" />
-
-                                {{-- Main Glass Jar Body Outline --}}
-                                <path d="M194 64 C194 76 140 108 114 168 C86 232 84 370 108 424 C128 468 174 480 230 480 C286 480 332 468 352 424 C376 370 374 232 346 168 C320 108 266 76 266 64 Z"
-                                      fill="url(#stGlassGrad)"
-                                      stroke="rgba(255, 255, 255, 0.35)"
-                                      stroke-width="2.5" />
-
-                                {{-- Inner Atmospheric Microclimate --}}
-                                <ellipse cx="230" cy="280" rx="120" ry="150" fill="rgba(111, 138, 110, 0.06)" />
-
-                                {{-- LAYER 03: SUBSTRATE STRATA --}}
-                                <g opacity="0.95">
-                                    {{-- Drainage Gravel Base --}}
-                                    <path d="M115 435 C135 464 176 476 230 476 C284 476 325 464 345 435 C320 448 275 454 230 454 C185 454 140 448 115 435 Z" fill="url(#stDrainageGrad)" />
-                                    {{-- Pebbles texture --}}
-                                    <circle cx="150" cy="452" r="5" fill="#D7CCC8" opacity="0.7" />
-                                    <circle cx="175" cy="458" r="6" fill="#8D6E63" opacity="0.8" />
-                                    <circle cx="210" cy="462" r="5.5" fill="#BCAAA4" opacity="0.7" />
-                                    <circle cx="245" cy="463" r="7" fill="#6D4C41" opacity="0.9" />
-                                    <circle cx="280" cy="459" r="6" fill="#A1887F" opacity="0.8" />
-                                    <circle cx="310" cy="453" r="5" fill="#D7CCC8" opacity="0.7" />
-
-                                    {{-- Activated Charcoal Layer --}}
-                                    <path d="M110 415 C132 432 178 440 230 440 C282 440 328 432 350 415 C345 435 325 448 230 454 C140 448 115 435 110 415 Z" fill="url(#stCarbonGrad)" />
-
-                                    {{-- Botanical Soil Layer --}}
-                                    <path d="M102 368 C120 376 160 388 210 382 C265 376 310 392 358 372 C362 395 354 416 350 415 C328 432 282 440 230 440 C178 440 132 432 110 415 C106 395 101 380 102 368 Z" fill="url(#stSoilGrad)" />
-                                </g>
-
-                                {{-- LAYER 04: ROCK & DRIFTWOOD --}}
-                                <path d="M142 374 L165 298 L188 320 L196 376 Z" fill="url(#stStoneGrad)" stroke="rgba(0,0,0,0.15)" stroke-width="1" />
-                                <path d="M165 298 L180 326 L175 374 L162 374 Z" fill="rgba(255,255,255,0.12)" />
-                                <path d="M188 335 L208 305 L224 340 L216 375 Z" fill="#454D5A" />
-
-                                {{-- Natural Driftwood --}}
-                                <path d="M210 372 C225 340 248 305 272 268 C278 260 286 262 284 274 C262 312 245 352 238 375 Z" fill="url(#stWoodGrad)" />
-                                <path d="M255 300 C270 285 290 280 306 278 C302 284 286 295 268 312 Z" fill="#795548" />
-
-                                {{-- LAYER 02: BOTANICAL FOLIAGE & MOSS --}}
-                                <path d="M118 368 C135 348 165 348 185 365 C205 352 235 354 252 368 C270 355 305 358 330 366 C348 362 358 368 358 372 C310 392 265 376 210 382 C160 388 120 376 102 368 C108 365 112 366 118 368 Z" fill="url(#stMossGrad)" />
-                                <circle cx="145" cy="358" r="2.5" fill="#A2D149" opacity="0.6" />
-                                <circle cx="170" cy="356" r="3" fill="#C5E1A5" opacity="0.5" />
-                                <circle cx="225" cy="360" r="2.5" fill="#A2D149" opacity="0.7" />
-                                <circle cx="290" cy="362" r="3.5" fill="#AED581" opacity="0.6" />
-
-                                {{-- Tropical Ferns & Fittonia --}}
-                                <path d="M150 330 C130 290 120 250 135 220 C145 245 155 275 168 310 Z" fill="url(#stFoliageGrad1)" />
-                                <path d="M135 220 C125 210 115 225 128 238 C115 240 110 252 122 260 C110 268 112 280 124 284 Z" fill="#2E7D32" opacity="0.8" />
-
-                                <ellipse cx="230" cy="295" rx="24" ry="14" transform="rotate(-18 230 295)" fill="url(#stFoliageGrad2)" />
-                                <path d="M210 300 Q230 295 250 290" stroke="#E8F8F5" stroke-width="1.2" stroke-linecap="round" opacity="0.85" />
-                                <path d="M220 294 Q224 290 228 296" stroke="#E8F8F5" stroke-width="0.8" opacity="0.7" />
-                                <path d="M234 292 Q238 288 242 294" stroke="#E8F8F5" stroke-width="0.8" opacity="0.7" />
-
-                                <ellipse cx="270" cy="275" rx="20" ry="12" transform="rotate(22 270 275)" fill="url(#stFoliageGrad1)" />
-                                <path d="M252 270 Q270 275 288 280" stroke="#D4EFDF" stroke-width="1" stroke-linecap="round" opacity="0.75" />
-
-                                {{-- LAYER 05: MINIATURE LANTERN ACCESSORY --}}
-                                <g transform="translate(294, 335)">
-                                    <path d="M8 18 L16 18 L18 24 L6 24 Z" fill="#ECEFF1" opacity="0.85" />
-                                    <rect x="9" y="10" width="6" height="8" rx="1" fill="#FFECB3" />
-                                    <circle cx="12" cy="14" r="2.5" fill="#FFA000" opacity="0.9" />
-                                    <path d="M4 10 Q12 6 20 10 L18 8 Q12 5 6 8 Z" fill="#CFD8DC" />
-                                    <rect x="11" y="24" width="2" height="6" fill="#90A4AE" />
-                                </g>
-
-                                {{-- LAYER 01: GLASS HIGHLIGHTS --}}
-                                <path d="M125 150 C108 200 104 310 120 380 C114 320 118 210 134 160 Z" fill="url(#stSpecularGrad)" opacity="0.75" />
-                                <path d="M338 150 C352 195 356 280 348 340 C352 270 348 190 330 155 Z" fill="#FFFFFF" opacity="0.25" />
-                                <ellipse cx="230" cy="74" rx="34" ry="6" stroke="#FFFFFF" stroke-width="1" opacity="0.4" fill="none" />
-                            </svg>
-                        </div>
-
-                        {{-- Floating Botanical Material Indicators (Editorial Chips) --}}
-                        <div class="studio-chip chip-glass" aria-hidden="true">
-                            <span class="chip-dot"></span>
-                            <span class="chip-label">Bình kính thủ công</span>
-                        </div>
-
-                        <div class="studio-chip chip-plants" aria-hidden="true">
-                            <span class="chip-dot"></span>
-                            <span class="chip-label">Rêu đệm &amp; Cây nhiệt đới</span>
-                        </div>
-
-                        <div class="studio-chip chip-strata" aria-hidden="true">
-                            <span class="chip-dot"></span>
-                            <span class="chip-label">Đất nền sinh thái &amp; Than</span>
-                        </div>
-
-                        <div class="studio-chip chip-stone" aria-hidden="true">
-                            <span class="chip-dot"></span>
-                            <span class="chip-label">Đá tự nhiên &amp; Lũa rừng</span>
-                        </div>
-                    </div>
-                </div>
+                {{-- Right: Focal area showcasing real terrarium background --}}
+                <div class="studio-focal-area" aria-hidden="true"></div>
             </div>
         </div>
     </div>
@@ -570,7 +503,7 @@
                 as $product
             )
 
-                <div class="new-product-slot {{ $loop->iteration % 2 === 0 ? 'new-product-slot--offset' : 'new-product-slot--anchor' }}">
+                <div class="new-product-slot">
 
                     @include(
                         'partials.product-card',
@@ -623,6 +556,272 @@
     revealElements.forEach(function (el) {
         observer.observe(el);
     });
+})();
+
+// Hero Multi-Banner Horizontal Sliding Carousel Controller
+(function () {
+    'use strict';
+
+    var carousel = document.querySelector('.hero-carousel');
+    if (!carousel) return;
+
+    var track = document.getElementById('hero-carousel-track');
+    if (!track) return;
+
+    var realSlides = track.querySelectorAll('.hero-slide:not(.hero-slide-clone)');
+    var dots = carousel.querySelectorAll('.hero-dot');
+    var prevBtn = document.getElementById('hero-carousel-prev');
+    var nextBtn = document.getElementById('hero-carousel-next');
+    var heroBox = document.querySelector('.hero-banner-box');
+    var totalRealSlides = realSlides.length;
+
+    if (totalRealSlides <= 1) return;
+
+    // Track has 6 slides:
+    // 0: Clone Slide 4
+    // 1: Real Slide 1 (initial active)
+    // 2: Real Slide 2
+    // 3: Real Slide 3
+    // 4: Real Slide 4
+    // 5: Clone Slide 1
+    var currentTrackIndex = 1;
+    var timer = null;
+    var intervalMs = 5000;
+    var isPaused = false;
+    var isAnimating = false;
+    var animationFallbackTimer = null;
+    var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Mark as ready for JS transitions
+    carousel.classList.add('js-carousel-ready');
+
+    function updateRealSlideState(realIndex) {
+        realSlides.forEach(function (slide, i) {
+            var isActive = (i === realIndex);
+            slide.classList.toggle('active', isActive);
+            slide.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+        });
+
+        dots.forEach(function (dot, i) {
+            var isSelected = (i === realIndex);
+            dot.classList.toggle('active', isSelected);
+            dot.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+            if (isSelected) {
+                dot.setAttribute('aria-current', 'true');
+            } else {
+                dot.removeAttribute('aria-current');
+            }
+        });
+    }
+
+    function moveToTrackIndex(targetIndex, instant) {
+        if (isAnimating && !instant) return;
+
+        // Determine corresponding real slide index (0..3)
+        var realIndex = 0;
+        if (targetIndex === 0) {
+            realIndex = totalRealSlides - 1; // Clone 4 maps to real slide 4 (index 3)
+        } else if (targetIndex === totalRealSlides + 1) {
+            realIndex = 0; // Clone 1 maps to real slide 1 (index 0)
+        } else {
+            realIndex = targetIndex - 1;
+        }
+
+        updateRealSlideState(realIndex);
+
+        if (instant || prefersReducedMotion) {
+            track.style.transition = 'none';
+            currentTrackIndex = targetIndex;
+            track.style.transform = 'translate3d(' + (-targetIndex * 100) + '%, 0, 0)';
+            void track.offsetHeight; // Force reflow
+            track.style.transition = '';
+
+            // Handle clone boundary immediately if reduced motion
+            if (currentTrackIndex === totalRealSlides + 1) {
+                currentTrackIndex = 1;
+                track.style.transform = 'translate3d(-100%, 0, 0)';
+            } else if (currentTrackIndex === 0) {
+                currentTrackIndex = totalRealSlides;
+                track.style.transform = 'translate3d(' + (-totalRealSlides * 100) + '%, 0, 0)';
+            }
+            isAnimating = false;
+            return;
+        }
+
+        isAnimating = true;
+        currentTrackIndex = targetIndex;
+        track.style.transform = 'translate3d(' + (-targetIndex * 100) + '%, 0, 0)';
+
+        // Safety fallback timer (850ms) in case transitionend event is missed
+        clearTimeout(animationFallbackTimer);
+        animationFallbackTimer = setTimeout(function () {
+            if (isAnimating) {
+                handleTransitionEnd();
+            }
+        }, 850);
+    }
+
+    function handleTransitionEnd() {
+        clearTimeout(animationFallbackTimer);
+        if (!isAnimating) return;
+
+        // If moved forward onto Clone Slide 1 (index 5) -> seamlessly snap to Real Slide 1 (index 1)
+        if (currentTrackIndex === totalRealSlides + 1) {
+            track.style.transition = 'none';
+            currentTrackIndex = 1;
+            track.style.transform = 'translate3d(-100%, 0, 0)';
+            void track.offsetHeight; // Force reflow
+            track.style.transition = '';
+        }
+        // If moved backward onto Clone Slide 4 (index 0) -> seamlessly snap to Real Slide 4 (index 4)
+        else if (currentTrackIndex === 0) {
+            track.style.transition = 'none';
+            currentTrackIndex = totalRealSlides;
+            track.style.transform = 'translate3d(' + (-totalRealSlides * 100) + '%, 0, 0)';
+            void track.offsetHeight; // Force reflow
+            track.style.transition = '';
+        }
+
+        isAnimating = false;
+    }
+
+    // Listen for transitionend on track
+    track.addEventListener('transitionend', function (e) {
+        if (e.target !== track) return;
+        if (e.propertyName !== 'transform') return;
+        handleTransitionEnd();
+    });
+
+    function nextSlide() {
+        if (isAnimating) return;
+        moveToTrackIndex(currentTrackIndex + 1, false);
+    }
+
+    function prevSlide() {
+        if (isAnimating) return;
+        moveToTrackIndex(currentTrackIndex - 1, false);
+    }
+
+    function startAutoplay() {
+        if (prefersReducedMotion || isPaused) return;
+        stopAutoplay();
+        timer = setInterval(function () {
+            nextSlide();
+        }, intervalMs);
+    }
+
+    function stopAutoplay() {
+        if (timer) {
+            clearInterval(timer);
+            timer = null;
+        }
+    }
+
+    function pause() {
+        isPaused = true;
+        stopAutoplay();
+    }
+
+    function resume() {
+        isPaused = false;
+        startAutoplay();
+    }
+
+    // Previous / Next controls
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (isAnimating) return;
+            nextSlide();
+            startAutoplay();
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (isAnimating) return;
+            prevSlide();
+            startAutoplay();
+        });
+    }
+
+    // Pagination dots
+    dots.forEach(function (dot) {
+        dot.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (isAnimating) return;
+            var targetRealIndex = parseInt(dot.getAttribute('data-slide-to'), 10);
+            if (!isNaN(targetRealIndex)) {
+                var targetTrack = targetRealIndex + 1;
+                if (targetTrack !== currentTrackIndex) {
+                    moveToTrackIndex(targetTrack, false);
+                    startAutoplay();
+                }
+            }
+        });
+    });
+
+    // Pause on hover and focus
+    if (heroBox) {
+        heroBox.addEventListener('mouseenter', pause);
+        heroBox.addEventListener('mouseleave', resume);
+        heroBox.addEventListener('focusin', pause);
+        heroBox.addEventListener('focusout', resume);
+
+        // Keyboard navigation (ArrowLeft & ArrowRight)
+        heroBox.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                if (isAnimating) return;
+                prevSlide();
+                startAutoplay();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (isAnimating) return;
+                nextSlide();
+                startAutoplay();
+            }
+        });
+
+        // Touch swipe handling for mobile
+        var touchStartX = 0;
+        var touchStartY = 0;
+        var touchStartTime = 0;
+
+        heroBox.addEventListener('touchstart', function (e) {
+            if (e.touches && e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                touchStartTime = Date.now();
+                pause();
+            }
+        }, { passive: true });
+
+        heroBox.addEventListener('touchend', function (e) {
+            if (e.changedTouches && e.changedTouches.length === 1) {
+                var touchEndX = e.changedTouches[0].clientX;
+                var touchEndY = e.changedTouches[0].clientY;
+                var deltaX = touchEndX - touchStartX;
+                var deltaY = touchEndY - touchStartY;
+                var deltaTime = Date.now() - touchStartTime;
+
+                // Threshold 45px and predominantly horizontal movement
+                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) >= 45 && deltaTime <= 800) {
+                    if (deltaX < 0) {
+                        nextSlide();
+                    } else {
+                        prevSlide();
+                    }
+                }
+            }
+            resume();
+        }, { passive: true });
+    }
+
+    // Set initial position to Real Slide 1 (track index 1)
+    moveToTrackIndex(1, true);
+    startAutoplay();
 })();
 </script>
 @endpush

@@ -63,28 +63,6 @@
 
 <div class="customer-sticky-shell">
 
-{{-- TOP BAR --}}
-<div class="customer-topbar">
-
-    <div
-        class="
-            customer-container
-            customer-topbar-inner
-        "
-    >
-
-        <div>
-            Nhỏ một khu rừng, lớn một thế giới.
-        </div>
-
-
-        <div class="topbar-links"></div>
-
-    </div>
-
-</div>
-
-
 {{-- HEADER --}}
 <header class="customer-header">
 
