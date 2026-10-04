@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\OrderCancellationService;
@@ -30,7 +31,7 @@ class OnePayController extends Controller
         $receivedHash =
             $params['vpc_SecureHash'] ?? '';
 
-        if (!$receivedHash) {
+        if (! $receivedHash) {
             return redirect()
                 ->route('checkout.index')
                 ->with(
@@ -66,9 +67,9 @@ class OnePayController extends Controller
 
         foreach ($hashParams as $key => $value) {
             $hashData .=
-                $key .
-                '=' .
-                $value .
+                $key.
+                '='.
+                $value.
                 '&';
         }
 
@@ -101,7 +102,7 @@ class OnePayController extends Controller
         */
 
         if (
-            !hash_equals(
+            ! hash_equals(
                 $calculatedHash,
                 strtoupper($receivedHash)
             )
@@ -109,17 +110,13 @@ class OnePayController extends Controller
             Log::warning(
                 'OnePay SecureHash không hợp lệ.',
                 [
-                    'received' =>
-                        $receivedHash,
+                    'received' => $receivedHash,
 
-                    'calculated' =>
-                        $calculatedHash,
+                    'calculated' => $calculatedHash,
 
-                    'hash_data' =>
-                        $hashData,
+                    'hash_data' => $hashData,
 
-                    'params' =>
-                        $params,
+                    'params' => $params,
                 ]
             );
 
@@ -158,8 +155,8 @@ class OnePayController extends Controller
         */
 
         if (
-            !$orderReference ||
-            !$transactionCode
+            ! $orderReference ||
+            ! $transactionCode
         ) {
             return redirect()
                 ->route('checkout.index')
@@ -183,7 +180,7 @@ class OnePayController extends Controller
         */
 
         if (
-            !preg_match(
+            ! preg_match(
                 '/^MG([0-9]+)$/',
                 $orderReference,
                 $matches
@@ -192,8 +189,7 @@ class OnePayController extends Controller
             Log::warning(
                 'OnePay OrderInfo không hợp lệ.',
                 [
-                    'order_info' =>
-                        $orderReference,
+                    'order_info' => $orderReference,
                 ]
             );
 
@@ -218,18 +214,15 @@ class OnePayController extends Controller
             ->whereKey($orderId)
             ->first();
 
-        if (!$order) {
+        if (! $order) {
             Log::warning(
                 'Không tìm thấy Order OnePay.',
                 [
-                    'order_id' =>
-                        $orderId,
+                    'order_id' => $orderId,
 
-                    'order_info' =>
-                        $orderReference,
+                    'order_info' => $orderReference,
 
-                    'transaction_code' =>
-                        $transactionCode,
+                    'transaction_code' => $transactionCode,
                 ]
             );
 
@@ -263,18 +256,15 @@ class OnePayController extends Controller
             ->latest('id')
             ->first();
 
-        if (!$payment) {
+        if (! $payment) {
             Log::warning(
                 'Không tìm thấy Payment OnePay tương ứng.',
                 [
-                    'order_id' =>
-                        $order->id,
+                    'order_id' => $order->id,
 
-                    'order_code' =>
-                        $order->order_code,
+                    'order_code' => $order->order_code,
 
-                    'transaction_code' =>
-                        $transactionCode,
+                    'transaction_code' => $transactionCode,
                 ]
             );
 
@@ -312,17 +302,13 @@ class OnePayController extends Controller
             Log::warning(
                 'OnePay amount không khớp.',
                 [
-                    'order_id' =>
-                        $order->id,
+                    'order_id' => $order->id,
 
-                    'order_amount' =>
-                        $orderAmount,
+                    'order_amount' => $orderAmount,
 
-                    'onepay_amount' =>
-                        $returnedAmount,
+                    'onepay_amount' => $returnedAmount,
 
-                    'transaction_code' =>
-                        $transactionCode,
+                    'transaction_code' => $transactionCode,
                 ]
             );
 
@@ -361,14 +347,11 @@ class OnePayController extends Controller
                         !== 'paid'
                     ) {
                         $payment->update([
-                            'status' =>
-                                'paid',
+                            'status' => 'paid',
 
-                            'transaction_code' =>
-                                $transactionCode,
+                            'transaction_code' => $transactionCode,
 
-                            'paid_at' =>
-                                now(),
+                            'paid_at' => now(),
                         ]);
                     }
 
@@ -378,13 +361,27 @@ class OnePayController extends Controller
                     |--------------------------------------------------------------
                     */
 
-                    if (
-                        $order->payment_status
-                        !== 'paid'
-                    ) {
-                        $order->update([
-                            'payment_status' =>
-                                'paid',
+                    $wasPending =
+    $order->order_status === 'pending';
+
+                    $order->forceFill([
+                        'payment_status' => 'paid',
+
+                        'order_status' => $wasPending
+                                ? 'confirmed'
+                                : $order->order_status,
+                    ])->save();
+
+                    if ($wasPending) {
+                        OrderStatusHistory::create([
+                            'order_id' => $order->id,
+
+                            'status' => 'confirmed',
+
+                            'description' => 'OnePay xác nhận thanh toán thành công. '
+                                .'Đơn hàng được hệ thống tự động xác nhận.',
+
+                            'updated_by' => null,
                         ]);
                     }
                 }
@@ -402,6 +399,8 @@ class OnePayController extends Controller
                 'checkout.product_id',
                 'checkout.quantity',
                 'checkout.address_id',
+                'checkout.order_voucher_code',
+                'checkout.shipping_voucher_code',
                 'checkout.voucher_code',
             ]);
 
@@ -438,17 +437,13 @@ class OnePayController extends Controller
         Log::info(
             'OnePay giao dịch thất bại.',
             [
-                'order_id' =>
-                    $order->id,
+                'order_id' => $order->id,
 
-                'response_code' =>
-                    $responseCode,
+                'response_code' => $responseCode,
 
-                'transaction_code' =>
-                    $transactionCode,
+                'transaction_code' => $transactionCode,
 
-                'params' =>
-                    $params,
+                'params' => $params,
             ]
         );
 
@@ -478,16 +473,16 @@ class OnePayController extends Controller
         ) {
             try {
                 $cancellationService->cancel(
-    $customer,
-    $order,
-    'Thanh toán OnePay không thành công. Mã lỗi: '
-    . (
-        $responseCode !== ''
-            ? $responseCode
-            : 'UNKNOWN'
-    ),
-    true
-);
+                    $customer,
+                    $order,
+                    'Thanh toán OnePay không thành công. Mã lỗi: '
+                    .(
+                        $responseCode !== ''
+                            ? $responseCode
+                            : 'UNKNOWN'
+                    ),
+                    true
+                );
 
             } catch (\Throwable $e) {
                 /*
@@ -502,17 +497,13 @@ class OnePayController extends Controller
                 Log::error(
                     'Không thể tự động hủy Order sau khi OnePay thất bại.',
                     [
-                        'order_id' =>
-                            $order->id,
+                        'order_id' => $order->id,
 
-                        'transaction_code' =>
-                            $transactionCode,
+                        'transaction_code' => $transactionCode,
 
-                        'response_code' =>
-                            $responseCode,
+                        'response_code' => $responseCode,
 
-                        'error' =>
-                            $e->getMessage(),
+                        'error' => $e->getMessage(),
                     ]
                 );
 
@@ -527,11 +518,9 @@ class OnePayController extends Controller
                             !== 'paid'
                         ) {
                             $payment->update([
-                                'status' =>
-                                    'failed',
+                                'status' => 'failed',
 
-                                'transaction_code' =>
-                                    $transactionCode,
+                                'transaction_code' => $transactionCode,
                             ]);
                         }
 
@@ -540,8 +529,7 @@ class OnePayController extends Controller
                             !== 'paid'
                         ) {
                             $order->update([
-                                'payment_status' =>
-                                    'failed',
+                                'payment_status' => 'failed',
                             ]);
                         }
                     }
@@ -566,11 +554,9 @@ class OnePayController extends Controller
                         !== 'paid'
                     ) {
                         $payment->update([
-                            'status' =>
-                                'failed',
+                            'status' => 'failed',
 
-                            'transaction_code' =>
-                                $transactionCode,
+                            'transaction_code' => $transactionCode,
                         ]);
                     }
 
@@ -579,8 +565,7 @@ class OnePayController extends Controller
                         !== 'paid'
                     ) {
                         $order->update([
-                            'payment_status' =>
-                                'failed',
+                            'payment_status' => 'failed',
                         ]);
                     }
                 }
@@ -599,6 +584,8 @@ class OnePayController extends Controller
             'checkout.product_id',
             'checkout.quantity',
             'checkout.address_id',
+            'checkout.order_voucher_code',
+            'checkout.shipping_voucher_code',
             'checkout.voucher_code',
         ]);
 
@@ -607,9 +594,9 @@ class OnePayController extends Controller
             ->with(
                 'error',
                 'Thanh toán OnePay không thành công. '
-                . 'Đơn hàng đã được hủy và tồn kho đã được hoàn lại. '
-                . 'Mã lỗi: '
-                . (
+                .'Đơn hàng đã được hủy và tồn kho đã được hoàn lại. '
+                .'Mã lỗi: '
+                .(
                     $responseCode !== ''
                         ? $responseCode
                         : 'UNKNOWN'

@@ -233,6 +233,7 @@ class OrderController extends Controller
                     'subtotal',
                     'discount_amount',
                     'shipping_fee',
+                    'shipping_discount_amount',
                     'total_amount',
 
                     'payment_method',
@@ -278,6 +279,9 @@ class OrderController extends Controller
                      * Voucher.
                      */
                     'voucherUsage.voucher',
+                    'orderVoucherUsage.voucher',
+                    'shippingVoucherUsage.voucher',
+                    'voucherUsages.voucher',
 
 
                     /*

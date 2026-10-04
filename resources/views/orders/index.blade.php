@@ -1148,31 +1148,6 @@
             <main class="purchase-main">
 
 
-                {{-- FLASH SUCCESS --}}
-
-                @if (session('success'))
-
-                    <div class="purchase-alert success">
-
-                        ✓ {{ session('success') }}
-
-                    </div>
-
-                @endif
-
-
-                {{-- FLASH ERROR --}}
-
-                @if (session('error'))
-
-                    <div class="purchase-alert error">
-
-                        {{ session('error') }}
-
-                    </div>
-
-                @endif
-
 
                 {{-- =================================================
                      TABS
@@ -1944,6 +1919,38 @@
                                             @endif
 
 
+                                            @if ($order->order_status === 'shipping')
+
+                                                <form
+                                                    method="POST"
+                                                    action="{{
+                                                        route(
+                                                            'orders.received',
+                                                            $order
+                                                        )
+                                                    }}"
+                                                    onsubmit="
+                                                        return confirm(
+                                                            'Bạn xác nhận đã nhận được hàng và sản phẩm không có vấn đề?'
+                                                        );
+                                                    "
+                                                >
+
+                                                    @csrf
+                                                    @method('PATCH')
+
+                                                    <button
+                                                        type="submit"
+                                                        class="purchase-button"
+                                                    >
+                                                        Đã nhận được hàng
+                                                    </button>
+
+                                                </form>
+
+                                            @endif
+
+
                                             <a
                                                 href="{{
                                                     route(
@@ -1951,7 +1958,10 @@
                                                         $order
                                                     )
                                                 }}"
-                                                class="purchase-button"
+                                                class="
+                                                    purchase-button
+                                                    {{ $order->order_status === 'shipping' ? 'secondary' : '' }}
+                                                "
                                             >
                                                 Xem chi tiết
                                             </a>

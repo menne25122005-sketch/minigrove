@@ -108,10 +108,30 @@
 
                 </div>
 
+                @if ((float) $order->discount_amount > 0)
+                    <div>
+                        <span>Giảm giá đơn hàng</span>
+                        <strong style="color: var(--mg-success, #2D7A3A);">-{{ number_format($order->discount_amount, 0, ',', '.') }}đ</strong>
+                    </div>
+                @endif
+
+                @if ((float) $order->shipping_discount_amount > 0)
+                    <div>
+                        <span>Giảm phí ship</span>
+                        <strong style="color: var(--mg-success, #2D7A3A);">-{{ number_format($order->shipping_discount_amount, 0, ',', '.') }}đ</strong>
+                    </div>
+                @endif
             </div>
 
 
             <div class="checkout-success-actions">
+
+                <a
+                    href="{{ route('orders.show', $order) }}"
+                    class="checkout-secondary-button"
+                >
+                    Xem chi tiết đơn hàng
+                </a>
 
                 <a
                     href="{{ route('products.index') }}"

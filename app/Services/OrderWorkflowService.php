@@ -6,16 +6,15 @@ use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\User;
-
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class OrderWorkflowService
 {
-        public function __construct(
+    public function __construct(
         private GroveService $groveService
-    ) {
-    }
+    ) {}
+
     /**
      * Chuyển trạng thái Order theo đúng luồng nghiệp vụ.
      */
@@ -30,7 +29,6 @@ class OrderWorkflowService
             strtolower(
                 trim($newStatus)
             );
-
 
         /*
         |--------------------------------------------------------------------------
@@ -69,7 +67,6 @@ class OrderWorkflowService
             'cancelled' => [],
         ];
 
-
         return DB::transaction(
             function () use (
                 $actor,
@@ -85,7 +82,7 @@ class OrderWorkflowService
                 |--------------------------------------------------------------------------
                 */
 
-               $lockedOrder =
+                $lockedOrder =
     Order::query()
         ->select([
             'id',
@@ -100,11 +97,9 @@ class OrderWorkflowService
         ->lockForUpdate()
         ->firstOrFail();
 
-
                 $currentStatus =
                     $lockedOrder
                         ->order_status;
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -113,18 +108,16 @@ class OrderWorkflowService
                 */
 
                 if (
-                    !array_key_exists(
+                    ! array_key_exists(
                         $currentStatus,
                         $allowedTransitions
                     )
                 ) {
 
                     throw ValidationException::withMessages([
-                        'status' =>
-                            'Trạng thái hiện tại của đơn hàng không hợp lệ.',
+                        'status' => 'Trạng thái hiện tại của đơn hàng không hợp lệ.',
                     ]);
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -133,7 +126,7 @@ class OrderWorkflowService
                 */
 
                 if (
-                    !in_array(
+                    ! in_array(
                         $newStatus,
                         $allowedTransitions[
                             $currentStatus
@@ -143,15 +136,13 @@ class OrderWorkflowService
                 ) {
 
                     throw ValidationException::withMessages([
-                        'status' =>
-                            'Không thể chuyển đơn hàng từ '
-                            . $currentStatus
-                            . ' sang '
-                            . $newStatus
-                            . '.',
+                        'status' => 'Không thể chuyển đơn hàng từ '
+                            .$currentStatus
+                            .' sang '
+                            .$newStatus
+                            .'.',
                     ]);
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -178,11 +169,9 @@ class OrderWorkflowService
                 ) {
 
                     throw ValidationException::withMessages([
-                        'payment' =>
-                            'Đơn QR chưa được xác nhận thanh toán.',
+                        'payment' => 'Đơn QR chưa được xác nhận thanh toán.',
                     ]);
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -211,15 +200,12 @@ class OrderWorkflowService
                             ->lockForUpdate()
                             ->first();
 
-
-                    if (!$payment) {
+                    if (! $payment) {
 
                         throw ValidationException::withMessages([
-                            'payment' =>
-                                'Không tìm thấy thông tin thanh toán của đơn hàng.',
+                            'payment' => 'Không tìm thấy thông tin thanh toán của đơn hàng.',
                         ]);
                     }
-
 
                     /*
                     |--------------------------------------------------------------------------
@@ -253,25 +239,19 @@ class OrderWorkflowService
                                 );
 
                             $payment->save();
-                        }
-
-
-                        elseif (
+                        } elseif (
                             $payment->status
                             !== 'paid'
                         ) {
 
                             throw ValidationException::withMessages([
-                                'payment' =>
-                                    'Trạng thái Payment COD không cho phép hoàn thành đơn.',
+                                'payment' => 'Trạng thái Payment COD không cho phép hoàn thành đơn.',
                             ]);
                         }
-
 
                         $lockedOrder->payment_status =
                             'paid';
                     }
-
 
                     /*
                     |--------------------------------------------------------------------------
@@ -294,22 +274,39 @@ class OrderWorkflowService
                         ) {
 
                             throw ValidationException::withMessages([
-                                'payment' =>
-                                    'Thanh toán QR chưa được xác nhận.',
+                                'payment' => 'Thanh toán QR chưa được xác nhận.',
                             ]);
                         }
                     }
 
+                    /*
+                    |--------------------------------------------------------------------------
+                    | ONEPAY
+                    |--------------------------------------------------------------------------
+                    */
 
-                    else {
+                    elseif (
+                        $lockedOrder->payment_method
+                        === 'ONEPAY'
+                    ) {
+
+                        if (
+                            $payment->status !== 'paid'
+                            ||
+                            $lockedOrder->payment_status !== 'paid'
+                        ) {
+
+                            throw ValidationException::withMessages([
+                                'payment' => 'Thanh toán OnePay chưa được xác nhận.',
+                            ]);
+                        }
+                    } else {
 
                         throw ValidationException::withMessages([
-                            'payment' =>
-                                'Phương thức thanh toán không hợp lệ.',
+                            'payment' => 'Phương thức thanh toán không hợp lệ.',
                         ]);
                     }
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -321,7 +318,6 @@ class OrderWorkflowService
                     $newStatus;
 
                 $lockedOrder->save();
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -342,19 +338,14 @@ class OrderWorkflowService
                                     $newStatus
                                 );
 
-
                 OrderStatusHistory::create([
-                    'order_id' =>
-                        $lockedOrder->id,
+                    'order_id' => $lockedOrder->id,
 
-                    'status' =>
-                        $newStatus,
+                    'status' => $newStatus,
 
-                    'description' =>
-                        $historyDescription,
+                    'description' => $historyDescription,
 
-                    'updated_by' =>
-                        $actor->id,
+                    'updated_by' => $actor->id,
                 ]);
                 /*
 |--------------------------------------------------------------------------
@@ -371,28 +362,93 @@ class OrderWorkflowService
 |
 */
 
-if (
-    $newStatus === 'completed'
-) {
-    $this
-        ->groveService
-        ->createForCompletedOrder(
-            $lockedOrder
-        );
-}
-
+                if (
+                    $newStatus === 'completed'
+                ) {
+                    $this
+                        ->groveService
+                        ->createForCompletedOrder(
+                            $lockedOrder
+                        );
+                }
 
                 $lockedOrder->load([
-    'details',
-    'payments',
-    'statusHistories',
-]);
+                    'details',
+                    'payments',
+                    'statusHistories',
+                ]);
 
-return $lockedOrder;
+                return $lockedOrder;
             }
         );
     }
 
+    /**
+     * Customer xác nhận đã nhận được hàng (shipping -> completed).
+     */
+    public function confirmReceivedByCustomer(
+        User $customer,
+        Order $order
+    ): Order {
+
+        return DB::transaction(
+            function () use ($customer, $order) {
+
+                $lockedOrder =
+                    Order::query()
+                        ->select([
+                            'id',
+                            'user_id',
+                            'order_status',
+                            'payment_method',
+                            'payment_status',
+                        ])
+                        ->whereKey($order->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                /*
+                |--------------------------------------------------------------------------
+                | OWNERSHIP
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $lockedOrder->user_id
+                    !== $customer->id
+                ) {
+
+                    abort(
+                        403,
+                        'Bạn không có quyền thao tác trên đơn hàng này.'
+                    );
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | CHỈ SHIPPING MỚI ĐƯỢC XÁC NHẬN NHẬN HÀNG
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $lockedOrder->order_status
+                    !== 'shipping'
+                ) {
+
+                    throw ValidationException::withMessages([
+                        'order' => 'Đơn hàng không ở trạng thái đang giao nên không thể xác nhận nhận hàng.',
+                    ]);
+                }
+
+                return $this->updateStatus(
+                    $customer,
+                    $lockedOrder,
+                    'completed',
+                    'Khách hàng đã xác nhận nhận được hàng.'
+                );
+            }
+        );
+    }
 
     /**
      * Nội dung History mặc định.
@@ -403,26 +459,19 @@ return $lockedOrder;
 
         return match ($status) {
 
-            'confirmed' =>
-                'MiniGrove đã xác nhận đơn hàng.',
+            'confirmed' => 'MiniGrove đã xác nhận đơn hàng.',
 
-            'preparing' =>
-                'MiniGrove đang chuẩn bị Terrarium.',
+            'preparing' => 'MiniGrove đang chuẩn bị Terrarium.',
 
-            'packed' =>
-                'Đơn hàng đã được đóng gói.',
+            'packed' => 'Đơn hàng đã được đóng gói.',
 
-            'shipping' =>
-                'Đơn hàng đang được giao đến Customer.',
+            'shipping' => 'Đơn hàng đang được giao đến Customer.',
 
-            'completed' =>
-                'Đơn hàng đã giao thành công.',
+            'completed' => 'Đơn hàng đã giao thành công.',
 
-            default =>
-                'Trạng thái đơn hàng đã được cập nhật.',
+            default => 'Trạng thái đơn hàng đã được cập nhật.',
         };
     }
-
 
     /**
      * Nối ghi chú mà không làm mất
@@ -439,7 +488,6 @@ return $lockedOrder;
                 $currentNote
             );
 
-
         if (
             $currentNote === ''
         ) {
@@ -447,9 +495,8 @@ return $lockedOrder;
             return $newNote;
         }
 
-
         return $currentNote
-            . ' '
-            . $newNote;
+            .' '
+            .$newNote;
     }
 }

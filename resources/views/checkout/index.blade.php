@@ -47,20 +47,8 @@
             </div>
         </div>
 
-        {{-- THÔNG BÁO CHUNG --}}
-        @if (session('error'))
-            <div class="checkout-alert checkout-alert-error">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        @if (session('success'))
-            <div class="checkout-alert checkout-alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if ($voucherError)
+        {{-- THÔNG BÁO LỖI VOUCHER RIÊNG (CHỈ KHI CHƯA ĐƯỢC LAYOUT CUSTOMER CHUNG HIỂN THỊ) --}}
+        @if ($voucherError && !session('error'))
             <div class="checkout-alert checkout-alert-error">
                 {{ $voucherError }}
             </div>
@@ -883,89 +871,83 @@
             <div class="checkout-sidebar">
 
                 {{-- =============================================
-                     1. VOUCHER MINIGROVE
+                     1. VOUCHER MINIGROVE (COMPACT SHOPEE-STYLE ROW)
                 ============================================== --}}
-                <div class="checkout-card checkout-card-voucher">
-                    <div class="checkout-card-title-bar">
-                        <span class="checkout-card-title-text">🎟 Voucher MiniGrove</span>
-                        @if ($appliedVoucher)
-                            <span class="checkout-voucher-active-pill">Đang áp dụng</span>
+                <div
+                    class="checkout-card checkout-voucher-bar"
+                    id="openVoucherModalBtn"
+                    role="button"
+                    tabindex="0"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
+                    aria-controls="checkoutVoucherModal"
+                >
+                    <div class="checkout-voucher-bar-main">
+                        <div class="checkout-voucher-bar-header">
+                            <span class="checkout-voucher-bar-icon" aria-hidden="true">🎟️</span>
+                            <span class="checkout-voucher-bar-title">Voucher MiniGrove</span>
+                        </div>
+                        @if ($appliedOrderVoucher || $appliedShippingVoucher)
+                            <div class="checkout-voucher-bar-tags" onclick="event.stopPropagation();">
+                                @if ($appliedShippingVoucher)
+                                    <div class="checkout-voucher-bar-tag">
+                                        <span class="checkout-voucher-tag-icon" aria-hidden="true">🚚</span>
+                                        <span class="checkout-voucher-tag-code">{{ $appliedShippingVoucher->code }}</span>
+                                        <span class="checkout-voucher-tag-disc">(-{{ number_format($shippingDiscountAmount, 0, ',', '.') }}đ)</span>
+                                        <form
+                                            method="POST"
+                                            action="{{ route('checkout.voucher.remove') }}"
+                                            class="checkout-voucher-tag-remove-form"
+                                            onclick="event.stopPropagation();"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="scope" value="shipping">
+                                            <button
+                                                type="submit"
+                                                class="checkout-voucher-tag-remove-btn"
+                                                title="Gỡ mã vận chuyển"
+                                                aria-label="Gỡ mã vận chuyển {{ $appliedShippingVoucher->code }}"
+                                                onclick="event.stopPropagation();"
+                                            >&times;</button>
+                                        </form>
+                                    </div>
+                                @endif
+                                @if ($appliedOrderVoucher)
+                                    <div class="checkout-voucher-bar-tag">
+                                        <span class="checkout-voucher-tag-icon" aria-hidden="true">🏷️</span>
+                                        <span class="checkout-voucher-tag-code">{{ $appliedOrderVoucher->code }}</span>
+                                        <span class="checkout-voucher-tag-disc">(-{{ number_format($orderDiscountAmount, 0, ',', '.') }}đ)</span>
+                                        <form
+                                            method="POST"
+                                            action="{{ route('checkout.voucher.remove') }}"
+                                            class="checkout-voucher-tag-remove-form"
+                                            onclick="event.stopPropagation();"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="scope" value="order">
+                                            <button
+                                                type="submit"
+                                                class="checkout-voucher-tag-remove-btn"
+                                                title="Gỡ mã giảm giá đơn hàng"
+                                                aria-label="Gỡ mã giảm giá đơn hàng {{ $appliedOrderVoucher->code }}"
+                                                onclick="event.stopPropagation();"
+                                            >&times;</button>
+                                        </form>
+                                    </div>
+                                @endif
+                            </div>
+                        @else
+                            <div class="checkout-voucher-bar-hint">
+                                Chọn hoặc nhập mã voucher
+                            </div>
                         @endif
                     </div>
-
-                    @if ($appliedVoucher)
-                        <div class="checkout-voucher-applied-row">
-                            <div class="checkout-voucher-applied-detail">
-                                <span class="checkout-voucher-applied-code">{{ $appliedVoucher->code }}</span>
-                                <span class="checkout-voucher-applied-disc">Giảm {{ number_format($discountAmount, 0, ',', '.') }}đ</span>
-                            </div>
-                            <form
-                                method="POST"
-                                action="{{ route('checkout.voucher.remove') }}"
-                                class="checkout-voucher-remove-form"
-                            >
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="checkout-voucher-remove-btn" title="Gỡ mã giảm giá này">
-                                    Gỡ mã
-                                </button>
-                            </form>
-                        </div>
-                    @else
-                        <form
-                            method="POST"
-                            action="{{ route('checkout.voucher.apply') }}"
-                            class="checkout-voucher-form"
-                        >
-                            @csrf
-                            <div class="checkout-voucher-picker" id="checkoutVoucherPicker">
-                                <input
-                                    type="text"
-                                    id="checkoutVoucherInput"
-                                    name="voucher_code"
-                                    value="{{ old('voucher_code') }}"
-                                    maxlength="50"
-                                    placeholder="Nhập hoặc chọn mã..."
-                                    autocomplete="off"
-                                    aria-expanded="false"
-                                    aria-controls="checkoutSavedVoucherList"
-                                >
-                                <div id="checkoutSavedVoucherList" class="checkout-saved-vouchers">
-                                    <div class="checkout-saved-vouchers-title">
-                                        Voucher đã lưu
-                                    </div>
-                                    @forelse ($savedVouchers as $savedVoucher)
-                                        <button
-                                            type="button"
-                                            class="checkout-saved-voucher-option {{ $savedVoucher->checkout_eligible ? '' : 'is-disabled' }}"
-                                            data-saved-voucher-option
-                                            data-voucher-code="{{ $savedVoucher->code }}"
-                                            data-voucher-search="{{ strtolower($savedVoucher->code) }}"
-                                            onclick="document.getElementById('checkoutVoucherInput').value = this.dataset.voucherCode;"
-                                        >
-                                            <span class="checkout-saved-voucher-code">{{ $savedVoucher->code }}</span>
-                                            <span class="checkout-saved-voucher-desc">
-                                                @if ($savedVoucher->checkout_eligible)
-                                                    Giảm {{ number_format($savedVoucher->calculated_discount, 0, ',', '.') }}đ
-                                                @else
-                                                    {{ $savedVoucher->checkout_error }}
-                                                @endif
-                                            </span>
-                                        </button>
-                                    @empty
-                                        <div class="checkout-saved-vouchers-empty">
-                                            Bạn chưa lưu Voucher nào.
-                                            <a href="{{ route('profile.vouchers') }}">Mở Kho Voucher</a>
-                                        </div>
-                                    @endforelse
-                                </div>
-                            </div>
-
-                            <button type="submit" class="checkout-voucher-apply-btn">
-                                Áp dụng
-                            </button>
-                        </form>
-                    @endif
+                    <div class="checkout-voucher-bar-action-wrap">
+                        <span>{{ ($appliedOrderVoucher || $appliedShippingVoucher) ? 'Đổi mã' : 'Chọn mã' }}</span>
+                        <span class="checkout-voucher-bar-chevron" aria-hidden="true">›</span>
+                    </div>
                 </div>
 
                 {{-- =============================================
@@ -985,9 +967,9 @@
                         </div>
 
                         <div class="checkout-summary-row">
-                            <span>Giảm giá</span>
+                            <span>Giảm giá đơn hàng</span>
                             <strong class="checkout-discount-val">
-                                {{ $discountAmount > 0 ? '-' . number_format($discountAmount, 0, ',', '.') . 'đ' : '0đ' }}
+                                {{ $orderDiscountAmount > 0 ? '-' . number_format($orderDiscountAmount, 0, ',', '.') . 'đ' : '0đ' }}
                             </strong>
                         </div>
 
@@ -999,6 +981,13 @@
                                 @else
                                     <span class="checkout-muted" style="font-size: 12px; color: #7A8782; font-weight: normal;">Chưa chọn địa chỉ</span>
                                 @endif
+                            </strong>
+                        </div>
+
+                        <div class="checkout-summary-row">
+                            <span>Giảm phí vận chuyển</span>
+                            <strong class="checkout-discount-val">
+                                {{ $shippingDiscountAmount > 0 ? '-' . number_format($shippingDiscountAmount, 0, ',', '.') . 'đ' : '0đ' }}
                             </strong>
                         </div>
 
@@ -1035,6 +1024,320 @@
 
         </div>
 
+    </div>
+
+    {{-- =============================================
+         POPUP MODAL CHỌN VOUCHER (SHOPEE STYLE)
+    ============================================== --}}
+    <div
+        class="checkout-modal-backdrop"
+        id="checkoutVoucherModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="checkoutVoucherModalTitle"
+        tabindex="-1"
+    >
+        <div class="checkout-modal-dialog">
+            <div class="checkout-modal-header">
+                <h2 class="checkout-modal-title" id="checkoutVoucherModalTitle">Chọn Voucher MiniGrove</h2>
+                <button
+                    type="button"
+                    class="checkout-modal-close-btn"
+                    id="closeVoucherModalBtn"
+                    aria-label="Đóng popup chọn voucher"
+                >
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="checkout-modal-body">
+                {{-- Ô NHẬP MÃ THỦ CÔNG --}}
+                <div class="checkout-modal-input-section">
+                    <form
+                        method="POST"
+                        action="{{ route('checkout.voucher.apply') }}"
+                        class="checkout-modal-input-form"
+                    >
+                        @csrf
+                        <div class="checkout-modal-input-wrap">
+                            <input
+                                type="text"
+                                name="voucher_code"
+                                value="{{ old('voucher_code') }}"
+                                maxlength="50"
+                                placeholder="Nhập mã voucher..."
+                                autocomplete="off"
+                                class="checkout-modal-input"
+                            >
+                            <button type="submit" class="checkout-modal-apply-btn">
+                                Áp dụng
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                {{-- 1. NHÓM MÃ MIỄN PHÍ VẬN CHUYỂN --}}
+                @php
+                    $sortedShippingVouchers = $shippingVouchers->sortByDesc(function ($v) use ($appliedShippingVoucher) {
+                        return ($appliedShippingVoucher && $appliedShippingVoucher->id === $v->id) ? 1 : 0;
+                    })->values();
+                @endphp
+                <div class="checkout-modal-group" id="groupShippingVouchers">
+                    <div class="checkout-modal-group-header">
+                        <span class="checkout-modal-group-icon" aria-hidden="true">🚚</span>
+                        <div class="checkout-modal-group-info">
+                            <span class="checkout-modal-group-title">Mã miễn phí vận chuyển</span>
+                            <span class="checkout-modal-group-sub">Áp dụng tối đa 1 mã</span>
+                        </div>
+                    </div>
+
+                    <div class="checkout-modal-vouchers-list">
+                        @forelse ($sortedShippingVouchers as $idx => $vItem)
+                            @php
+                                $isApplied = ($appliedShippingVoucher && $appliedShippingVoucher->id === $vItem->id);
+                                $isCollapsed = ($idx >= 2);
+                            @endphp
+                            @if ($vItem->checkout_eligible)
+                                <div class="checkout-modal-voucher-wrapper {{ $isCollapsed ? 'is-collapsed-item' : '' }}">
+                                    <button
+                                        type="button"
+                                        class="checkout-shopee-voucher-card is-eligible {{ $isApplied ? 'is-applied' : '' }}"
+                                        data-voucher-select
+                                        data-voucher-scope="shipping"
+                                        data-voucher-code="{{ $vItem->code }}"
+                                        title="Bấm để chọn hoặc bỏ chọn mã này"
+                                    >
+                                        <div class="checkout-shopee-voucher-left">
+                                            <div class="checkout-shopee-badge-icon">🚚</div>
+                                        </div>
+                                        <div class="checkout-shopee-voucher-main">
+                                            <div class="checkout-shopee-code-row">
+                                                <span class="checkout-shopee-code">{{ $vItem->code }}</span>
+                                            </div>
+                                            <div class="checkout-shopee-disc">
+                                                @if ($vItem->discount_type === 'percentage')
+                                                    Giảm {{ number_format($vItem->discount_value, 0, ',', '.') }}% phí vận chuyển
+                                                    @if ($vItem->max_discount_amount)
+                                                        (tối đa {{ number_format($vItem->max_discount_amount, 0, ',', '.') }}đ)
+                                                    @endif
+                                                @else
+                                                    Giảm tối đa {{ number_format($vItem->discount_value, 0, ',', '.') }}đ phí ship
+                                                @endif
+                                            </div>
+                                            <div class="checkout-shopee-min">
+                                                Đơn tối thiểu {{ number_format($vItem->min_order_amount, 0, ',', '.') }}đ
+                                            </div>
+                                        </div>
+                                        <div class="checkout-shopee-voucher-radio">
+                                            <div class="checkout-shopee-circle {{ $isApplied ? 'is-checked' : '' }}" aria-hidden="true">
+                                                <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+                                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
+                            @else
+                                <div class="checkout-modal-voucher-wrapper {{ $isCollapsed ? 'is-collapsed-item' : '' }}">
+                                    <div class="checkout-shopee-voucher-card is-ineligible" aria-disabled="true">
+                                        <div class="checkout-shopee-voucher-left">
+                                            <div class="checkout-shopee-badge-icon">🚚</div>
+                                        </div>
+                                        <div class="checkout-shopee-voucher-main">
+                                            <div class="checkout-shopee-code-row">
+                                                <span class="checkout-shopee-code">{{ $vItem->code }}</span>
+                                            </div>
+                                            <div class="checkout-shopee-disc">
+                                                @if ($vItem->discount_type === 'percentage')
+                                                    Giảm {{ number_format($vItem->discount_value, 0, ',', '.') }}% phí vận chuyển
+                                                    @if ($vItem->max_discount_amount)
+                                                        (tối đa {{ number_format($vItem->max_discount_amount, 0, ',', '.') }}đ)
+                                                    @endif
+                                                @else
+                                                    Giảm tối đa {{ number_format($vItem->discount_value, 0, ',', '.') }}đ phí ship
+                                                @endif
+                                            </div>
+                                            <div class="checkout-shopee-min">
+                                                Đơn tối thiểu {{ number_format($vItem->min_order_amount, 0, ',', '.') }}đ
+                                            </div>
+                                            <div class="checkout-shopee-error">
+                                                {{ $vItem->checkout_error }}
+                                            </div>
+                                        </div>
+                                        <div class="checkout-shopee-voucher-radio">
+                                            <div class="checkout-shopee-circle is-disabled" aria-hidden="true"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        @empty
+                            <div class="checkout-modal-empty-note">
+                                Chưa có mã vận chuyển khả dụng.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    @if ($sortedShippingVouchers->count() > 2)
+                        <button
+                            type="button"
+                            class="checkout-modal-toggle-more-btn"
+                            data-target="groupShippingVouchers"
+                            data-more-text="Xem thêm ({{ $sortedShippingVouchers->count() - 2 }}) ▾"
+                            data-less-text="Thu gọn ▴"
+                        >
+                            Xem thêm ({{ $sortedShippingVouchers->count() - 2 }}) ▾
+                        </button>
+                    @endif
+                </div>
+
+                {{-- 2. NHÓM MÃ GIẢM GIÁ ĐƠN HÀNG --}}
+                @php
+                    $sortedOrderVouchers = $orderVouchers->sortByDesc(function ($v) use ($appliedOrderVoucher) {
+                        return ($appliedOrderVoucher && $appliedOrderVoucher->id === $v->id) ? 1 : 0;
+                    })->values();
+                @endphp
+                <div class="checkout-modal-group" id="groupOrderVouchers">
+                    <div class="checkout-modal-group-header">
+                        <span class="checkout-modal-group-icon" aria-hidden="true">🏷️</span>
+                        <div class="checkout-modal-group-info">
+                            <span class="checkout-modal-group-title">Mã giảm giá đơn hàng</span>
+                            <span class="checkout-modal-group-sub">Áp dụng tối đa 1 mã</span>
+                        </div>
+                    </div>
+
+                    <div class="checkout-modal-vouchers-list">
+                        @forelse ($sortedOrderVouchers as $idx => $vItem)
+                            @php
+                                $isApplied = ($appliedOrderVoucher && $appliedOrderVoucher->id === $vItem->id);
+                                $isCollapsed = ($idx >= 2);
+                            @endphp
+                            @if ($vItem->checkout_eligible)
+                                <div class="checkout-modal-voucher-wrapper {{ $isCollapsed ? 'is-collapsed-item' : '' }}">
+                                    <button
+                                        type="button"
+                                        class="checkout-shopee-voucher-card is-eligible {{ $isApplied ? 'is-applied' : '' }}"
+                                        data-voucher-select
+                                        data-voucher-scope="order"
+                                        data-voucher-code="{{ $vItem->code }}"
+                                        title="Bấm để chọn hoặc bỏ chọn mã này"
+                                    >
+                                        <div class="checkout-shopee-voucher-left">
+                                            <div class="checkout-shopee-badge-icon">🏷️</div>
+                                        </div>
+                                        <div class="checkout-shopee-voucher-main">
+                                            <div class="checkout-shopee-code-row">
+                                                <span class="checkout-shopee-code">{{ $vItem->code }}</span>
+                                            </div>
+                                            <div class="checkout-shopee-disc">
+                                                @if ($vItem->discount_type === 'percentage')
+                                                    Giảm {{ number_format($vItem->discount_value, 0, ',', '.') }}%
+                                                    @if ($vItem->max_discount_amount)
+                                                        (tối đa {{ number_format($vItem->max_discount_amount, 0, ',', '.') }}đ)
+                                                    @endif
+                                                @else
+                                                    Giảm {{ number_format($vItem->discount_value, 0, ',', '.') }}đ
+                                                @endif
+                                            </div>
+                                            <div class="checkout-shopee-min">
+                                                Đơn tối thiểu {{ number_format($vItem->min_order_amount, 0, ',', '.') }}đ
+                                            </div>
+                                        </div>
+                                        <div class="checkout-shopee-voucher-radio">
+                                            <div class="checkout-shopee-circle {{ $isApplied ? 'is-checked' : '' }}" aria-hidden="true">
+                                                <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+                                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
+                            @else
+                                <div class="checkout-modal-voucher-wrapper {{ $isCollapsed ? 'is-collapsed-item' : '' }}">
+                                    <div class="checkout-shopee-voucher-card is-ineligible" aria-disabled="true">
+                                        <div class="checkout-shopee-voucher-left">
+                                            <div class="checkout-shopee-badge-icon">🏷️</div>
+                                        </div>
+                                        <div class="checkout-shopee-voucher-main">
+                                            <div class="checkout-shopee-code-row">
+                                                <span class="checkout-shopee-code">{{ $vItem->code }}</span>
+                                            </div>
+                                            <div class="checkout-shopee-disc">
+                                                @if ($vItem->discount_type === 'percentage')
+                                                    Giảm {{ number_format($vItem->discount_value, 0, ',', '.') }}%
+                                                    @if ($vItem->max_discount_amount)
+                                                        (tối đa {{ number_format($vItem->max_discount_amount, 0, ',', '.') }}đ)
+                                                    @endif
+                                                @else
+                                                    Giảm {{ number_format($vItem->discount_value, 0, ',', '.') }}đ
+                                                @endif
+                                            </div>
+                                            <div class="checkout-shopee-min">
+                                                Đơn tối thiểu {{ number_format($vItem->min_order_amount, 0, ',', '.') }}đ
+                                            </div>
+                                            <div class="checkout-shopee-error">
+                                                {{ $vItem->checkout_error }}
+                                            </div>
+                                        </div>
+                                        <div class="checkout-shopee-voucher-radio">
+                                            <div class="checkout-shopee-circle is-disabled" aria-hidden="true"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        @empty
+                            <div class="checkout-modal-empty-note">
+                                Chưa có mã giảm giá đơn hàng khả dụng.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    @if ($sortedOrderVouchers->count() > 2)
+                        <button
+                            type="button"
+                            class="checkout-modal-toggle-more-btn"
+                            data-target="groupOrderVouchers"
+                            data-more-text="Xem thêm ({{ $sortedOrderVouchers->count() - 2 }}) ▾"
+                            data-less-text="Thu gọn ▴"
+                        >
+                            Xem thêm ({{ $sortedOrderVouchers->count() - 2 }}) ▾
+                        </button>
+                    @endif
+                </div>
+            </div>
+
+            <div class="checkout-modal-footer">
+                <form
+                    method="POST"
+                    action="{{ route('checkout.vouchers.confirm') }}"
+                    id="checkoutConfirmVouchersForm"
+                    class="checkout-modal-confirm-form"
+                >
+                    @csrf
+                    <input
+                        type="hidden"
+                        name="order_voucher_code"
+                        id="modalInputOrderVoucherCode"
+                        value="{{ $appliedOrderVoucher ? $appliedOrderVoucher->code : '' }}"
+                    >
+                    <input
+                        type="hidden"
+                        name="shipping_voucher_code"
+                        id="modalInputShippingVoucherCode"
+                        value="{{ $appliedShippingVoucher ? $appliedShippingVoucher->code : '' }}"
+                    >
+                    <button
+                        type="submit"
+                        class="checkout-modal-done-btn"
+                        id="doneVoucherModalBtn"
+                    >
+                        Đồng ý
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
 </section>
@@ -1107,6 +1410,128 @@
                         orderForm.submit();
                     }
                 }
+            });
+        }
+
+        // 4. Shopee-style Voucher Modal Logic
+        var openBtn = document.getElementById('openVoucherModalBtn');
+        var modal = document.getElementById('checkoutVoucherModal');
+        var closeBtn = document.getElementById('closeVoucherModalBtn');
+        var inputOrder = document.getElementById('modalInputOrderVoucherCode');
+        var inputShipping = document.getElementById('modalInputShippingVoucherCode');
+
+        if (openBtn && modal) {
+            // Giá trị đang được áp dụng thực tế trên server
+            var serverOrderCode = @json($appliedOrderVoucher ? $appliedOrderVoucher->code : '');
+            var serverShippingCode = @json($appliedShippingVoucher ? $appliedShippingVoucher->code : '');
+
+            // Trạng thái lựa chọn tạm thời trong modal
+            var tempOrderCode = serverOrderCode;
+            var tempShippingCode = serverShippingCode;
+
+            var voucherCards = modal.querySelectorAll('[data-voucher-select]');
+
+            var syncVoucherUI = function () {
+                voucherCards.forEach(function (card) {
+                    var scope = card.getAttribute('data-voucher-scope');
+                    var code = card.getAttribute('data-voucher-code');
+                    var isSelected = (scope === 'order' && code === tempOrderCode)
+                        || (scope === 'shipping' && code === tempShippingCode);
+
+                    card.classList.toggle('is-applied', isSelected);
+                    var circle = card.querySelector('.checkout-shopee-circle');
+                    if (circle) {
+                        circle.classList.toggle('is-checked', isSelected);
+                    }
+                });
+
+                if (inputOrder) {
+                    inputOrder.value = tempOrderCode;
+                }
+                if (inputShipping) {
+                    inputShipping.value = tempShippingCode;
+                }
+            };
+
+            var openModal = function () {
+                // Khởi tạo lựa chọn tạm thời từ voucher đang được áp dụng trên server
+                tempOrderCode = serverOrderCode;
+                tempShippingCode = serverShippingCode;
+                syncVoucherUI();
+
+                modal.style.display = 'flex';
+                openBtn.setAttribute('aria-expanded', 'true');
+                document.body.classList.add('checkout-modal-open');
+                modal.focus();
+            };
+
+            var closeModal = function () {
+                // Hủy toàn bộ lựa chọn tạm chưa xác nhận khi bấm đóng / Esc / click backdrop
+                tempOrderCode = serverOrderCode;
+                tempShippingCode = serverShippingCode;
+                syncVoucherUI();
+
+                modal.style.display = 'none';
+                openBtn.setAttribute('aria-expanded', 'false');
+                document.body.classList.remove('checkout-modal-open');
+                openBtn.focus();
+            };
+
+            // Click vào toàn bộ dòng voucher: chỉ cập nhật lựa chọn tạm trên giao diện
+            voucherCards.forEach(function (card) {
+                card.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var scope = card.getAttribute('data-voucher-scope');
+                    var code = card.getAttribute('data-voucher-code');
+
+                    if (scope === 'order') {
+                        // Click vào mã đang chọn tạm -> bỏ chọn; click mã khác -> chọn mã đó
+                        tempOrderCode = (tempOrderCode === code) ? '' : code;
+                    } else if (scope === 'shipping') {
+                        tempShippingCode = (tempShippingCode === code) ? '' : code;
+                    }
+
+                    syncVoucherUI();
+                });
+            });
+
+            openBtn.addEventListener('click', openModal);
+            openBtn.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openModal();
+                }
+            });
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeModal);
+            }
+
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal.style.display === 'flex') {
+                    closeModal();
+                }
+            });
+
+            // Toggle Xem thêm / Thu gọn
+            var toggleBtns = modal.querySelectorAll('.checkout-modal-toggle-more-btn');
+            toggleBtns.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var targetId = btn.getAttribute('data-target');
+                    var group = document.getElementById(targetId);
+                    if (!group) return;
+
+                    var isExpanded = group.classList.toggle('is-expanded');
+                    var moreText = btn.getAttribute('data-more-text');
+                    var lessText = btn.getAttribute('data-less-text');
+                    btn.textContent = isExpanded ? lessText : moreText;
+                });
             });
         }
     })();

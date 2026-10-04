@@ -378,7 +378,7 @@
     font-weight: 600;
 }
 
-.checkout-field input,
+.checkout-field input:not([type="checkbox"]):not([type="radio"]),
 .checkout-field select {
     width: 100%;
     height: 38px;
@@ -393,7 +393,7 @@
     transition: border-color 150ms ease;
 }
 
-.checkout-field input:focus,
+.checkout-field input:not([type="checkbox"]):not([type="radio"]):focus,
 .checkout-field select:focus {
     border-color: var(--mg-primary, #173F35);
     box-shadow: 0 0 0 2px rgba(23, 63, 53, 0.1);
@@ -409,25 +409,101 @@
     cursor: not-allowed;
 }
 
+.checkout-page .checkout-default-check,
 .checkout-default-check {
     margin: 8px 0 2px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--mg-text, #20312C);
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.4;
+    width: fit-content;
+    max-width: 100%;
 }
 
+.checkout-page .checkout-default-check input[type="checkbox"],
+.checkout-default-check input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--mg-border, #DDD8CE);
+    border-radius: 4px;
+    background: #FFFFFF;
+    accent-color: var(--mg-primary, #173F35);
+    flex-shrink: 0;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.checkout-page .checkout-default-check input[type="checkbox"]:focus-visible,
+.checkout-default-check input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--mg-primary, #173F35);
+    outline-offset: 2px;
+}
+
+.checkout-page .checkout-default-check span,
+.checkout-default-check span {
+    cursor: pointer;
+    word-break: break-word;
+}
+
+.checkout-page .checkout-label-options,
 .checkout-label-options {
     display: flex;
-    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 4px;
 }
 
+.checkout-page .checkout-label-option,
 .checkout-label-option {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 12px;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--mg-text, #20312C);
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.4;
+}
+
+.checkout-page .checkout-label-option input[type="radio"],
+.checkout-label-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--mg-border, #DDD8CE);
+    background: #FFFFFF;
+    accent-color: var(--mg-primary, #173F35);
+    flex-shrink: 0;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.checkout-page .checkout-label-option input[type="radio"]:focus-visible,
+.checkout-label-option input[type="radio"]:focus-visible {
+    outline: 2px solid var(--mg-primary, #173F35);
+    outline-offset: 2px;
+}
+
+.checkout-page .checkout-label-option span,
+.checkout-label-option span {
     cursor: pointer;
 }
 
@@ -885,45 +961,72 @@
     border-bottom: 1px solid var(--mg-border-subtle, #E8E4DB);
 }
 
-.checkout-saved-voucher-option {
+.checkout-saved-voucher-option,
+.checkout-saved-voucher-item {
     width: 100%;
-    padding: 9px 12px;
+    padding: 10px 12px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 12px;
     border: none;
     border-bottom: 1px solid var(--mg-border-subtle, #E8E4DB);
     background: #FFFFFF;
     cursor: pointer;
     font-family: inherit;
     text-align: left;
+    box-sizing: border-box;
     transition: background 120ms ease;
 }
 
-.checkout-saved-voucher-option:last-child {
+.checkout-saved-voucher-option:last-child,
+.checkout-saved-voucher-item:last-child {
     border-bottom: none;
 }
 
-.checkout-saved-voucher-option:hover {
+.checkout-saved-voucher-option:hover:not(.is-disabled),
+.checkout-saved-voucher-item:hover:not(.is-disabled) {
     background: var(--mg-bg-green-soft, #EDF5EE);
 }
 
-.checkout-saved-voucher-option.is-disabled {
-    opacity: 0.5;
+.checkout-saved-voucher-option.is-disabled,
+.checkout-saved-voucher-item.is-disabled {
     cursor: not-allowed;
-    background: #FDFCF9;
+    background: #FAF8F5;
+    opacity: 0.85;
 }
 
 .checkout-saved-voucher-code {
     font-size: 12.5px;
     font-weight: 700;
     color: var(--mg-deep-forest, #102F28);
+    flex-shrink: 0;
+    white-space: nowrap;
+    line-height: 1.4;
 }
 
 .checkout-saved-voucher-desc {
+    flex: 1;
+    min-width: 0;
+    text-align: right;
     font-size: 11.5px;
+    line-height: 1.4;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
     color: var(--mg-terracotta, #C46F4A);
     font-weight: 600;
+}
+
+.checkout-saved-voucher-option.is-disabled .checkout-saved-voucher-code,
+.checkout-saved-voucher-item.is-disabled .checkout-saved-voucher-code {
+    color: var(--mg-text-soft, #5E6B66);
+}
+
+.checkout-saved-voucher-option.is-disabled .checkout-saved-voucher-desc,
+.checkout-saved-voucher-item.is-disabled .checkout-saved-voucher-desc {
+    color: var(--mg-muted, #7A8782);
+    font-weight: 500;
 }
 
 .checkout-saved-vouchers-empty {
@@ -979,6 +1082,577 @@
     font-weight: 600;
     cursor: pointer;
     text-decoration: underline;
+}
+
+/* =========================================================
+   CHECKOUT VOUCHER COMPACT BAR (SIDEBAR)
+========================================================= */
+.checkout-voucher-bar {
+    padding: 13px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 180ms ease;
+    background: #FFFFFF;
+}
+
+.checkout-voucher-bar:hover {
+    border-color: var(--mg-primary, #173F35);
+    box-shadow: 0 3px 10px rgba(16, 47, 40, 0.08);
+}
+
+.checkout-voucher-bar:focus-visible {
+    outline: 2px solid var(--mg-primary, #173F35);
+    outline-offset: 2px;
+}
+
+.checkout-voucher-bar-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.checkout-voucher-bar-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.checkout-voucher-bar-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.checkout-voucher-bar-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--mg-deep-forest, #102F28);
+}
+
+.checkout-voucher-bar-hint {
+    font-size: 12px;
+    color: var(--mg-text-soft, #5E6B66);
+    line-height: 1.35;
+}
+
+.checkout-voucher-bar-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.checkout-voucher-bar-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    background: var(--mg-bg-green-soft, #EDF5EE);
+    border: 1px solid rgba(23, 63, 53, 0.18);
+    border-radius: 6px;
+    font-size: 11.5px;
+    line-height: 1.3;
+}
+
+.checkout-voucher-tag-icon {
+    font-size: 11px;
+}
+
+.checkout-voucher-tag-code {
+    font-weight: 700;
+    color: var(--mg-deep-forest, #102F28);
+}
+
+.checkout-voucher-tag-disc {
+    font-weight: 600;
+    color: var(--mg-success, #2D7A3A);
+}
+
+.checkout-voucher-tag-remove-form {
+    margin: 0;
+    display: inline-flex;
+}
+
+.checkout-voucher-tag-remove-btn {
+    border: none;
+    background: rgba(184, 68, 68, 0.12);
+    color: var(--mg-danger, #B84444);
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: all 120ms ease;
+    margin-left: 2px;
+}
+
+.checkout-voucher-tag-remove-btn:hover {
+    background: var(--mg-danger, #B84444);
+    color: #FFFFFF;
+}
+
+.checkout-voucher-bar-action-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    color: var(--mg-primary, #173F35);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.checkout-voucher-bar-chevron {
+    font-size: 18px;
+    line-height: 1;
+    color: var(--mg-text-soft, #5E6B66);
+    transition: transform 150ms ease;
+}
+
+.checkout-voucher-bar:hover .checkout-voucher-bar-chevron {
+    transform: translateX(3px);
+    color: var(--mg-primary, #173F35);
+}
+
+/* =========================================================
+   SHOPEE-STYLE VOUCHER POPUP MODAL
+========================================================= */
+.checkout-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(16, 47, 40, 0.5);
+    backdrop-filter: blur(3px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+body.checkout-modal-open {
+    overflow: hidden !important;
+}
+
+.checkout-modal-dialog {
+    width: 100%;
+    max-width: 520px;
+    max-height: 86vh;
+    background: #FFFFFF;
+    border-radius: 16px;
+    box-shadow: 0 20px 48px rgba(16, 47, 40, 0.22);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: checkoutModalFadeIn 180ms ease-out;
+    border: 1px solid var(--mg-border, #DDD8CE);
+}
+
+@keyframes checkoutModalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.checkout-modal-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--mg-border-subtle, #E8E4DB);
+    background: #FCFAF6;
+    flex-shrink: 0;
+}
+
+.checkout-modal-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--mg-deep-forest, #102F28);
+}
+
+.checkout-modal-close-btn {
+    border: none;
+    background: transparent;
+    padding: 6px;
+    border-radius: 8px;
+    color: var(--mg-text-soft, #5E6B66);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 150ms ease;
+}
+
+.checkout-modal-close-btn:hover {
+    background: #EFECE6;
+    color: var(--mg-deep-forest, #102F28);
+}
+
+.checkout-modal-body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: #FAF8F5;
+}
+
+/* Modal Input Box */
+.checkout-modal-input-section {
+    background: #FFFFFF;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--mg-border, #DDD8CE);
+}
+
+.checkout-modal-input-form {
+    margin: 0;
+}
+
+.checkout-modal-input-wrap {
+    display: flex;
+    gap: 8px;
+}
+
+.checkout-modal-input {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--mg-border, #DDD8CE);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 150ms ease;
+}
+
+.checkout-modal-input:focus {
+    border-color: var(--mg-primary, #173F35);
+}
+
+.checkout-modal-apply-btn {
+    height: 40px;
+    padding: 0 18px;
+    background: var(--mg-primary, #173F35);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 150ms ease;
+}
+
+.checkout-modal-apply-btn:hover {
+    background: var(--mg-primary-hover, #102F28);
+}
+
+/* Modal Voucher Groups */
+.checkout-modal-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.checkout-modal-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkout-modal-group-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.checkout-modal-group-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkout-modal-group-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--mg-deep-forest, #102F28);
+}
+
+.checkout-modal-group-sub {
+    font-size: 11.5px;
+    color: var(--mg-text-soft, #5E6B66);
+}
+
+.checkout-modal-vouchers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+/* Collapse behavior */
+.checkout-modal-group:not(.is-expanded) .is-collapsed-item {
+    display: none !important;
+}
+
+.checkout-modal-toggle-more-btn {
+    border: none;
+    background: transparent;
+    color: var(--mg-primary, #173F35);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-family: inherit;
+    transition: color 150ms ease;
+    align-self: center;
+}
+
+.checkout-modal-toggle-more-btn:hover {
+    text-decoration: underline;
+    color: var(--mg-deep-forest, #102F28);
+}
+
+.checkout-modal-voucher-form,
+.checkout-modal-voucher-wrapper {
+    margin: 0;
+    width: 100%;
+}
+
+/* Shopee-style Voucher Card */
+.checkout-shopee-voucher-card {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #FFFFFF;
+    border: 1px solid var(--mg-border, #DDD8CE);
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    box-sizing: border-box;
+    transition: all 150ms ease;
+    position: relative;
+}
+
+.checkout-shopee-voucher-card.is-eligible:hover {
+    border-color: var(--mg-primary, #173F35);
+    background: #FCFAF6;
+    box-shadow: 0 3px 8px rgba(16, 47, 40, 0.06);
+}
+
+.checkout-shopee-voucher-card.is-applied {
+    border: 1.5px solid var(--mg-primary, #173F35);
+    background: var(--mg-bg-green-soft, #EDF5EE);
+}
+
+.checkout-shopee-voucher-card.is-ineligible {
+    opacity: 0.65;
+    background: #F9F7F4;
+    border-style: dashed;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.checkout-shopee-voucher-left {
+    flex-shrink: 0;
+}
+
+.checkout-shopee-badge-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #F2EFEB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.checkout-shopee-voucher-card.is-applied .checkout-shopee-badge-icon {
+    background: #DBECE0;
+}
+
+.checkout-shopee-voucher-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.checkout-shopee-code-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.checkout-shopee-code {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--mg-deep-forest, #102F28);
+    letter-spacing: 0.02em;
+}
+
+.checkout-shopee-disc {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mg-terracotta, #C46F4A);
+    line-height: 1.35;
+}
+
+.checkout-shopee-min {
+    font-size: 11px;
+    color: var(--mg-text-soft, #5E6B66);
+    line-height: 1.3;
+}
+
+.checkout-shopee-error {
+    font-size: 11px;
+    color: var(--mg-danger, #B84444);
+    margin-top: 3px;
+    line-height: 1.3;
+}
+
+/* Radio circle on the right */
+.checkout-shopee-voucher-radio {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.checkout-shopee-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #C4BEB4;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 120ms ease;
+    box-sizing: border-box;
+}
+
+.checkout-shopee-voucher-card.is-eligible:hover .checkout-shopee-circle {
+    border-color: var(--mg-primary, #173F35);
+}
+
+.checkout-shopee-circle.is-checked {
+    background: var(--mg-primary, #173F35);
+    border-color: var(--mg-primary, #173F35);
+    color: #FFFFFF;
+}
+
+.checkout-shopee-circle svg {
+    display: none;
+}
+
+.checkout-shopee-circle.is-checked svg {
+    display: block;
+}
+
+.checkout-shopee-circle.is-disabled {
+    border-color: #DDD8CE;
+    background: #F0ECE4;
+}
+
+.checkout-modal-empty-note {
+    font-size: 12.5px;
+    color: var(--mg-text-soft, #5E6B66);
+    font-style: italic;
+    padding: 10px;
+    text-align: center;
+}
+
+.checkout-modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--mg-border-subtle, #E8E4DB);
+    background: #FCFAF6;
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.checkout-modal-confirm-form {
+    margin: 0;
+    display: inline-flex;
+}
+
+.checkout-modal-done-btn {
+    padding: 9px 24px;
+    background: var(--mg-primary, #173F35);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+.checkout-modal-done-btn:hover {
+    background: var(--mg-primary-hover, #102F28);
+}
+
+/* Mobile Bottom Sheet */
+@media (max-width: 640px) {
+    .checkout-modal-backdrop {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .checkout-modal-dialog {
+        width: 100%;
+        max-width: 100%;
+        max-height: 88vh;
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+        animation: checkoutModalSlideUp 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes checkoutModalSlideUp {
+        from {
+            transform: translateY(100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
+
+    .checkout-voucher-bar {
+        padding: 12px 14px;
+    }
 }
 
 /* =========================================================

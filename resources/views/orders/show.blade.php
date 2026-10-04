@@ -15,11 +15,13 @@
 >
 <style>
     .order-review-box {
-        margin-top: 18px;
+        margin-top: 0;
         padding: 18px;
         border: 1px solid #dce8df;
         border-radius: 14px;
         background: #f8fbf9;
+        width: 100%;
+        box-sizing: border-box;
     }
     .order-review-heading {
         display: flex;
@@ -268,14 +270,26 @@
     |--------------------------------------------------------------------------
     */
 
-    $voucherUsage =
+    $orderVoucherUsage =
         $order
+            ->orderVoucherUsage
+        ?? $order
             ->voucherUsage;
 
+    $orderVoucher =
+        $orderVoucherUsage
+            ?->voucher;
+
+    $shippingVoucherUsage =
+        $order
+            ->shippingVoucherUsage;
+
+    $shippingVoucher =
+        $shippingVoucherUsage
+            ?->voucher;
 
     $voucher =
-        $voucherUsage
-            ?->voucher;
+        $orderVoucher;
 
 @endphp
 
@@ -371,7 +385,145 @@
 
 
                 {{-- =============================================
-                     TIMELINE
+                     TIẾN TRÌNH ĐƠN HÀNG 6 BƯỚC CỐ ĐỊNH
+                ============================================== --}}
+                @php
+                    $customerFlowSteps = [
+                        'pending'   => 'Chờ xác nhận',
+                        'confirmed' => 'MiniGrove đã xác nhận',
+                        'preparing' => 'Đang chuẩn bị Terrarium',
+                        'packed'    => 'Đã đóng gói',
+                        'shipping'  => 'Đang giao hàng',
+                        'completed' => 'Giao hàng thành công',
+                    ];
+
+                    $customerStepKeys = array_keys($customerFlowSteps);
+                    $customerTotalSteps = count($customerStepKeys);
+                    $isCustomerCancelled = ($order->order_status === 'cancelled');
+
+                    // Lấy lịch sử trạng thái (đọc an toàn status hoặc order_status)
+                    $customerHistoryStatuses = collect($order->statusHistories ?? [])
+                        ->map(fn($h) => $h->status ?? $h->order_status)
+                        ->filter()
+                        ->values()
+                        ->all();
+
+                    if (!in_array('pending', $customerHistoryStatuses, true)) {
+                        array_unshift($customerHistoryStatuses, 'pending');
+                    }
+
+                    if ($isCustomerCancelled) {
+                        $customerStoppedIndex = 0;
+                        foreach ($customerHistoryStatuses as $hStatus) {
+                            $foundIdx = array_search($hStatus, $customerStepKeys, true);
+                            if ($foundIdx !== false && $foundIdx > $customerStoppedIndex) {
+                                $customerStoppedIndex = $foundIdx;
+                            }
+                        }
+                        $customerStoppedKey = $customerStepKeys[$customerStoppedIndex];
+                        $customerStoppedLabel = $customerFlowSteps[$customerStoppedKey];
+                    } else {
+                        $customerCurrentIndex = array_search($order->order_status, $customerStepKeys, true);
+                        if ($customerCurrentIndex === false) {
+                            $customerCurrentIndex = 0;
+                        }
+                        $customerCurrentStepNumber = $customerCurrentIndex + 1;
+                        $customerCurrentLabel = $customerFlowSteps[$order->order_status] ?? ($orderStatusLabels[$order->order_status] ?? $order->order_status);
+                    }
+                @endphp
+
+                <section class="order-detail-card customer-order-stepper-card">
+                    <div class="customer-order-stepper-header">
+                        <div>
+                            <strong style="display: block; font-size: 14px; color: var(--mg-green-dark, #173F35);">
+                                Tiến trình đơn hàng
+                            </strong>
+                            <span style="display: block; margin-top: 4px; font-size: 11px; color: var(--mg-muted, #728078);">
+                                Hành trình xử lý đơn hàng từ khi đặt đến khi giao thành công.
+                            </span>
+                        </div>
+
+                        <div class="customer-order-stepper-meta">
+                            @if ($isCustomerCancelled)
+                                <span class="customer-stepper-cancelled-badge">
+                                    ⛔ Đơn hàng đã hủy
+                                </span>
+                                <span class="customer-stepper-stop-text">
+                                    Đã dừng tại: <strong>{{ $customerStoppedLabel }}</strong> (Bước {{ $customerStoppedIndex + 1 }}/{{ $customerTotalSteps }})
+                                </span>
+                            @else
+                                <span class="customer-stepper-pill">
+                                    <strong>Bước {{ $customerCurrentStepNumber }}/{{ $customerTotalSteps }}</strong>: {{ $customerCurrentLabel }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="customer-order-stepper-body">
+                        <ol class="customer-order-stepper-list">
+                            @foreach ($customerStepKeys as $idx => $stepKey)
+                                @php
+                                    $stepName = $customerFlowSteps[$stepKey];
+                                    if ($isCustomerCancelled) {
+                                        $isCompleted = ($idx <= $customerStoppedIndex);
+                                        $isCurrent = false;
+                                        $isUpcoming = ($idx > $customerStoppedIndex);
+                                        $stepState = $isCompleted ? 'completed' : 'upcoming';
+                                        $isStopped = ($idx === $customerStoppedIndex);
+                                    } else {
+                                        $isFinalCompleted = ($order->order_status === 'completed' && $stepKey === 'completed');
+                                        $isCompleted = ($idx < $customerCurrentIndex) || $isFinalCompleted;
+                                        $isCurrent = ($idx === $customerCurrentIndex);
+                                        $isUpcoming = ($idx > $customerCurrentIndex);
+                                        $stepState = $isCompleted ? 'completed' : ($isCurrent ? 'current' : 'upcoming');
+                                        $isStopped = false;
+                                    }
+
+                                    $lineActive = (!$isCustomerCancelled && $idx < $customerCurrentIndex) || ($isCustomerCancelled && $idx < $customerStoppedIndex);
+                                @endphp
+
+                                <li
+                                    class="customer-order-stepper-item customer-order-stepper-item--{{ $stepState }} {{ $isStopped ? 'is-stopped' : '' }}"
+                                    {!! $isCurrent ? 'aria-current="step"' : '' !!}
+                                >
+                                    <div class="customer-order-stepper-node-wrap">
+                                        <div class="customer-order-stepper-node" aria-hidden="true">
+                                            @if ($isCompleted)
+                                                <svg class="customer-order-stepper-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3.5 8.5 6.5 11.5 12.5 4.5"></polyline>
+                                                </svg>
+                                            @else
+                                                <span class="customer-order-stepper-idx">{{ $idx + 1 }}</span>
+                                            @endif
+                                        </div>
+
+                                        @if ($idx < $customerTotalSteps - 1)
+                                            <div class="customer-order-stepper-line {{ $lineActive ? 'is-active' : '' }}" aria-hidden="true"></div>
+                                        @endif
+                                    </div>
+
+                                    <div class="customer-order-stepper-content">
+                                        <span class="customer-order-stepper-step-count">
+                                            Bước {{ $idx + 1 }}
+                                            @if ($isCompleted)
+                                                <span class="customer-sr-only"> (Đã qua)</span>
+                                            @elseif ($isCurrent)
+                                                <span class="customer-sr-only"> (Hiện tại)</span>
+                                            @elseif ($isUpcoming)
+                                                <span class="customer-sr-only"> (Chưa tới)</span>
+                                            @endif
+                                        </span>
+                                        <strong class="customer-order-stepper-step-name">{{ $stepName }}</strong>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ol>
+                    </div>
+                </section>
+
+
+                {{-- =============================================
+                     LỊCH SỬ TRẠNG THÁI ĐƠN HÀNG
                 ============================================== --}}
 
                 <section class="order-detail-card">
@@ -381,11 +533,11 @@
                         <div>
 
                             <strong>
-                                Tiến trình đơn hàng
+                                Lịch sử trạng thái đơn hàng
                             </strong>
 
                             <span>
-                                Theo dõi quá trình xử lý đơn hàng.
+                                Chi tiết các mốc thời gian cập nhật trạng thái đơn hàng.
                             </span>
 
                         </div>
@@ -623,113 +775,58 @@
                             @endphp
 
 
-                            <div
-                                class="
-                                    order-detail-product
-                                "
-                            >
-
-
-                                <div
-                                    class="
-                                        order-product-image
-                                    "
-                                >
-
-                                    @if ($primaryImage)
-
-                                        <img
-                                            src="{{
-                                                asset(
-                                                    'storage/'
-                                                    . $primaryImage
-                                                        ->image_path
-                                                )
-                                            }}"
-                                            alt="{{
-                                                $detail
-                                                    ->item_name
-                                            }}"
-                                        >
-
-                                    @else
-
-                                        <span>
-                                            🌱
-                                        </span>
-
-                                    @endif
-
-                                </div>
-
-
-                                <div
-                                    class="
-                                        order-product-info
-                                    "
-                                >
-
-
-                                    <strong>
-
-                                        {{
-                                            $detail
-                                                ->item_name
-                                        }}
-
-                                    </strong>
-
-
-                                    <span>
-
-                                        Mã:
-
-                                        {{
-                                            $detail
-                                                ->item_code
-                                            ?? '—'
-                                        }}
-
-                                    </span>
-
-
-                                    <span>
-
-                                        @if ((float) $order->discount_amount > 0)
-
-    -{{
-        number_format(
-            $order->discount_amount,
-            0,
-            ',',
-            '.'
-        )
-    }}đ
-
-@else
-
-    0đ
-
-@endif
-
-                                        ×
-
-                                        {{
-                                            $detail
-                                                ->quantity
-                                        }}
-
-                                    </span>
-
-                                </div>
-
-
-
-                                @if (
+                            @php
+                                $hasReview = (
                                     $order->order_status === 'completed'
                                     && $detail->product_id
-                                )
+                                );
+                            @endphp
 
+                            <div
+                                class="order-detail-product {{ $hasReview ? 'has-review' : 'no-review' }}"
+                            >
+                                <div class="order-product-summary">
+                                    <div class="order-product-image">
+                                        @if ($primaryImage)
+                                            <img
+                                                src="{{
+                                                    asset(
+                                                        'storage/'
+                                                        . $primaryImage->image_path
+                                                    )
+                                                }}"
+                                                alt="{{ $detail->item_name }}"
+                                            >
+                                        @else
+                                            <span>
+                                                🌱
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <div class="order-product-info order-product-content">
+                                        <strong class="order-product-name">
+                                            {{ $detail->item_name }}
+                                        </strong>
+
+                                        <span class="order-product-code">
+                                            Mã: {{ $detail->item_code ?? '—' }}
+                                        </span>
+
+                                        <div class="order-product-price-line">
+                                            {{ number_format($detail->unit_price, 0, ',', '.') }}đ × {{ $detail->quantity }}
+                                        </div>
+
+                                        <div class="order-product-total">
+                                            <span class="order-product-total-label">Thành tiền:</span>
+                                            <strong class="order-product-total-value">
+                                                {{ number_format($detail->subtotal, 0, ',', '.') }}đ
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if ($hasReview)
                                     @php
                                         $review = $detail->review;
                                     @endphp
@@ -994,24 +1091,6 @@
                                     </div>
 
                                 @endif
-
-                                <div
-                                    class="
-                                        order-product-subtotal
-                                    "
-                                >
-
-                                    {{
-                                        number_format(
-                                            $detail
-                                                ->subtotal,
-                                            0,
-                                            ',',
-                                            '.'
-                                        )
-                                    }}đ
-
-                                </div>
 
                             </div>
 
@@ -1394,7 +1473,7 @@
                     <div class="order-summary-row">
 
                         <span>
-                            Voucher
+                            Giảm giá đơn hàng
                         </span>
 
                         <strong>
@@ -1414,7 +1493,7 @@
                     </div>
 
 
-                    @if ($voucher)
+                    @if ($orderVoucher)
 
                         <div
                             class="
@@ -1422,11 +1501,11 @@
                             "
                         >
 
-                            Voucher:
+                            Mã giảm đơn hàng:
 
                             <strong>
                                 {{
-                                    $voucher
+                                    $orderVoucher
                                         ->code
                                 }}
                             </strong>
@@ -1457,6 +1536,54 @@
                         </strong>
 
                     </div>
+
+
+                    @if ((float) $order->shipping_discount_amount > 0 || $shippingVoucher)
+
+                        <div class="order-summary-row">
+
+                            <span>
+                                Giảm phí vận chuyển
+                            </span>
+
+                            <strong>
+
+                                -{{
+                                    number_format(
+                                        $order
+                                            ->shipping_discount_amount,
+                                        0,
+                                        ',',
+                                        '.'
+                                    )
+                                }}đ
+
+                            </strong>
+
+                        </div>
+
+                        @if ($shippingVoucher)
+
+                            <div
+                                class="
+                                    order-summary-voucher
+                                "
+                            >
+
+                                Mã giảm ship:
+
+                                <strong>
+                                    {{
+                                        $shippingVoucher
+                                            ->code
+                                    }}
+                                </strong>
+
+                            </div>
+
+                        @endif
+
+                    @endif
 
 
                     <div
@@ -1528,6 +1655,44 @@
                         >
                             Thanh toán bằng QR
                         </a>
+
+                    @endif
+
+
+                    {{-- ĐÃ NHẬN ĐƯỢC HÀNG --}}
+
+                    @if ($order->order_status === 'shipping')
+
+                        <form
+                            action="{{
+                                route(
+                                    'orders.received',
+                                    $order
+                                )
+                            }}"
+                            method="POST"
+                            class="order-action-full"
+                            onsubmit="
+                                return confirm(
+                                    'Bạn xác nhận đã nhận được hàng và sản phẩm không có vấn đề?'
+                                );
+                            "
+                        >
+
+                            @csrf
+                            @method('PATCH')
+
+                            <button
+                                type="submit"
+                                class="
+                                    orders-main-button
+                                    order-action-full
+                                "
+                            >
+                                Đã nhận được hàng
+                            </button>
+
+                        </form>
 
                     @endif
 
@@ -1648,6 +1813,8 @@
                         !$canCancel
                         &&
                         !$canRequestReturn
+                        &&
+                        $order->order_status !== 'shipping'
                         &&
                         !(
                             $order->payment_method

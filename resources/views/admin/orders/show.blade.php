@@ -91,6 +91,137 @@
     </header>
 
     {{-- =========================================================
+         ORDER PROGRESSION STEPPER (6 BƯỚC TIẾN TRÌNH CỐ ĐỊNH)
+    ========================================================== --}}
+    @php
+        $flowStepsAdmin = [
+            'pending'   => 'Chờ xác nhận',
+            'confirmed' => 'Đã xác nhận',
+            'preparing' => 'Đang chuẩn bị',
+            'packed'    => 'Đã đóng gói',
+            'shipping'  => 'Đang giao',
+            'completed' => 'Hoàn thành',
+        ];
+
+        $stepKeysAdmin = array_keys($flowStepsAdmin);
+        $totalStepsAdmin = count($stepKeysAdmin);
+        $isAdminCancelled = ($order->order_status === 'cancelled');
+
+        // Lấy lịch sử trạng thái đã xuất hiện thực tế (đọc an toàn status hoặc order_status)
+        $adminHistoryStatuses = collect($order->statusHistories ?? [])
+            ->map(fn($h) => $h->status ?? $h->order_status)
+            ->filter()
+            ->values()
+            ->all();
+
+        if (!in_array('pending', $adminHistoryStatuses, true)) {
+            array_unshift($adminHistoryStatuses, 'pending');
+        }
+
+        if ($isAdminCancelled) {
+            $adminStoppedIndex = 0;
+            foreach ($adminHistoryStatuses as $hStatus) {
+                $foundIdx = array_search($hStatus, $stepKeysAdmin, true);
+                if ($foundIdx !== false && $foundIdx > $adminStoppedIndex) {
+                    $adminStoppedIndex = $foundIdx;
+                }
+            }
+            $adminStoppedKey = $stepKeysAdmin[$adminStoppedIndex];
+            $adminStoppedLabel = $flowStepsAdmin[$adminStoppedKey];
+        } else {
+            $adminCurrentIndex = array_search($order->order_status, $stepKeysAdmin, true);
+            if ($adminCurrentIndex === false) {
+                $adminCurrentIndex = 0;
+            }
+            $adminCurrentStepNumber = $adminCurrentIndex + 1;
+            $adminCurrentLabel = $flowStepsAdmin[$order->order_status] ?? $order->order_status;
+        }
+    @endphp
+
+    <section class="card admin-order-stepper-card">
+        <div class="admin-order-stepper-header">
+            <div class="admin-order-stepper-title-wrap">
+                <h2 class="admin-order-stepper-title">Tiến trình đơn hàng</h2>
+                <p class="admin-order-stepper-subtitle">Quy trình xử lý và vận hành đơn hàng gồm 6 bước tiêu chuẩn.</p>
+            </div>
+
+            <div class="admin-order-stepper-meta">
+                @if ($isAdminCancelled)
+                    <span class="badge badge-order-cancelled" style="font-size: 13px; padding: 5px 12px;">
+                        ⛔ Đơn hàng đã hủy
+                    </span>
+                    <span class="admin-order-stepper-stop-text">
+                        Đã dừng tại: <strong>{{ $adminStoppedLabel }}</strong> (Bước {{ $adminStoppedIndex + 1 }}/{{ $totalStepsAdmin }})
+                    </span>
+                @else
+                    <span class="admin-order-stepper-pill">
+                        <strong>Bước {{ $adminCurrentStepNumber }}/{{ $totalStepsAdmin }}</strong>: {{ $adminCurrentLabel }}
+                    </span>
+                @endif
+            </div>
+        </div>
+
+        <ol class="admin-order-stepper-list">
+            @foreach ($stepKeysAdmin as $idx => $stepKey)
+                @php
+                    $stepName = $flowStepsAdmin[$stepKey];
+                    if ($isAdminCancelled) {
+                        $isCompleted = ($idx <= $adminStoppedIndex);
+                        $isCurrent = false;
+                        $isUpcoming = ($idx > $adminStoppedIndex);
+                        $stepState = $isCompleted ? 'completed' : 'upcoming';
+                        $isStopped = ($idx === $adminStoppedIndex);
+                    } else {
+                        $isFinalCompleted = ($order->order_status === 'completed' && $stepKey === 'completed');
+                        $isCompleted = ($idx < $adminCurrentIndex) || $isFinalCompleted;
+                        $isCurrent = ($idx === $adminCurrentIndex);
+                        $isUpcoming = ($idx > $adminCurrentIndex);
+                        $stepState = $isCompleted ? 'completed' : ($isCurrent ? 'current' : 'upcoming');
+                        $isStopped = false;
+                    }
+
+                    $lineActive = (!$isAdminCancelled && $idx < $adminCurrentIndex) || ($isAdminCancelled && $idx < $adminStoppedIndex);
+                @endphp
+
+                <li
+                    class="admin-order-stepper-item admin-order-stepper-item--{{ $stepState }} {{ $isStopped ? 'is-stopped' : '' }}"
+                    {!! $isCurrent ? 'aria-current="step"' : '' !!}
+                >
+                    <div class="admin-order-stepper-node-wrap">
+                        <div class="admin-order-stepper-node" aria-hidden="true">
+                            @if ($isCompleted)
+                                <svg class="admin-order-stepper-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3.5 8.5 6.5 11.5 12.5 4.5"></polyline>
+                                </svg>
+                            @else
+                                <span class="admin-order-stepper-idx">{{ $idx + 1 }}</span>
+                            @endif
+                        </div>
+
+                        @if ($idx < $totalStepsAdmin - 1)
+                            <div class="admin-order-stepper-line {{ $lineActive ? 'is-active' : '' }}" aria-hidden="true"></div>
+                        @endif
+                    </div>
+
+                    <div class="admin-order-stepper-content">
+                        <span class="admin-order-stepper-step-count">
+                            Bước {{ $idx + 1 }}
+                            @if ($isCompleted)
+                                <span class="admin-order-stepper-sr"> (Đã qua)</span>
+                            @elseif ($isCurrent)
+                                <span class="admin-order-stepper-sr"> (Hiện tại)</span>
+                            @elseif ($isUpcoming)
+                                <span class="admin-order-stepper-sr"> (Chưa tới)</span>
+                            @endif
+                        </span>
+                        <strong class="admin-order-stepper-step-name">{{ $stepName }}</strong>
+                    </div>
+                </li>
+            @endforeach
+        </ol>
+    </section>
+
+    {{-- =========================================================
          MAIN 2-COLUMN OPERATIONS LAYOUT
     ========================================================== --}}
     <div class="admin-ops-layout">
@@ -120,7 +251,7 @@
                             Khách hàng: Customer #{{ $order->user_id }} (ID #{{ $order->user_id }})
                         </div>
                         <p class="admin-privacy-desc">
-                            Họ tên, Email, số điện thoại, thông tin người nhận, địa chỉ giao hàng và ghi chú của Customer được bảo mật nghiêm ngặt và không hiển thị trong bảng điều khiển quản trị.
+                            Họ tên, Email, số điện thoại, thông tin người nhận, địa chỉ giao hàng và ghi chú của Customer được bảo mật.
                         </p>
                     </div>
                 </div>
@@ -284,7 +415,15 @@
                     </div>
 
                     <div class="admin-ops-summary-row admin-ops-summary-discount">
-                        <span>Voucher giảm giá</span>
+                        <span>
+                            Voucher giảm đơn hàng
+                            @php
+                                $adminOrderVoucher = ($order->orderVoucherUsage ?? $order->voucherUsage)?->voucher;
+                            @endphp
+                            @if ($adminOrderVoucher)
+                                <small style="display: block; font-size: 11.5px; color: var(--admin-text-muted);">Mã: {{ $adminOrderVoucher->code }}</small>
+                            @endif
+                        </span>
                         <strong>
                             @if ((float) $order->discount_amount > 0)
                                 -{{ number_format((float) $order->discount_amount, 0, ',', '.') }}đ
@@ -298,6 +437,23 @@
                         <span>Phí vận chuyển</span>
                         <strong>{{ number_format((float) $order->shipping_fee, 0, ',', '.') }}đ</strong>
                     </div>
+
+                    @php
+                        $adminShippingVoucher = $order->shippingVoucherUsage?->voucher;
+                    @endphp
+                    @if ((float) $order->shipping_discount_amount > 0 || $adminShippingVoucher)
+                        <div class="admin-ops-summary-row admin-ops-summary-discount">
+                            <span>
+                                Giảm phí ship
+                                @if ($adminShippingVoucher)
+                                    <small style="display: block; font-size: 11.5px; color: var(--admin-text-muted);">Mã: {{ $adminShippingVoucher->code }}</small>
+                                @endif
+                            </span>
+                            <strong>
+                                -{{ number_format((float) $order->shipping_discount_amount, 0, ',', '.') }}đ
+                            </strong>
+                        </div>
+                    @endif
 
                     <div class="admin-ops-summary-row admin-ops-summary-total">
                         <span>Tổng cộng</span>

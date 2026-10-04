@@ -37,6 +37,64 @@
             @enderror
         </div>
 
+        {{-- PHẠM VI VOUCHER --}}
+        <div class="form-group">
+            <label for="voucher_scope">
+                Phạm vi áp dụng <span class="required-mark">*</span>
+            </label>
+            <select
+                id="voucher_scope"
+                name="voucher_scope"
+                required
+            >
+                <option
+                    value="order"
+                    @selected(old('voucher_scope', $voucher->voucher_scope ?? 'order') === 'order')
+                >
+                    Giảm giá đơn hàng
+                </option>
+                <option
+                    value="shipping"
+                    @selected(old('voucher_scope', $voucher->voucher_scope ?? '') === 'shipping')
+                >
+                    Giảm phí vận chuyển
+                </option>
+            </select>
+            <small class="help-text">Áp dụng chiết khấu vào tiền hàng hoặc phí vận chuyển GHN.</small>
+            @error('voucher_scope')
+                <div class="error">{{ $message }}</div>
+            @enderror
+        </div>
+
+        {{-- HIỂN THỊ CÔNG KHAI TẠI CHECKOUT --}}
+        <div class="form-group">
+            <label for="is_public">
+                Hiển thị công khai tại Checkout <span class="required-mark">*</span>
+            </label>
+            <select
+                id="is_public"
+                name="is_public"
+                required
+            >
+                <option
+                    value="1"
+                    @selected((string) old('is_public', isset($voucher) ? (int)$voucher->is_public : 1) === '1')
+                >
+                    Có – hiển thị công khai để khách chọn
+                </option>
+                <option
+                    value="0"
+                    @selected((string) old('is_public', isset($voucher) ? (int)$voucher->is_public : 1) === '0')
+                >
+                    Không – chỉ dùng khi khách nhập mã
+                </option>
+            </select>
+            <small class="help-text">Voucher riêng tư sẽ không hiện trong danh sách nhưng vẫn nhập mã thủ công được.</small>
+            @error('is_public')
+                <div class="error">{{ $message }}</div>
+            @enderror
+        </div>
+
         {{-- LOẠI GIẢM --}}
         <div class="form-group">
             <label for="discount_type">

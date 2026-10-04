@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Voucher;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\Order;
@@ -540,69 +541,100 @@ if ($selectedAddress) {
 
         /*
         |--------------------------------------------------------------------------
-        | VOUCHER
+        | PHÍ VẬN CHUYỂN
+        |--------------------------------------------------------------------------
+        |
+        | Phải tính phí vận chuyển GHN trước khi kiểm tra Voucher Shipping.
+        |
+        */
+
+        $shippingFee =
+            $checkoutService
+                ->calculateShippingFee(
+                    $selectedAddress,
+                    $checkoutItems
+                );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | XỬ LÝ TƯƠNG THÍCH SESSION VOUCHER CŨ
         |--------------------------------------------------------------------------
         */
 
-        $appliedVoucher =
-            null;
-
-
-        $discountAmount =
-            0;
-
-
-        $voucherError =
-            null;
-
-
-        $voucherCode =
+        $legacyVoucherCode =
             session(
                 'checkout.voucher_code'
             );
 
+        if ($legacyVoucherCode) {
+            $legacyVoucher =
+                Voucher::query()
+                    ->whereRaw(
+                        'UPPER(code) = ?',
+                        [strtoupper(trim($legacyVoucherCode))]
+                    )
+                    ->first();
+
+            if ($legacyVoucher) {
+                $targetSessionKey =
+                    $legacyVoucher->isShippingScope()
+                        ? 'checkout.shipping_voucher_code'
+                        : 'checkout.order_voucher_code';
+
+                if (!session()->has($targetSessionKey)) {
+                    session([
+                        $targetSessionKey =>
+                            $legacyVoucher->code,
+                    ]);
+                }
+            }
+
+            session()->forget(
+                'checkout.voucher_code'
+            );
+        }
+
 
         /*
-         * Nếu Customer đã áp Voucher trước đó,
-         * mỗi lần mở Checkout vẫn phải
-         * kiểm tra Voucher lại từ Database.
-         */
-        if ($voucherCode) {
+        |--------------------------------------------------------------------------
+        | VOUCHER GIẢM GIÁ ĐƠN HÀNG (ORDER SCOPE)
+        |--------------------------------------------------------------------------
+        */
 
+        $appliedOrderVoucher = null;
+        $orderDiscountAmount = 0.0;
+        $orderVoucherError = null;
+
+        $orderVoucherCode =
+            session(
+                'checkout.order_voucher_code'
+            );
+
+        if ($orderVoucherCode) {
             try {
-
-                $result =
+                $resultOrder =
                     $voucherService
                         ->validateAndCalculate(
                             $request->user(),
-                            $voucherCode,
-                            $subtotal
+                            $orderVoucherCode,
+                            $subtotal,
+                            $shippingFee,
+                            Voucher::SCOPE_ORDER
                         );
 
+                $appliedOrderVoucher =
+                    $resultOrder['voucher'];
 
-                $appliedVoucher =
-                    $result['voucher'];
+                $orderDiscountAmount =
+                    (float) $resultOrder['discount_amount'];
 
-
-                $discountAmount =
-                    $result[
-                        'discount_amount'
-                    ];
-
-            } catch (
-                ValidationException $e
-            ) {
-
-                /*
-                 * Voucher không còn hợp lệ:
-                 * xóa khỏi Checkout Session.
-                 */
+            } catch (ValidationException $e) {
                 session()->forget(
-                    'checkout.voucher_code'
+                    'checkout.order_voucher_code'
                 );
 
-
-                $voucherError =
+                $orderVoucherError =
                     $e->validator
                         ->errors()
                         ->first();
@@ -612,16 +644,49 @@ if ($selectedAddress) {
 
         /*
         |--------------------------------------------------------------------------
-        | PHÍ VẬN CHUYỂN
+        | VOUCHER MIỄN / GIẢM PHÍ VẬN CHUYỂN (SHIPPING SCOPE)
         |--------------------------------------------------------------------------
         */
 
-       $shippingFee =
-    $checkoutService
-        ->calculateShippingFee(
-            $selectedAddress,
-            $checkoutItems
-        );
+        $appliedShippingVoucher = null;
+        $shippingDiscountAmount = 0.0;
+        $shippingVoucherError = null;
+
+        $shippingVoucherCode =
+            session(
+                'checkout.shipping_voucher_code'
+            );
+
+        if ($shippingVoucherCode) {
+            try {
+                $resultShipping =
+                    $voucherService
+                        ->validateAndCalculate(
+                            $request->user(),
+                            $shippingVoucherCode,
+                            $subtotal,
+                            $shippingFee,
+                            Voucher::SCOPE_SHIPPING
+                        );
+
+                $appliedShippingVoucher =
+                    $resultShipping['voucher'];
+
+                $shippingDiscountAmount =
+                    (float) $resultShipping['discount_amount'];
+
+            } catch (ValidationException $e) {
+                session()->forget(
+                    'checkout.shipping_voucher_code'
+                );
+
+                $shippingVoucherError =
+                    $e->validator
+                        ->errors()
+                        ->first();
+            }
+        }
+
 
         /*
         |--------------------------------------------------------------------------
@@ -629,9 +694,8 @@ if ($selectedAddress) {
         |--------------------------------------------------------------------------
         |
         | total =
-        | subtotal
-        | - discount
-        | + shipping
+        | max(0, subtotal - orderDiscount)
+        | + max(0, shippingFee - shippingDiscount)
         |
         */
 
@@ -639,79 +703,136 @@ if ($selectedAddress) {
             max(
                 0,
                 $subtotal
-                - $discountAmount
-                + $shippingFee
+                - $orderDiscountAmount
+            )
+            + max(
+                0,
+                $shippingFee
+                - $shippingDiscountAmount
             );
-/*
-|--------------------------------------------------------------------------
-| PHƯƠNG THỨC THANH TOÁN ĐANG HOẠT ĐỘNG
-|--------------------------------------------------------------------------
-|
-| Chỉ truyền các phương thức đang Active
-| sang giao diện Checkout.
-|
-*/
 
-$paymentSettings =
-    PaymentSetting::query()
-        ->whereIn(
-            'payment_method',
-            [
-                'COD',
-                'QR',
-                'ONEPAY',
-            ]
-        )
-        ->where(
-            'is_enabled',
-            true
-        )
-        ->orderByRaw(
-            "
-            CASE payment_method
-                WHEN 'COD' THEN 1
-                WHEN 'QR' THEN 2
-                ELSE 3
-            END
-            "
-        )
-        ->get()
-        ->keyBy(
-            'payment_method'
-        );
+        // Biến tương thích ngược cho view cũ
+        $appliedVoucher = $appliedOrderVoucher;
+        $discountAmount = $orderDiscountAmount;
+        $voucherError = $orderVoucherError ?: $shippingVoucherError;
+
 
         /*
         |--------------------------------------------------------------------------
-        | VOUCHER ĐÃ LƯU CỦA CUSTOMER
+        | PHƯƠNG THỨC THANH TOÁN ĐANG HOẠT ĐỘNG
+        |--------------------------------------------------------------------------
+        */
+
+        $paymentSettings =
+            PaymentSetting::query()
+                ->whereIn(
+                    'payment_method',
+                    [
+                        'COD',
+                        'QR',
+                        'ONEPAY',
+                    ]
+                )
+                ->where(
+                    'is_enabled',
+                    true
+                )
+                ->orderByRaw(
+                    "
+                    CASE payment_method
+                        WHEN 'COD' THEN 1
+                        WHEN 'QR' THEN 2
+                        ELSE 3
+                    END
+                    "
+                )
+                ->get()
+                ->keyBy(
+                    'payment_method'
+                );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DANH SÁCH VOUCHER CÔNG KHAI TẠI CHECKOUT
         |--------------------------------------------------------------------------
         |
-        | Hiển thị trong dropdown ở ô Voucher.
-        | Mỗi Voucher vẫn được kiểm tra lại theo
-        | subtotal hiện tại trước khi cho chọn.
+        | Không yêu cầu Customer phải lưu trước.
+        | Lấy trực tiếp từ Voucher model:
+        | - is_public = true
+        | - is_active = true
+        | - chưa hết hạn (start_at <= now <= end_at)
+        | - chưa hết tổng usage_limit
+        | - Customer chưa hết per_user_limit
         |
         */
 
-        $savedVouchers = $request->user()
-            ->savedVouchers()
-            ->orderByPivot(
-                'created_at',
-                'desc'
-            )
-            ->get();
+        $now = now();
 
-        $savedVouchers->each(
+        $publicVouchers =
+            Voucher::query()
+                ->where(
+                    'is_public',
+                    true
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->where(
+                    'start_at',
+                    '<=',
+                    $now
+                )
+                ->where(
+                    'end_at',
+                    '>=',
+                    $now
+                )
+                ->where(
+                    function ($query) {
+                        $query->whereNull('usage_limit')
+                            ->orWhereColumn('usage_count', '<', 'usage_limit');
+                    }
+                )
+                ->orderBy('min_order_amount', 'asc')
+                ->orderByDesc('id')
+                ->get();
+
+        // Lọc Customer chưa hết per_user_limit
+        $publicVouchers =
+            $publicVouchers->reject(
+                function ($voucher) use ($request, $voucherService) {
+                    return $voucherService
+                        ->isUserLimitReached(
+                            $request->user(),
+                            $voucher
+                        );
+                }
+            )->values();
+
+        // Tính eligibility & số tiền giảm dự kiến
+        $publicVouchers->each(
             function ($voucher) use (
                 $request,
                 $voucherService,
-                $subtotal
+                $subtotal,
+                $shippingFee
             ) {
+                $scope =
+                    $voucher->voucher_scope
+                    ?? Voucher::SCOPE_ORDER;
+
                 try {
-                    $result = $voucherService
-                        ->validateAndCalculate(
-                            $request->user(),
-                            $voucher->code,
-                            $subtotal
-                        );
+                    $result =
+                        $voucherService
+                            ->validateAndCalculate(
+                                $request->user(),
+                                $voucher->code,
+                                $subtotal,
+                                $shippingFee,
+                                $scope
+                            );
 
                     $voucher->setAttribute(
                         'checkout_eligible',
@@ -727,9 +848,9 @@ $paymentSettings =
                         'checkout_error',
                         null
                     );
-                } catch (
-                    ValidationException $exception
-                ) {
+
+                } catch (ValidationException $exception) {
+
                     $voucher->setAttribute(
                         'checkout_eligible',
                         false
@@ -750,6 +871,26 @@ $paymentSettings =
             }
         );
 
+        $orderVouchers =
+            $publicVouchers
+                ->filter(
+                    fn ($v) =>
+                        $v->isOrderScope()
+                )
+                ->values();
+
+        $shippingVouchers =
+            $publicVouchers
+                ->filter(
+                    fn ($v) =>
+                        $v->isShippingScope()
+                )
+                ->values();
+
+        // Tương thích biến savedVouchers cũ
+        $savedVouchers = $orderVouchers;
+
+
         /*
         |--------------------------------------------------------------------------
         | VIEW
@@ -760,17 +901,25 @@ $paymentSettings =
             'checkout.index',
             compact(
                 'mode',
-    'checkoutItems',
-    'subtotal',
-    'addresses',
-    'selectedAddress',
-    'appliedVoucher',
-    'discountAmount',
-    'shippingFee',
-    'total',
-    'voucherError',
-    'paymentSettings',
-    'savedVouchers'
+                'checkoutItems',
+                'subtotal',
+                'addresses',
+                'selectedAddress',
+                'shippingFee',
+                'total',
+                'paymentSettings',
+                'appliedOrderVoucher',
+                'orderDiscountAmount',
+                'orderVoucherError',
+                'orderVouchers',
+                'appliedShippingVoucher',
+                'shippingDiscountAmount',
+                'shippingVoucherError',
+                'shippingVouchers',
+                'appliedVoucher',
+                'discountAmount',
+                'voucherError',
+                'savedVouchers'
             )
         );
     }
@@ -778,6 +927,7 @@ $paymentSettings =
 
     /**
      * Áp dụng Voucher cho Checkout hiện tại.
+     * Tự động xác định voucher_scope: order hoặc shipping.
      */
     public function applyVoucher(
         Request $request,
@@ -803,15 +953,127 @@ $paymentSettings =
                 ]
             );
 
+        $checkoutData =
+            $checkoutService
+                ->getCheckoutData(
+                    $request->user()
+                );
 
-        /*
-        |--------------------------------------------------------------------------
-        | LẤY LẠI CHECKOUT
-        |--------------------------------------------------------------------------
-        |
-        | Không dùng giá từ Browser.
-        |
-        */
+        $subtotal =
+            $checkoutData['subtotal'];
+
+        $selectedAddressId =
+            session('checkout.address_id');
+
+        $selectedAddress = null;
+        if ($selectedAddressId) {
+            $selectedAddress =
+                $request->user()
+                    ->addresses()
+                    ->where(
+                        'id',
+                        (int) $selectedAddressId
+                    )
+                    ->first();
+        }
+
+        $shippingFee =
+            $checkoutService
+                ->calculateShippingFee(
+                    $selectedAddress,
+                    $checkoutData['checkoutItems']
+                );
+
+        $code = strtoupper(
+            trim($validated['voucher_code'])
+        );
+
+        $voucher =
+            Voucher::query()
+                ->whereRaw(
+                    'UPPER(code) = ?',
+                    [$code]
+                )
+                ->first();
+
+        if (!$voucher) {
+            return redirect()
+                ->route('checkout.index')
+                ->withInput()
+                ->with(
+                    'error',
+                    'Mã Voucher không tồn tại.'
+                );
+        }
+
+        $scope =
+            $voucher->voucher_scope
+            ?? Voucher::SCOPE_ORDER;
+
+        try {
+            $voucherService
+                ->validateAndCalculate(
+                    $request->user(),
+                    $code,
+                    $subtotal,
+                    $shippingFee,
+                    $scope
+                );
+        } catch (ValidationException $e) {
+            return redirect()
+                ->route('checkout.index')
+                ->withInput()
+                ->with(
+                    'error',
+                    $e->validator
+                        ->errors()
+                        ->first()
+                );
+        }
+
+        if ($scope === Voucher::SCOPE_SHIPPING) {
+            session([
+                'checkout.shipping_voucher_code' =>
+                    $voucher->code,
+            ]);
+
+            $successMsg =
+                'Áp dụng mã giảm giá phí vận chuyển thành công.';
+        } else {
+            session([
+                'checkout.order_voucher_code' =>
+                    $voucher->code,
+            ]);
+
+            $successMsg =
+                'Áp dụng mã giảm giá đơn hàng thành công.';
+        }
+
+        // Dọn key cũ nếu có
+        session()->forget(
+            'checkout.voucher_code'
+        );
+
+        return redirect()
+            ->route('checkout.index')
+            ->with(
+                'success',
+                $successMsg
+            );
+    }
+
+
+    /**
+     * Xác nhận đồng thời Voucher (Order & Shipping) từ Modal Shopee.
+     * Xác thực nguyên khối: cả 2 mã hợp lệ mới cập nhật session.
+     */
+    public function confirmVouchers(
+        Request $request,
+        CheckoutService $checkoutService,
+        VoucherService $voucherService
+    ): RedirectResponse {
+        $orderCode = trim((string) $request->input('order_voucher_code', ''));
+        $shippingCode = trim((string) $request->input('shipping_voucher_code', ''));
 
         $checkoutData =
             $checkoutService
@@ -819,77 +1081,172 @@ $paymentSettings =
                     $request->user()
                 );
 
+        $subtotal =
+            $checkoutData['subtotal'];
 
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDATE VOUCHER
-        |--------------------------------------------------------------------------
-        |
-        | Kiểm tra:
-        | - tồn tại
-        | - Active
-        | - còn hạn
-        | - còn lượt
-        | - min order
-        | - per user limit
-        | - discount
-        |
-        */
+        $selectedAddressId =
+            session('checkout.address_id');
 
-        $voucherService
-            ->validateAndCalculate(
-                $request->user(),
-                $validated[
-                    'voucher_code'
-                ],
-                $checkoutData[
-                    'subtotal'
-                ]
-            );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | LƯU VOUCHER SESSION
-        |--------------------------------------------------------------------------
-        */
-
-        session([
-            'checkout.voucher_code'
-                => strtoupper(
-                    trim(
-                        $validated[
-                            'voucher_code'
-                        ]
+        $selectedAddress = null;
+        if ($selectedAddressId) {
+            $selectedAddress =
+                $request->user()
+                    ->addresses()
+                    ->where(
+                        'id',
+                        (int) $selectedAddressId
                     )
-                ),
-        ]);
+                    ->first();
+        }
 
+        $shippingFee =
+            $checkoutService
+                ->calculateShippingFee(
+                    $selectedAddress,
+                    $checkoutData['checkoutItems']
+                );
+
+        $validatedOrderVoucher = null;
+        $validatedShippingVoucher = null;
+
+        // 1. Kiểm tra mã giảm giá đơn hàng (nếu có chọn)
+        if ($orderCode !== '') {
+            try {
+                $orderResult =
+                    $voucherService
+                        ->validateAndCalculate(
+                            $request->user(),
+                            $orderCode,
+                            $subtotal,
+                            $shippingFee,
+                            Voucher::SCOPE_ORDER
+                        );
+
+                $validatedOrderVoucher = $orderResult['voucher'];
+            } catch (ValidationException $e) {
+                return redirect()
+                    ->route('checkout.index')
+                    ->with(
+                        'error',
+                        $e->validator
+                            ->errors()
+                            ->first()
+                    );
+            }
+        }
+
+        // 2. Kiểm tra mã giảm phí vận chuyển (nếu có chọn)
+        if ($shippingCode !== '') {
+            try {
+                $shippingResult =
+                    $voucherService
+                        ->validateAndCalculate(
+                            $request->user(),
+                            $shippingCode,
+                            $subtotal,
+                            $shippingFee,
+                            Voucher::SCOPE_SHIPPING
+                        );
+
+                $validatedShippingVoucher = $shippingResult['voucher'];
+            } catch (ValidationException $e) {
+                return redirect()
+                    ->route('checkout.index')
+                    ->with(
+                        'error',
+                        $e->validator
+                            ->errors()
+                            ->first()
+                    );
+            }
+        }
+
+        // 3. Nguyên khối: Chỉ cập nhật session sau khi cả hai mã đều hợp lệ
+        if ($validatedOrderVoucher) {
+            session([
+                'checkout.order_voucher_code' =>
+                    $validatedOrderVoucher->code,
+            ]);
+        } else {
+            session()->forget(
+                'checkout.order_voucher_code'
+            );
+        }
+
+        if ($validatedShippingVoucher) {
+            session([
+                'checkout.shipping_voucher_code' =>
+                    $validatedShippingVoucher->code,
+            ]);
+        } else {
+            session()->forget(
+                'checkout.shipping_voucher_code'
+            );
+        }
+
+        // Dọn key cũ nếu có
+        session()->forget(
+            'checkout.voucher_code'
+        );
+
+        // Thông báo kết quả
+        if ($validatedOrderVoucher && $validatedShippingVoucher) {
+            $msg = 'Áp dụng mã giảm giá đơn hàng và phí vận chuyển thành công.';
+        } elseif ($validatedOrderVoucher) {
+            $msg = 'Áp dụng mã giảm giá đơn hàng thành công.';
+        } elseif ($validatedShippingVoucher) {
+            $msg = 'Áp dụng mã giảm giá phí vận chuyển thành công.';
+        } else {
+            $msg = 'Đã cập nhật lựa chọn voucher.';
+        }
 
         return redirect()
             ->route('checkout.index')
             ->with(
                 'success',
-                'Áp dụng Voucher thành công.'
+                $msg
             );
     }
 
 
     /**
-     * Bỏ Voucher đang áp dụng.
+     * Bỏ Voucher đang áp dụng (cho phép bỏ riêng theo scope).
      */
-    public function removeVoucher(): RedirectResponse
-    {
-        session()->forget(
-            'checkout.voucher_code'
-        );
+    public function removeVoucher(
+        Request $request
+    ): RedirectResponse {
 
+        $scope =
+            $request->input('scope')
+            ?: $request->query('scope');
+
+        if ($scope === Voucher::SCOPE_SHIPPING) {
+            session()->forget(
+                'checkout.shipping_voucher_code'
+            );
+
+            $msg = 'Đã bỏ mã giảm phí vận chuyển.';
+        } elseif ($scope === Voucher::SCOPE_ORDER) {
+            session()->forget(
+                'checkout.order_voucher_code'
+            );
+
+            $msg = 'Đã bỏ mã giảm giá đơn hàng.';
+        } else {
+            session()->forget([
+                'checkout.order_voucher_code',
+                'checkout.shipping_voucher_code',
+                'checkout.voucher_code',
+            ]);
+
+            $msg = 'Đã bỏ Voucher.';
+        }
 
         return redirect()
             ->route('checkout.index')
             ->with(
                 'success',
-                'Đã bỏ Voucher.'
+                $msg
             );
     }
 /**
@@ -1092,6 +1449,8 @@ session()->forget([
     'checkout.product_id',
     'checkout.quantity',
     'checkout.address_id',
+    'checkout.order_voucher_code',
+    'checkout.shipping_voucher_code',
     'checkout.voucher_code',
 ]);
 

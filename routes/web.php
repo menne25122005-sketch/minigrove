@@ -1,46 +1,38 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\StudioController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AddressController;
-use App\Http\Controllers\OnePayController;
-use App\Http\Controllers\GoogleAuthController;
-
-use App\Http\Controllers\Shop\ProductController as ShopProductController;
-
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ChatController as AdminChatController;
+use App\Http\Controllers\Admin\CompatibilityRuleController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\GroveController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReturnRequestController as AdminReturnRequestController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VoucherController;
-use App\Http\Controllers\Admin\PaymentController;
-use App\Http\Controllers\Admin\CustomerController;
-use App\Http\Controllers\Admin\GroveController;
-use App\Http\Controllers\Admin\CompatibilityRuleController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Admin\ChatController as AdminChatController;
-
-
-
-use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
-use App\Http\Controllers\Customer\VoucherController as CustomerVoucherController;
-use App\Http\Controllers\Customer\ReturnRequestController as CustomerReturnRequestController;
-use App\Http\Controllers\Customer\GroveController as CustomerGroveController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Customer\ChatController as CustomerChatController;
-use App\Http\Controllers\Customer\ReviewController as CustomerReviewController;
-use App\Http\Controllers\Customer\WishlistController as CustomerWishlistController;
 use App\Http\Controllers\Customer\CustomDesignController as CustomerCustomDesignController;
-
+use App\Http\Controllers\Customer\GroveController as CustomerGroveController;
+use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
+use App\Http\Controllers\Customer\ReturnRequestController as CustomerReturnRequestController;
+use App\Http\Controllers\Customer\ReviewController as CustomerReviewController;
+use App\Http\Controllers\Customer\VoucherController as CustomerVoucherController;
+use App\Http\Controllers\Customer\WishlistController as CustomerWishlistController;
+use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\OnePayController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Shop\ProductController as ShopProductController;
+use App\Http\Controllers\StudioController;
 use App\Models\Review;
-
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,13 +44,11 @@ use App\Models\Review;
 */
 Route::model('review', Review::class);
 
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
-
 
 /*
 |--------------------------------------------------------------------------
@@ -80,7 +70,6 @@ Route::view(
     'about'
 )->name('about');
 
-
 /*
 |--------------------------------------------------------------------------
 | MiniGrove Studio
@@ -100,7 +89,6 @@ Route::get(
     '/studio',
     [StudioController::class, 'index']
 )->name('studio.index');
-
 
 Route::post(
     '/studio/preview',
@@ -147,7 +135,6 @@ Route::middleware([
     )->name('designs.cart');
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | Product - Customer / Guest
@@ -169,12 +156,10 @@ Route::get(
     [ShopProductController::class, 'index']
 )->name('products.index');
 
-
 Route::get(
     '/products/{product}',
     [ShopProductController::class, 'show']
 )->name('products.show');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -202,7 +187,6 @@ Route::middleware([
 ])
     ->group(function () {
 
-
         /*
          * ---------------------------------------------------------------
          * Xem giỏ hàng
@@ -215,7 +199,6 @@ Route::middleware([
         )->name(
             'cart.index'
         );
-
 
         /*
          * ---------------------------------------------------------------
@@ -230,7 +213,6 @@ Route::middleware([
             'cart.add'
         );
 
-
         /*
          * ---------------------------------------------------------------
          * Cập nhật số lượng CartItem
@@ -243,7 +225,6 @@ Route::middleware([
         )->name(
             'cart.update'
         );
-
 
         /*
          * ---------------------------------------------------------------
@@ -261,7 +242,6 @@ Route::middleware([
             'cart.selected.destroy'
         );
 
-
         /*
          * ---------------------------------------------------------------
          * Xóa một CartItem
@@ -276,7 +256,7 @@ Route::middleware([
         );
 
     });
-    Route::get(
+Route::get(
     '/profile/addresses',
     [AddressController::class, 'index']
 )->name('profile.addresses');
@@ -289,9 +269,6 @@ Route::post(
     '/profile/password/reset',
     [ProfileController::class, 'startPasswordReset']
 )->name('profile.password.reset');
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -334,7 +311,6 @@ Route::middleware([
 ])
     ->group(function () {
 
-
         /*
          * ---------------------------------------------------------------
          * Chuẩn bị Checkout từ Cart
@@ -353,7 +329,6 @@ Route::middleware([
         )->name(
             'checkout.cart'
         );
-
 
         /*
          * ---------------------------------------------------------------
@@ -374,7 +349,6 @@ Route::middleware([
             'checkout.buy-now'
         );
 
-
         /*
          * ---------------------------------------------------------------
          * Trang Checkout
@@ -390,7 +364,6 @@ Route::middleware([
         )->name(
             'checkout.index'
         );
-
 
         /*
          * ---------------------------------------------------------------
@@ -408,7 +381,6 @@ Route::middleware([
             'checkout.address.store'
         );
 
-
         /*
          * ---------------------------------------------------------------
          * Chọn địa chỉ giao hàng
@@ -424,89 +396,86 @@ Route::middleware([
         )->name(
             'checkout.address.select'
         );
-/*
- * ---------------------------------------------------------------
- * Sửa địa chỉ giao hàng
- * ---------------------------------------------------------------
- */
-Route::patch(
-    '/checkout/address/{address}',
-    [
-        AddressController::class,
-        'update',
-    ]
-)->whereNumber(
-    'address'
-)->name(
-    'checkout.address.update'
-);
+        /*
+         * ---------------------------------------------------------------
+         * Sửa địa chỉ giao hàng
+         * ---------------------------------------------------------------
+         */
+        Route::patch(
+            '/checkout/address/{address}',
+            [
+                AddressController::class,
+                'update',
+            ]
+        )->whereNumber(
+            'address'
+        )->name(
+            'checkout.address.update'
+        );
 
+        /*
+         * ---------------------------------------------------------------
+         * Xóa địa chỉ giao hàng
+         * ---------------------------------------------------------------
+         */
+        Route::delete(
+            '/checkout/address/{address}',
+            [
+                AddressController::class,
+                'destroy',
+            ]
+        )->whereNumber(
+            'address'
+        )->name(
+            'checkout.address.destroy'
+        );
+        /*
+         * ---------------------------------------------------------------
+         * GHN Address API
+         * ---------------------------------------------------------------
+         *
+         * Các API này dùng để:
+         * - Lấy danh sách Tỉnh/Thành phố từ GHN
+         * - Lấy danh sách Quận/Huyện theo Tỉnh
+         * - Lấy danh sách Phường/Xã theo Quận
+         *
+         * GHN Token chỉ được sử dụng ở Backend,
+         * không đưa Token ra JavaScript.
+         */
 
-/*
- * ---------------------------------------------------------------
- * Xóa địa chỉ giao hàng
- * ---------------------------------------------------------------
- */
-Route::delete(
-    '/checkout/address/{address}',
-    [
-        AddressController::class,
-        'destroy',
-    ]
-)->whereNumber(
-    'address'
-)->name(
-    'checkout.address.destroy'
-);
-/*
- * ---------------------------------------------------------------
- * GHN Address API
- * ---------------------------------------------------------------
- *
- * Các API này dùng để:
- * - Lấy danh sách Tỉnh/Thành phố từ GHN
- * - Lấy danh sách Quận/Huyện theo Tỉnh
- * - Lấy danh sách Phường/Xã theo Quận
- *
- * GHN Token chỉ được sử dụng ở Backend,
- * không đưa Token ra JavaScript.
- */
+        Route::get(
+            '/checkout/ghn/provinces',
+            [
+                AddressController::class,
+                'ghnProvinces',
+            ]
+        )->name(
+            'checkout.ghn.provinces'
+        );
 
-Route::get(
-    '/checkout/ghn/provinces',
-    [
-        AddressController::class,
-        'ghnProvinces',
-    ]
-)->name(
-    'checkout.ghn.provinces'
-);
+        Route::get(
+            '/checkout/ghn/districts/{provinceId}',
+            [
+                AddressController::class,
+                'ghnDistricts',
+            ]
+        )->whereNumber(
+            'provinceId'
+        )->name(
+            'checkout.ghn.districts'
+        );
 
-
-Route::get(
-    '/checkout/ghn/districts/{provinceId}',
-    [
-        AddressController::class,
-        'ghnDistricts',
-    ]
-)->whereNumber(
-    'provinceId'
-)->name(
-    'checkout.ghn.districts'
-);
-
-
-Route::get(
-    '/checkout/ghn/wards/{districtId}',
-    [
-        AddressController::class,
-        'ghnWards',
-    ]
-)->whereNumber(
-    'districtId'
-)->name(
-    'checkout.ghn.wards'
-);
+        Route::get(
+            '/checkout/ghn/wards/{districtId}',
+            [
+                AddressController::class,
+                'ghnWards',
+            ]
+        )->whereNumber(
+            'districtId'
+        )->name(
+            'checkout.ghn.wards'
+        );
         /*
          * ---------------------------------------------------------------
          * Áp dụng Voucher
@@ -522,7 +491,6 @@ Route::get(
         )->name(
             'checkout.voucher.apply'
         );
-
 
         /*
          * ---------------------------------------------------------------
@@ -541,36 +509,50 @@ Route::get(
         );
 
         /*
+         * ---------------------------------------------------------------
+         * Xác nhận đồng thời Voucher (Modal Shopee)
+         * ---------------------------------------------------------------
+         */
+
+        Route::post(
+            '/checkout/vouchers/confirm',
+            [
+                CheckoutController::class,
+                'confirmVouchers',
+            ]
+        )->name(
+            'checkout.vouchers.confirm'
+        );
+
+        /*
 |--------------------------------------------------------------------------
 | CUSTOMER WISHLIST
 |--------------------------------------------------------------------------
 */
 
-Route::get(
-    '/wishlist',
-    [
-        CustomerWishlistController::class,
-        'index',
-    ]
-)->name('wishlist.index');
+        Route::get(
+            '/wishlist',
+            [
+                CustomerWishlistController::class,
+                'index',
+            ]
+        )->name('wishlist.index');
 
+        Route::post(
+            '/wishlist/{product}',
+            [
+                CustomerWishlistController::class,
+                'store',
+            ]
+        )->name('wishlist.store');
 
-Route::post(
-    '/wishlist/{product}',
-    [
-        CustomerWishlistController::class,
-        'store',
-    ]
-)->name('wishlist.store');
-
-
-Route::delete(
-    '/wishlist/{product}',
-    [
-        CustomerWishlistController::class,
-        'destroy',
-    ]
-)->name('wishlist.destroy');
+        Route::delete(
+            '/wishlist/{product}',
+            [
+                CustomerWishlistController::class,
+                'destroy',
+            ]
+        )->name('wishlist.destroy');
 
         /*
          * ---------------------------------------------------------------
@@ -604,7 +586,6 @@ Route::delete(
             'checkout.place-order'
         );
 
-
         /*
          * ---------------------------------------------------------------
          * Trang đặt hàng thành công
@@ -623,7 +604,6 @@ Route::delete(
         )->name(
             'checkout.success'
         );
-
 
         /*
          * ---------------------------------------------------------------
@@ -663,23 +643,22 @@ Route::delete(
         )->name(
             'checkout.payos.cancel'
         );
-/*
- * ---------------------------------------------------------------
- * Kiểm tra trạng thái thanh toán QR
- * ---------------------------------------------------------------
- */
+        /*
+         * ---------------------------------------------------------------
+         * Kiểm tra trạng thái thanh toán QR
+         * ---------------------------------------------------------------
+         */
 
-Route::get(
-    '/checkout/qr/{order}/status',
-    [
-        CheckoutController::class,
-        'qrStatus',
-    ]
-)->name(
-    'checkout.qr.status'
-);
+        Route::get(
+            '/checkout/qr/{order}/status',
+            [
+                CheckoutController::class,
+                'qrStatus',
+            ]
+        )->name(
+            'checkout.qr.status'
+        );
     });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -704,7 +683,6 @@ Route::middleware([
 ])
     ->group(function () {
 
-
         /*
         |--------------------------------------------------------------------------
         | My Grove
@@ -724,7 +702,6 @@ Route::middleware([
             'groves.index'
         );
 
-
         Route::get(
             '/groves/{grove}',
             [
@@ -736,8 +713,6 @@ Route::middleware([
         )->name(
             'groves.show'
         );
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -758,7 +733,6 @@ Route::middleware([
             'chat.index'
         );
 
-
         Route::post(
             '/chat',
             [
@@ -769,8 +743,6 @@ Route::middleware([
             'chat.store'
         );
 
-
-
         /*
 |--------------------------------------------------------------------------
 | Customer Reviews
@@ -780,94 +752,91 @@ Route::middleware([
 |
 */
 
-Route::post(
-    '/products/{product}/reviews',
-    [
-        CustomerReviewController::class,
-        'store',
-    ]
-)->name(
-    'customer.reviews.store'
-);
+        Route::post(
+            '/products/{product}/reviews',
+            [
+                CustomerReviewController::class,
+                'store',
+            ]
+        )->name(
+            'customer.reviews.store'
+        );
 
+        /*
+         * ---------------------------------------------------------------
+         * Sửa Review
+         * ---------------------------------------------------------------
+         *
+         * Customer chỉ được sửa Review của chính mình.
+         */
 
-/*
- * ---------------------------------------------------------------
- * Sửa Review
- * ---------------------------------------------------------------
- *
- * Customer chỉ được sửa Review của chính mình.
- */
+        Route::patch(
+            '/products/{product}/reviews/{review}',
+            [
+                CustomerReviewController::class,
+                'update',
+            ]
+        )->whereNumber(
+            'review'
+        )->name(
+            'customer.reviews.update'
+        );
 
-Route::patch(
-    '/products/{product}/reviews/{review}',
-    [
-        CustomerReviewController::class,
-        'update',
-    ]
-)->whereNumber(
-    'review'
-)->name(
-    'customer.reviews.update'
-);
+        /*
+         * ---------------------------------------------------------------
+         * Xóa Review
+         * ---------------------------------------------------------------
+         *
+         * Customer chỉ được xóa Review của chính mình.
+         */
 
+        Route::delete(
+            '/products/{product}/reviews/{review}',
+            [
+                CustomerReviewController::class,
+                'destroy',
+            ]
+        )->whereNumber(
+            'review'
+        )->name(
+            'customer.reviews.destroy'
+        );
 
-/*
- * ---------------------------------------------------------------
- * Xóa Review
- * ---------------------------------------------------------------
- *
- * Customer chỉ được xóa Review của chính mình.
- */
+        /*
+        |--------------------------------------------------------------------------
+        | CUSTOMER VOUCHER WALLET
+        |--------------------------------------------------------------------------
+        */
 
-Route::delete(
-    '/products/{product}/reviews/{review}',
-    [
-        CustomerReviewController::class,
-        'destroy',
-    ]
-)->whereNumber(
-    'review'
-)->name(
-    'customer.reviews.destroy'
-);
+        Route::get(
+            '/profile/vouchers',
+            [
+                CustomerVoucherController::class,
+                'index',
+            ]
+        )->name(
+            'profile.vouchers'
+        );
 
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER VOUCHER WALLET
-|--------------------------------------------------------------------------
-*/
+        Route::post(
+            '/profile/vouchers/{voucher}/save',
+            [
+                CustomerVoucherController::class,
+                'save',
+            ]
+        )->name(
+            'profile.vouchers.save'
+        );
 
-Route::get(
-    '/profile/vouchers',
-    [
-        CustomerVoucherController::class,
-        'index',
-    ]
-)->name(
-    'profile.vouchers'
-);
-
-Route::post(
-    '/profile/vouchers/{voucher}/save',
-    [
-        CustomerVoucherController::class,
-        'save',
-    ]
-)->name(
-    'profile.vouchers.save'
-);
-
-Route::delete(
-    '/profile/vouchers/{voucher}/save',
-    [
-        CustomerVoucherController::class,
-        'unsave',
-    ]
-)->name(
-    'profile.vouchers.unsave'
-);
-
+        Route::delete(
+            '/profile/vouchers/{voucher}/save',
+            [
+                CustomerVoucherController::class,
+                'unsave',
+            ]
+        )->name(
+            'profile.vouchers.unsave'
+        );
 
         /*
          * ---------------------------------------------------------------
@@ -895,7 +864,6 @@ Route::delete(
             'orders.index'
         );
 
-
         /*
          * ---------------------------------------------------------------
          * Chi tiết Order
@@ -914,7 +882,6 @@ Route::delete(
         )->name(
             'orders.show'
         );
-
 
         /*
          * ---------------------------------------------------------------
@@ -944,6 +911,24 @@ Route::delete(
             'orders.cancel'
         );
 
+        /*
+         * ---------------------------------------------------------------
+         * Customer xác nhận đã nhận được hàng
+         * ---------------------------------------------------------------
+         *
+         * Chỉ Order Status = shipping mới được xác nhận.
+         * Chuyển Order -> completed.
+         */
+
+        Route::patch(
+            '/orders/{order}/received',
+            [
+                CustomerOrderController::class,
+                'confirmReceived',
+            ]
+        )->name(
+            'orders.received'
+        );
 
         /*
          * ---------------------------------------------------------------
@@ -964,7 +949,6 @@ Route::delete(
             'returns.create'
         );
 
-
         /*
          * ---------------------------------------------------------------
          * Gửi yêu cầu trả hàng / hoàn tiền
@@ -980,7 +964,6 @@ Route::delete(
         )->name(
             'returns.store'
         );
-
 
         /*
          * ---------------------------------------------------------------
@@ -1003,7 +986,6 @@ Route::delete(
 
     });
 
-
 /*
 |--------------------------------------------------------------------------
 | Profile
@@ -1017,7 +999,6 @@ Route::delete(
 Route::middleware('auth')
     ->group(function () {
 
-
         Route::get(
             '/profile',
             [ProfileController::class, 'edit']
@@ -1025,14 +1006,12 @@ Route::middleware('auth')
             'profile.edit'
         );
 
-
         Route::patch(
             '/profile',
             [ProfileController::class, 'update']
         )->name(
             'profile.update'
         );
-
 
         Route::delete(
             '/profile',
@@ -1042,7 +1021,6 @@ Route::middleware('auth')
         );
 
     });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1067,7 +1045,6 @@ Route::prefix('admin')
     ])
     ->group(function () {
 
-
         /*
          * ---------------------------------------------------------------
          * Dashboard
@@ -1081,7 +1058,7 @@ Route::prefix('admin')
             'dashboard'
         );
 
-                /*
+        /*
          * ---------------------------------------------------------------
          * Customer Support Chat
          * ---------------------------------------------------------------
@@ -1139,7 +1116,7 @@ Route::prefix('admin')
             'chat.close'
         );
 
-    /*
+        /*
  * ---------------------------------------------------------------
  * Reports
  * ---------------------------------------------------------------
@@ -1148,24 +1125,21 @@ Route::prefix('admin')
  * Phạm vi TV3.
  */
 
-Route::get(
-    '/reports',
-    [ReportController::class, 'index']
-)->name(
-    'reports.index'
-);
+        Route::get(
+            '/reports',
+            [ReportController::class, 'index']
+        )->name(
+            'reports.index'
+        );
 
         /*
          * ---------------------------------------------------------------
-         * Review Management
+         * Review Management - Quản lý đánh giá sản phẩm
          * ---------------------------------------------------------------
-         *
-         * Admin quản lý đánh giá sản phẩm.
-         *
          * Privacy:
          * - Chỉ hiển thị Customer #ID.
          * - Không hiển thị PII của Customer.
-         * - Cho phép ẩn / hiện Review.
+         * - Xem đánh giá, lọc theo rating và gửi phản hồi chính thức.
          */
 
         Route::get(
@@ -1175,19 +1149,12 @@ Route::get(
             'reviews.index'
         );
 
-
-        Route::patch(
-            '/reviews/{review}/toggle-visibility',
-            [AdminReviewController::class, 'toggleVisibility']
-        )->name(
-            'reviews.toggle-visibility'
-        );
         Route::post(
-    '/reviews/{review}/reply',
-    [AdminReviewController::class, 'reply']
-)->name(
-    'reviews.reply'
-);
+            '/reviews/{review}/reply',
+            [AdminReviewController::class, 'reply']
+        )->name(
+            'reviews.reply'
+        );
 
 
         /*
@@ -1196,314 +1163,291 @@ Route::get(
 |--------------------------------------------------------------------------
 */
 
-Route::get(
-    '/stocks',
-    [StockController::class, 'index']
-)->name(
-    'stocks.index'
-);
+        Route::get(
+            '/stocks',
+            [StockController::class, 'index']
+        )->name(
+            'stocks.index'
+        );
 
+        Route::post(
+            '/stocks/{stockType}/{itemId}/change',
+            [StockController::class, 'change']
+        )->name(
+            'stocks.change'
+        );
 
-Route::post(
-    '/stocks/{stockType}/{itemId}/change',
-    [StockController::class, 'change']
-)->name(
-    'stocks.change'
-);
+        Route::patch(
+            '/stocks/{stockType}/{itemId}/threshold',
+            [StockController::class, 'updateThreshold']
+        )->name(
+            'stocks.threshold.update'
+        );
 
+        Route::get(
+            '/stocks/{stockType}/{itemId}/history',
+            [StockController::class, 'history']
+        )->name(
+            'stocks.history'
+        );
 
-Route::patch(
-    '/stocks/{stockType}/{itemId}/threshold',
-    [StockController::class, 'updateThreshold']
-)->name(
-    'stocks.threshold.update'
-);
+        /*
+        |--------------------------------------------------------------------------
+        | Voucher
+        |--------------------------------------------------------------------------
+        */
 
+        Route::patch(
+            '/vouchers/{voucher}/toggle-status',
+            [VoucherController::class, 'toggleStatus']
+        )->name(
+            'vouchers.toggle-status'
+        );
 
-Route::get(
-    '/stocks/{stockType}/{itemId}/history',
-    [StockController::class, 'history']
-)->name(
-    'stocks.history'
-);
+        Route::get(
+            '/vouchers/{voucher}/history',
+            [VoucherController::class, 'history']
+        )->name(
+            'vouchers.history'
+        );
 
-/*
-|--------------------------------------------------------------------------
-| Voucher
-|--------------------------------------------------------------------------
-*/
+        Route::resource(
+            'vouchers',
+            VoucherController::class
+        )->except(
+            'show'
+        );
 
-Route::patch(
-    '/vouchers/{voucher}/toggle-status',
-    [VoucherController::class, 'toggleStatus']
-)->name(
-    'vouchers.toggle-status'
-);
+        /*
+        |--------------------------------------------------------------------------
+        | Payment Management
+        |--------------------------------------------------------------------------
+        */
 
+        Route::get(
+            '/payments',
+            [PaymentController::class, 'index']
+        )->name(
+            'payments.index'
+        );
 
-Route::get(
-    '/vouchers/{voucher}/history',
-    [VoucherController::class, 'history']
-)->name(
-    'vouchers.history'
-);
+        Route::patch(
+            '/payments/settings/{paymentSetting}',
+            [PaymentController::class, 'updateSetting']
+        )->name(
+            'payments.settings.update'
+        );
 
+        /*
+         * ---------------------------------------------------------------
+         * Order Management
+         * ---------------------------------------------------------------
+         */
 
-Route::resource(
-    'vouchers',
-    VoucherController::class
-)->except(
-    'show'
-);
+        /*
+         * Danh sách Order
+         */
+        Route::get(
+            '/orders',
+            [
+                AdminOrderController::class,
+                'index',
+            ]
+        )->name(
+            'orders.index'
+        );
 
-/*
-|--------------------------------------------------------------------------
-| Payment Management
-|--------------------------------------------------------------------------
-*/
+        /*
+         * Chi tiết Order
+         */
+        Route::get(
+            '/orders/{order}',
+            [
+                AdminOrderController::class,
+                'show',
+            ]
+        )->name(
+            'orders.show'
+        );
 
-Route::get(
-    '/payments',
-    [PaymentController::class, 'index']
-)->name(
-    'payments.index'
-);
+        /*
+         * Chuyển trạng thái Order
+         *
+         * pending
+         * → confirmed
+         * → preparing
+         * → packed
+         * → shipping
+         * → completed
+         */
+        Route::patch(
+            '/orders/{order}/status',
+            [
+                AdminOrderController::class,
+                'updateStatus',
+            ]
+        )->name(
+            'orders.status.update'
+        );
 
+        /*
+         * ---------------------------------------------------------------
+         * Return / Refund Management
+         * ---------------------------------------------------------------
+         */
 
-Route::patch(
-    '/payments/settings/{paymentSetting}',
-    [PaymentController::class, 'updateSetting']
-)->name(
-    'payments.settings.update'
-);
+        /*
+         * Danh sách yêu cầu trả hàng / hoàn tiền
+         */
+        Route::get(
+            '/returns',
+            [
+                AdminReturnRequestController::class,
+                'index',
+            ]
+        )->name(
+            'returns.index'
+        );
 
-/*
- * ---------------------------------------------------------------
- * Order Management
- * ---------------------------------------------------------------
- */
+        /*
+         * Chi tiết yêu cầu
+         */
+        Route::get(
+            '/returns/{returnRequest}',
+            [
+                AdminReturnRequestController::class,
+                'show',
+            ]
+        )->name(
+            'returns.show'
+        );
 
+        /*
+         * Pending -> Approved
+         */
+        Route::patch(
+            '/returns/{returnRequest}/approve',
+            [
+                AdminReturnRequestController::class,
+                'approve',
+            ]
+        )->name(
+            'returns.approve'
+        );
 
-/*
- * Danh sách Order
- */
-Route::get(
-    '/orders',
-    [
-        AdminOrderController::class,
-        'index',
-    ]
-)->name(
-    'orders.index'
-);
+        /*
+         * Pending -> Rejected
+         */
+        Route::patch(
+            '/returns/{returnRequest}/reject',
+            [
+                AdminReturnRequestController::class,
+                'reject',
+            ]
+        )->name(
+            'returns.reject'
+        );
 
+        /*
+         * Approved -> Returning
+         */
+        Route::patch(
+            '/returns/{returnRequest}/returning',
+            [
+                AdminReturnRequestController::class,
+                'markReturning',
+            ]
+        )->name(
+            'returns.returning'
+        );
 
-/*
- * Chi tiết Order
- */
-Route::get(
-    '/orders/{order}',
-    [
-        AdminOrderController::class,
-        'show',
-    ]
-)->name(
-    'orders.show'
-);
+        /*
+         * Returning -> Received
+         */
+        Route::patch(
+            '/returns/{returnRequest}/received',
+            [
+                AdminReturnRequestController::class,
+                'markReceived',
+            ]
+        )->name(
+            'returns.received'
+        );
 
+        /*
+         * Received -> Refunded
+         */
+        Route::patch(
+            '/returns/{returnRequest}/refund',
+            [
+                AdminReturnRequestController::class,
+                'refund',
+            ]
+        )->name(
+            'returns.refund'
+        );
 
-/*
- * Chuyển trạng thái Order
- *
- * pending
- * → confirmed
- * → preparing
- * → packed
- * → shipping
- * → completed
- */
-Route::patch(
-    '/orders/{order}/status',
-    [
-        AdminOrderController::class,
-        'updateStatus',
-    ]
-)->name(
-    'orders.status.update'
-);
+        /*
+        |--------------------------------------------------------------------------
+        | Grove Management
+        |--------------------------------------------------------------------------
+        |
+        | Quản lý Grove của khách hàng.
+        |
+        | Privacy:
+        | - Chỉ hiển thị Customer ID.
+        | - Không hiển thị thông tin cá nhân Customer.
+        |
+        */
 
-/*
- * ---------------------------------------------------------------
- * Return / Refund Management
- * ---------------------------------------------------------------
- */
+        Route::get(
+            '/groves',
+            [
+                GroveController::class,
+                'index',
+            ]
+        )->name(
+            'groves.index'
+        );
 
+        Route::get(
+            '/groves/{grove}',
+            [
+                GroveController::class,
+                'show',
+            ]
+        )->whereNumber(
+            'grove'
+        )->name(
+            'groves.show'
+        );
 
-/*
- * Danh sách yêu cầu trả hàng / hoàn tiền
- */
-Route::get(
-    '/returns',
-    [
-        AdminReturnRequestController::class,
-        'index',
-    ]
-)->name(
-    'returns.index'
-);
+        /*
+        |--------------------------------------------------------------------------
+        | Customer Management
+        |--------------------------------------------------------------------------
+        */
 
+        Route::get(
+            '/customers',
+            [CustomerController::class, 'index']
+        )->name(
+            'customers.index'
+        );
 
-/*
- * Chi tiết yêu cầu
- */
-Route::get(
-    '/returns/{returnRequest}',
-    [
-        AdminReturnRequestController::class,
-        'show',
-    ]
-)->name(
-    'returns.show'
-);
+        Route::get(
+            '/customers/{customer}',
+            [CustomerController::class, 'show']
+        )->name(
+            'customers.show'
+        );
 
-
-/*
- * Pending -> Approved
- */
-Route::patch(
-    '/returns/{returnRequest}/approve',
-    [
-        AdminReturnRequestController::class,
-        'approve',
-    ]
-)->name(
-    'returns.approve'
-);
-
-
-/*
- * Pending -> Rejected
- */
-Route::patch(
-    '/returns/{returnRequest}/reject',
-    [
-        AdminReturnRequestController::class,
-        'reject',
-    ]
-)->name(
-    'returns.reject'
-);
-
-
-/*
- * Approved -> Returning
- */
-Route::patch(
-    '/returns/{returnRequest}/returning',
-    [
-        AdminReturnRequestController::class,
-        'markReturning',
-    ]
-)->name(
-    'returns.returning'
-);
-
-
-/*
- * Returning -> Received
- */
-Route::patch(
-    '/returns/{returnRequest}/received',
-    [
-        AdminReturnRequestController::class,
-        'markReceived',
-    ]
-)->name(
-    'returns.received'
-);
-
-
-/*
- * Received -> Refunded
- */
-Route::patch(
-    '/returns/{returnRequest}/refund',
-    [
-        AdminReturnRequestController::class,
-        'refund',
-    ]
-)->name(
-    'returns.refund'
-);
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Grove Management
-|--------------------------------------------------------------------------
-|
-| Quản lý Grove của khách hàng.
-|
-| Privacy:
-| - Chỉ hiển thị Customer ID.
-| - Không hiển thị thông tin cá nhân Customer.
-|
-*/
-
-
-Route::get(
-    '/groves',
-    [
-        GroveController::class,
-        'index',
-    ]
-)->name(
-    'groves.index'
-);
-
-
-Route::get(
-    '/groves/{grove}',
-    [
-        GroveController::class,
-        'show',
-    ]
-)->whereNumber(
-    'grove'
-)->name(
-    'groves.show'
-);
-
-/*
-|--------------------------------------------------------------------------
-| Customer Management
-|--------------------------------------------------------------------------
-*/
-
-Route::get(
-    '/customers',
-    [CustomerController::class, 'index']
-)->name(
-    'customers.index'
-);
-
-
-Route::get(
-    '/customers/{customer}',
-    [CustomerController::class, 'show']
-)->name(
-    'customers.show'
-);
-
-
-Route::patch(
-    '/customers/{customer}/toggle-status',
-    [CustomerController::class, 'toggleStatus']
-)->name(
-    'customers.toggle-status'
-);
+        Route::patch(
+            '/customers/{customer}/toggle-status',
+            [CustomerController::class, 'toggleStatus']
+        )->name(
+            'customers.toggle-status'
+        );
 
         /*
          * ---------------------------------------------------------------
@@ -1521,14 +1465,12 @@ Route::patch(
             'categories.toggle-status'
         );
 
-
         Route::resource(
             'categories',
             CategoryController::class
         )->except(
             'show'
         );
-
 
         /*
          * ---------------------------------------------------------------
@@ -1545,7 +1487,6 @@ Route::patch(
         )->name(
             'products.toggle-status'
         );
-
 
         Route::patch(
             '/products/{product}/images/{image}/primary',
@@ -1567,7 +1508,6 @@ Route::patch(
             'products.images.update'
         );
 
-
         Route::delete(
             '/products/{product}/images/{image}',
             [
@@ -1577,7 +1517,6 @@ Route::patch(
         )->name(
             'products.images.destroy'
         );
-
 
         Route::resource(
             'products',
@@ -1591,25 +1530,22 @@ Route::patch(
 | Product Compatibility Rules
 |--------------------------------------------------------------------------
 */
-Route::patch(
-    'compatibility-rules/{compatibilityRule}/toggle-status',
-    [CompatibilityRuleController::class, 'toggleStatus']
-)->name(
-    'compatibility-rules.toggle-status'
-);
-Route::resource(
-    'compatibility-rules',
-    CompatibilityRuleController::class
-)
-    ->except('show')
-    ->parameters([
-        'compatibility-rules' => 'compatibilityRule',
-    ]);
-
-
+        Route::patch(
+            'compatibility-rules/{compatibilityRule}/toggle-status',
+            [CompatibilityRuleController::class, 'toggleStatus']
+        )->name(
+            'compatibility-rules.toggle-status'
+        );
+        Route::resource(
+            'compatibility-rules',
+            CompatibilityRuleController::class
+        )
+            ->except('show')
+            ->parameters([
+                'compatibility-rules' => 'compatibilityRule',
+            ]);
 
     });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1644,4 +1580,4 @@ Route::get(
     [GoogleAuthController::class, 'callback']
 )->name('google.callback');
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

@@ -28,14 +28,6 @@ class ReviewController extends Controller
             ->withCount('replies')
             ->latest();
 
-        // Lọc theo trạng thái Hiện / Ẩn.
-        if ($request->filled('visibility')) {
-            $query->where(
-                'is_visible',
-                $request->input('visibility') === 'visible'
-            );
-        }
-
         // Lọc theo rating.
         if ($request->filled('rating')) {
             $query->where(
@@ -74,23 +66,6 @@ class ReviewController extends Controller
     }
 
     /**
-     * Ẩn / hiện Review.
-     */
-    public function toggleVisibility(
-        Review $review
-    ): RedirectResponse {
-        $review->update([
-            'is_visible' => !$review->is_visible,
-        ]);
-
-        return back()->with(
-            'success',
-            $review->is_visible
-                ? 'Đã hiển thị đánh giá.'
-                : 'Đã ẩn đánh giá.'
-        );
-    }
-        /**
      * Admin phản hồi Review.
      */
     public function reply(

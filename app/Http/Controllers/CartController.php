@@ -40,16 +40,16 @@ class CartController extends Controller
         foreach ($cart->items as $item) {
             if ($item->item_type === 'PRODUCT' && $item->product) {
                 $unitPrice = $item->product->sale_price !== null
-                    ? (float) $item->product->sale_price
-                    : (float) $item->product->list_price;
+                    ? (float) $item->product->sale_price //Thành tiền một mục = Đơn giá × Số lượng
+                    : (float) $item->product->list_price; //Tổng giỏ hàng = Tổng thành tiền của tất cả mục
 
-                $subtotal = $unitPrice * $item->quantity;
+                $subtotal = $unitPrice * $item->quantity; //tính tiền
             } elseif (
                 $item->item_type === 'CUSTOM_DESIGN'
                 && $item->customDesign
             ) {
                 try {
-                    $recalculated = $this->customDesignService
+                    $recalculated = $this->customDesignService// tính tiền thiết kế
                         ->recalculate($item->customDesign);
 
                     $unitPrice =

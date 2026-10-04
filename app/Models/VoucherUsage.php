@@ -13,6 +13,7 @@ class VoucherUsage extends Model
         'voucher_id',
         'user_id',
         'order_id',
+        'voucher_scope',
         'discount_amount',
         'status',
         'used_at',

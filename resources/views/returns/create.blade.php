@@ -50,25 +50,6 @@
         </div>
 
 
-        {{-- ERROR --}}
-
-        @if (session('error'))
-
-            <div class="returns-alert returns-alert-error">
-                {{ session('error') }}
-            </div>
-
-        @endif
-
-
-        @if ($errors->any())
-
-            <div class="returns-alert returns-alert-error">
-                {{ $errors->first() }}
-            </div>
-
-        @endif
-
 
         {{-- ORDER INFO --}}
 

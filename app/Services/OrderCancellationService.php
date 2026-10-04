@@ -245,11 +245,11 @@ class OrderCancellationService
 
                 /*
                 |--------------------------------------------------------------------------
-                | RELEASE VOUCHER
+                | RELEASE VOUCHERS (ORDER & SHIPPING)
                 |--------------------------------------------------------------------------
                 */
 
-                $voucherUsage =
+                $voucherUsages =
                     VoucherUsage::query()
                         ->where(
                             'order_id',
@@ -260,10 +260,16 @@ class OrderCancellationService
                             'used'
                         )
                         ->lockForUpdate()
-                        ->first();
+                        ->get();
 
+                foreach ($voucherUsages as $voucherUsage) {
+                    $voucherUsage->status =
+                        'released';
 
-                if ($voucherUsage) {
+                    $voucherUsage->released_at =
+                        now();
+
+                    $voucherUsage->save();
 
                     $voucher =
                         Voucher::query()
@@ -273,18 +279,7 @@ class OrderCancellationService
                             ->lockForUpdate()
                             ->first();
 
-
-                    $voucherUsage->status =
-                        'released';
-
-                    $voucherUsage->released_at =
-                        now();
-
-                    $voucherUsage->save();
-
-
                     if ($voucher) {
-
                         $voucher->usage_count =
                             max(
                                 0,

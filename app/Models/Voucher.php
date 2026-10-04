@@ -9,8 +9,12 @@ class Voucher extends Model
 {
     use HasFactory;
 
+    public const SCOPE_ORDER = 'order';
+    public const SCOPE_SHIPPING = 'shipping';
+
     protected $fillable = [
         'code',
+        'voucher_scope',
         'discount_type',
         'discount_value',
         'min_order_amount',
@@ -20,6 +24,7 @@ class Voucher extends Model
         'usage_limit',
         'usage_count',
         'per_user_limit',
+        'is_public',
         'is_active',
     ];
 
@@ -35,8 +40,24 @@ class Voucher extends Model
         'usage_count' => 'integer',
         'per_user_limit' => 'integer',
 
+        'is_public' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    public function isOrderScope(): bool
+    {
+        return ($this->voucher_scope ?? self::SCOPE_ORDER) === self::SCOPE_ORDER;
+    }
+
+    public function isShippingScope(): bool
+    {
+        return $this->voucher_scope === self::SCOPE_SHIPPING;
+    }
+
+    public function isPublic(): bool
+    {
+        return (bool) ($this->is_public ?? true);
+    }
     /**
  * Các Reward sử dụng Voucher này.
  */

@@ -11,7 +11,7 @@
     <div class="admin-index-header">
         <div class="admin-index-heading">
             <h1 class="admin-index-title">Quản lý đánh giá sản phẩm</h1>
-            <p class="admin-index-subtitle">Theo dõi phản hồi của khách hàng, kiểm duyệt hình ảnh và quản trị hiển thị đánh giá.</p>
+            <p class="admin-index-subtitle">Theo dõi đánh giá của khách hàng và gửi phản hồi chính thức cho sản phẩm.</p>
         </div>
     </div>
 
@@ -20,25 +20,6 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         <span>Chỉ hiển thị định danh <strong>Customer #ID</strong> để bảo vệ thông tin riêng tư của khách hàng theo chính sách bảo mật MiniGrove.</span>
     </div>
-
-    {{-- FLASH MESSAGES --}}
-    @if (session('success'))
-        <div class="admin-alert admin-alert-success" role="alert" style="margin-bottom: 20px;">
-            <div class="admin-alert-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
-            <div class="admin-alert-content">{{ session('success') }}</div>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="admin-alert admin-alert-danger" role="alert" style="margin-bottom: 20px;">
-            <div class="admin-alert-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-            <div class="admin-alert-content">{{ session('error') }}</div>
-        </div>
-    @endif
 
     {{-- TOOLBAR / FILTER --}}
     <div class="admin-toolbar">
@@ -70,24 +51,12 @@
                 </select>
             </div>
 
-            <div class="admin-toolbar-select">
-                <select name="visibility" aria-label="Lọc theo trạng thái hiển thị">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="visible" @selected(request('visibility') === 'visible')>
-                        Đang hiển thị
-                    </option>
-                    <option value="hidden" @selected(request('visibility') === 'hidden')>
-                        Đang ẩn
-                    </option>
-                </select>
-            </div>
-
             <div class="admin-toolbar-actions">
                 <button type="submit" class="btn btn-secondary">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                     Lọc
                 </button>
-                @if (request()->hasAny(['search', 'rating', 'visibility']))
+                @if (request()->hasAny(['search', 'rating']))
                     <a href="{{ route('admin.reviews.index') }}" class="btn btn-outline" title="Xóa bộ lọc">
                         Đặt lại
                     </a>
@@ -118,18 +87,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div>
-                            @if ($review->is_visible)
-                                <span class="badge badge-success">
-                                    <span class="badge-dot"></span> Đang hiển thị
-                                </span>
-                            @else
-                                <span class="badge badge-neutral">
-                                    <span class="badge-dot"></span> Đang ẩn
-                                </span>
-                            @endif
                         </div>
                     </div>
 
@@ -171,11 +128,24 @@
                         </div>
                     @endif
 
-                    {{-- PHẢN HỒI (REPLIES COUNT) --}}
-                    @if ($review->replies_count > 0)
-                        <div style="font-size: 13px; font-weight: 600; color: var(--admin-forest-800); margin: 10px 0 6px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                            <span>{{ $review->replies_count }} phản hồi từ quản trị viên</span>
+                    {{-- PHẢN HỒI HIỆN CÓ --}}
+                    @if ($review->replies->isNotEmpty())
+                        <div class="admin-review-replies" style="margin: 14px 0 6px;">
+                            <div style="font-size: 13px; font-weight: 600; color: var(--admin-forest-800); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                <span>Phản hồi từ quản trị viên ({{ $review->replies->count() }}):</span>
+                            </div>
+                            @foreach ($review->replies as $reply)
+                                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13.5px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                        <strong style="color: #166534; font-size: 12.5px;">MiniGrove Store</strong>
+                                        @if ($reply->created_at)
+                                            <span style="font-size: 12px; color: var(--admin-text-muted);">{{ $reply->created_at->format('d/m/Y H:i') }}</span>
+                                        @endif
+                                    </div>
+                                    <div style="color: #1f2937; line-height: 1.5; white-space: pre-line;">{{ $reply->content }}</div>
+                                </div>
+                            @endforeach
                         </div>
                     @endif
 
@@ -201,33 +171,6 @@
                                     Gửi phản hồi
                                 </button>
                             </div>
-                        </form>
-                    </div>
-
-                    {{-- ẨN / HIỆN TOGGLE --}}
-                    <div class="admin-review-actions">
-                        <span style="font-size: 12.5px; color: var(--admin-text-secondary);">
-                            Hành động kiểm duyệt:
-                        </span>
-                        <form
-                            method="POST"
-                            action="{{ route('admin.reviews.toggle-visibility', $review) }}"
-                            style="margin: 0;"
-                        >
-                            @csrf
-                            @method('PATCH')
-                            <button
-                                type="submit"
-                                class="btn {{ $review->is_visible ? 'btn-outline' : 'btn-primary' }} btn-sm"
-                            >
-                                @if ($review->is_visible)
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                                    Ẩn đánh giá
-                                @else
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    Hiển thị đánh giá
-                                @endif
-                            </button>
                         </form>
                     </div>
 

@@ -933,9 +933,13 @@
                     </h1>
 
                     <p>
-                        Xem và quản lý các mã ưu đãi
-                        dành cho tài khoản của bạn.
+                        Xem và khám phá các mã ưu đãi dành cho bạn.
                     </p>
+
+                    <div style="margin-top: 14px; padding: 12px 16px; background: #eaf5ee; border: 1px solid #b8dfc7; border-radius: 10px; font-size: 13.5px; color: #164e33; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px;">💡</span>
+                        <span><strong>Mẹo mua sắm:</strong> Bạn không cần phải lưu mã trước! Hãy <strong>chọn voucher trực tiếp khi thanh toán</strong> để nhận ưu đãi nhanh chóng.</span>
+                    </div>
 
                 </div>
 
@@ -1198,6 +1202,12 @@
 
                                 <div class="voucher-condition">
 
+                                    <div style="margin-bottom: 5px;">
+                                        <span style="display: inline-block; font-size: 11px; font-weight: 700; color: {{ $voucher->isShippingScope() ? '#8a531b' : '#174d37' }}; background: {{ $voucher->isShippingScope() ? '#fef3e6' : '#eaf5ee' }}; padding: 2px 7px; border-radius: 4px;">
+                                            {{ $voucher->isShippingScope() ? '🚚 Giảm phí vận chuyển' : '🏷️ Giảm giá đơn hàng' }}
+                                        </span>
+                                    </div>
+
                                     Đơn tối thiểu
 
                                     <strong>
@@ -1321,55 +1331,14 @@
             gap: 8px;
         "
     >
-
-        @if ($voucher->customer_saved)
-
-            <form
-                method="POST"
-                action="{{
-                    route(
-                        'profile.vouchers.unsave',
-                        $voucher
-                    )
-                }}"
-                class="voucher-save-form"
-            >
-                @csrf
-                @method('DELETE')
-
-                <button
-                    type="submit"
-                    class="voucher-copy voucher-saved"
-                    title="Bấm để bỏ lưu Voucher"
-                >
-                    ✓ Đã lưu
-                </button>
-            </form>
-
-        @else
-
-            <form
-                method="POST"
-                action="{{
-                    route(
-                        'profile.vouchers.save',
-                        $voucher
-                    )
-                }}"
-                class="voucher-save-form"
-            >
-                @csrf
-
-                <button
-                    type="submit"
-                    class="voucher-copy"
-                >
-                    Lưu mã
-                </button>
-            </form>
-
-        @endif
-
+        <button
+            type="button"
+            class="voucher-copy"
+            onclick="navigator.clipboard.writeText('{{ $voucher->code }}'); alert('Đã sao chép mã {{ $voucher->code }}');"
+            title="Sao chép mã để sử dụng tại bước thanh toán"
+        >
+            Sao chép mã
+        </button>
 
         <a
             href="{{ route('products.index') }}"

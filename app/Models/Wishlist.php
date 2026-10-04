@@ -10,11 +10,11 @@ class Wishlist extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'user_id', //khóa ngoại
     ];
 
     /**
-     * Wishlist thuộc một User.
+     * Một Wishlist thuộc về một User.
      */
     public function user()
     {
@@ -22,7 +22,7 @@ class Wishlist extends Model
     }
 
     /**
-     * Wishlist có nhiều Item.
+     * Một Wishlist có nhiều WishlistItem.
      */
     public function items()
     {

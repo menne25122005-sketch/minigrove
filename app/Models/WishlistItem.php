@@ -9,13 +9,13 @@ class WishlistItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'wishlist_id',
-        'product_id',
+    protected $fillable = [ //cho phép tạo 1 mục yêu thích
+        'wishlist_id', //mục này thuộc Wishlist số ...
+        'product_id', //sản phẩm được yêu thích là sản phẩm số ...
     ];
 
     /**
-     * Item thuộc một Wishlist.
+     * Mỗi WishlistItem chỉ thuộc về một Wishlist.
      */
     public function wishlist()
     {
@@ -23,7 +23,7 @@ class WishlistItem extends Model
     }
 
     /**
-     * Item tham chiếu một Product.
+     * Mỗi WishlistItem tham chiếu đến một Product.
      */
     public function product()
     {

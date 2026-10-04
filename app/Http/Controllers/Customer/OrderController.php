@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\ReturnRequest;
 use App\Services\OrderCancellationService;
-
+use App\Services\OrderWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -30,28 +30,20 @@ class OrderController extends Controller
         */
 
         $tabs = [
-            'all' =>
-                'Tất cả',
+            'all' => 'Tất cả',
 
-            'pending' =>
-                'Chờ xác nhận',
+            'pending' => 'Chờ xác nhận',
 
-            'preparing' =>
-                'Đang chuẩn bị',
+            'preparing' => 'Đang chuẩn bị',
 
-            'shipping' =>
-                'Đang giao',
+            'shipping' => 'Đang giao',
 
-            'completed' =>
-                'Hoàn thành',
+            'completed' => 'Hoàn thành',
 
-            'cancelled' =>
-                'Đã hủy',
+            'cancelled' => 'Đã hủy',
 
-            'returns' =>
-                'Trả hàng / Hoàn tiền',
+            'returns' => 'Trả hàng / Hoàn tiền',
         ];
-
 
         $tab =
             $request->query(
@@ -59,9 +51,8 @@ class OrderController extends Controller
                 'all'
             );
 
-
         if (
-            !array_key_exists(
+            ! array_key_exists(
                 $tab,
                 $tabs
             )
@@ -70,7 +61,6 @@ class OrderController extends Controller
             $tab =
                 'all';
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -99,10 +89,8 @@ class OrderController extends Controller
                     ->paginate(10)
                     ->withQueryString();
 
-
             $orders =
                 null;
-
 
             return view(
                 'orders.index',
@@ -114,7 +102,6 @@ class OrderController extends Controller
                 )
             );
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -131,22 +118,20 @@ class OrderController extends Controller
                         ->id
                 )
                 ->with([
-                    'details.product.images' =>
-                        function ($query) {
+                    'details.product.images' => function ($query) {
 
-                            $query
-                                ->orderByDesc(
-                                    'is_primary'
-                                )
-                                ->orderBy(
-                                    'sort_order'
-                                )
-                                ->orderBy('id');
-                        },
+                        $query
+                            ->orderByDesc(
+                                'is_primary'
+                            )
+                            ->orderBy(
+                                'sort_order'
+                            )
+                            ->orderBy('id');
+                    },
                 ])
                 ->withCount('details')
                 ->latest('id');
-
 
         /*
         |--------------------------------------------------------------------------
@@ -165,16 +150,15 @@ class OrderController extends Controller
 
                 break;
 
-
-            /*
-             * Gom:
-             *
-             * confirmed
-             * preparing
-             * packed
-             *
-             * thành một tab "Đang chuẩn bị".
-             */
+                /*
+                 * Gom:
+                 *
+                 * confirmed
+                 * preparing
+                 * packed
+                 *
+                 * thành một tab "Đang chuẩn bị".
+                 */
             case 'preparing':
 
                 $query->whereIn(
@@ -188,7 +172,6 @@ class OrderController extends Controller
 
                 break;
 
-
             case 'shipping':
 
                 $query->where(
@@ -197,7 +180,6 @@ class OrderController extends Controller
                 );
 
                 break;
-
 
             case 'completed':
 
@@ -208,7 +190,6 @@ class OrderController extends Controller
 
                 break;
 
-
             case 'cancelled':
 
                 $query->where(
@@ -217,7 +198,6 @@ class OrderController extends Controller
                 );
 
                 break;
-
 
             case 'all':
             default:
@@ -228,16 +208,13 @@ class OrderController extends Controller
                 break;
         }
 
-
         $orders =
             $query
                 ->paginate(10)
                 ->withQueryString();
 
-
         $returnRequests =
             null;
-
 
         return view(
             'orders.index',
@@ -249,7 +226,6 @@ class OrderController extends Controller
             )
         );
     }
-
 
     /**
      * Chi tiết Order.
@@ -272,7 +248,6 @@ class OrderController extends Controller
             403
         );
 
-
         $order->load([
 
             /*
@@ -284,50 +259,47 @@ class OrderController extends Controller
              */
             'details.review',
 
-            'details.product.images' =>
-                function ($query) {
+            'details.product.images' => function ($query) {
 
-                    $query
-                        ->orderByDesc(
-                            'is_primary'
-                        )
-                        ->orderBy(
-                            'sort_order'
-                        )
-                        ->orderBy('id');
-                },
+                $query
+                    ->orderByDesc(
+                        'is_primary'
+                    )
+                    ->orderBy(
+                        'sort_order'
+                    )
+                    ->orderBy('id');
+            },
 
+            'payments' => function ($query) {
 
-            'payments' =>
-                function ($query) {
+                $query
+                    ->latest('id');
+            },
 
-                    $query
-                        ->latest('id');
-                },
+            'statusHistories' => function ($query) {
 
-
-            'statusHistories' =>
-                function ($query) {
-
-                    $query
-                        ->orderBy(
-                            'created_at'
-                        )
-                        ->orderBy('id');
-                },
-
+                $query
+                    ->orderBy(
+                        'created_at'
+                    )
+                    ->orderBy('id');
+            },
 
             'voucherUsage.voucher',
 
+            'orderVoucherUsage.voucher',
 
-            'returnRequests' =>
-                function ($query) {
+            'shippingVoucherUsage.voucher',
 
-                    $query
-                        ->latest('id');
-                },
+            'voucherUsages.voucher',
+
+            'returnRequests' => function ($query) {
+
+                $query
+                    ->latest('id');
+            },
         ]);
-
 
         /*
          * Customer có được hủy không?
@@ -339,7 +311,6 @@ class OrderController extends Controller
             $order->payment_status
             !== 'paid';
 
-
         /*
          * Customer có được gửi
          * yêu cầu trả hàng không?
@@ -347,7 +318,6 @@ class OrderController extends Controller
         $canRequestReturn =
             $order->order_status
             === 'completed';
-
 
         return view(
             'orders.show',
@@ -358,7 +328,6 @@ class OrderController extends Controller
             )
         );
     }
-
 
     /**
      * Customer hủy đơn.
@@ -380,7 +349,6 @@ class OrderController extends Controller
             403
         );
 
-
         $validated =
             $request->validate(
                 [
@@ -391,7 +359,6 @@ class OrderController extends Controller
                     ],
                 ]
             );
-
 
         try {
 
@@ -421,7 +388,6 @@ class OrderController extends Controller
                 );
         }
 
-
         return redirect()
             ->route(
                 'orders.show',
@@ -430,6 +396,93 @@ class OrderController extends Controller
             ->with(
                 'success',
                 'Đơn hàng đã được hủy thành công.'
+            );
+    }
+
+    /**
+     * Customer xác nhận đã nhận được hàng.
+     */
+    public function confirmReceived(
+        Request $request,
+        Order $order,
+        OrderWorkflowService $workflowService
+    ): RedirectResponse {
+
+        /*
+         * Ownership kiểm tra ở Controller trước.
+         */
+        abort_unless(
+            $order->user_id
+                ===
+            $request->user()->id,
+            403
+        );
+
+        /*
+         * Chỉ cho phép khi order_status === 'shipping'.
+         */
+        if (
+            $order->order_status
+            !== 'shipping'
+        ) {
+
+            return redirect()
+                ->route(
+                    'orders.show',
+                    $order
+                )
+                ->with(
+                    'error',
+                    'Đơn hàng không ở trạng thái đang giao nên không thể xác nhận nhận hàng.'
+                );
+        }
+
+        try {
+
+            $workflowService->confirmReceivedByCustomer(
+                $request->user(),
+                $order
+            );
+
+        } catch (
+            ValidationException $e
+        ) {
+
+            return redirect()
+                ->route(
+                    'orders.show',
+                    $order
+                )
+                ->with(
+                    'error',
+                    $e->validator
+                        ->errors()
+                        ->first()
+                );
+
+        } catch (
+            \Throwable $e
+        ) {
+
+            return redirect()
+                ->route(
+                    'orders.show',
+                    $order
+                )
+                ->with(
+                    'error',
+                    'Không thể xác nhận nhận hàng. Vui lòng thử lại.'
+                );
+        }
+
+        return redirect()
+            ->route(
+                'orders.show',
+                $order
+            )
+            ->with(
+                'success',
+                'Cảm ơn bạn đã xác nhận nhận hàng. Đơn hàng đã hoàn thành.'
             );
     }
 }

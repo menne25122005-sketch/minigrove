@@ -162,12 +162,6 @@
                     Đang chờ PayOS xác nhận
                 </div>
 
-                @if (session('error'))
-                    <div class="payos-error">
-                        {{ session('error') }}
-                    </div>
-                @endif
-
                 <div class="payos-info">
                     <div class="payos-info-row">
                         <span>Mã đơn hàng</span>

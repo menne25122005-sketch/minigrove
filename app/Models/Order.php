@@ -19,6 +19,7 @@ class Order extends Model
         'subtotal',
         'discount_amount',
         'shipping_fee',
+        'shipping_discount_amount',
         'total_amount',
         'payment_method',
         'payment_status',
@@ -30,6 +31,7 @@ class Order extends Model
         'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'shipping_fee' => 'decimal:2',
+        'shipping_discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
     ];
 
@@ -65,11 +67,44 @@ public function payments()
 }
 
 /**
- * Voucher được sử dụng cho Order.
+ * Danh sách các Voucher được sử dụng cho Order.
+ */
+public function voucherUsages()
+{
+    return $this->hasMany(VoucherUsage::class);
+}
+
+/**
+ * Voucher được sử dụng cho Order (giới hạn scope order để tương thích code cũ).
  */
 public function voucherUsage()
 {
-    return $this->hasOne(VoucherUsage::class);
+    return $this->hasOne(VoucherUsage::class)
+        ->where(function ($query) {
+            $query->where('voucher_scope', Voucher::SCOPE_ORDER)
+                ->orWhereNull('voucher_scope');
+        });
+}
+
+/**
+ * Voucher giảm giá đơn hàng.
+ */
+public function orderVoucherUsage()
+{
+    return $this->hasOne(VoucherUsage::class)
+        ->where(function ($query) {
+            $query->where('voucher_scope', Voucher::SCOPE_ORDER)
+                ->orWhereNull('voucher_scope');
+        });
+}
+
+/**
+ * Voucher miễn/giảm phí vận chuyển.
+ */
+public function shippingVoucherUsage()
+{
+    return $this->hasOne(VoucherUsage::class)
+        ->where('voucher_scope', Voucher::SCOPE_SHIPPING);
 }
 /**
  * Các biến động kho phát sinh từ Order.

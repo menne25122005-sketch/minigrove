@@ -466,124 +466,139 @@ class OrderService
 
                 /*
                 |--------------------------------------------------------------------------
-                | 5. VOUCHER
+                | 5. SHIPPING FEE - GHN
+                |--------------------------------------------------------------------------
+                |
+                | Phải tính phí vận chuyển từ GHN trước khi tính Voucher Shipping.
+                |
+                */
+
+                if (
+                    !$address->ghn_district_id ||
+                    !$address->ghn_ward_code
+                ) {
+                    throw ValidationException::withMessages([
+                        'address' =>
+                            'Địa chỉ chưa được cấu hình mã GHN. Vui lòng cập nhật lại địa chỉ.',
+                    ]);
+                }
+
+                /*
+                 * Tính tổng trọng lượng đơn hàng.
+                 * GHN sử dụng đơn vị gram.
+                 */
+                $weight = 0;
+
+                foreach ($orderItems as $item) {
+                    $weight +=
+                        (int) ($item['weight'] ?? 500);
+                }
+
+                $weight = max(1, $weight);
+
+                /*
+                 * Thông tin kho/shop MiniGrove trên GHN.
+                 */
+                $shippingData = [
+                    'service_type_id' => 2,
+                    'from_district_id' => 3440,
+                    'from_ward_code' => '13005',
+                    'to_district_id' =>
+                        (int) $address->ghn_district_id,
+                    'to_ward_code' =>
+                        $address->ghn_ward_code,
+                    'weight' => $weight,
+                ];
+
+                /*
+                 * Gọi GHN để lấy phí vận chuyển.
+                 */
+                $shippingResult =
+                    $this->ghnService
+                        ->calculateFee($shippingData);
+
+                $shippingFee =
+                    (float) ($shippingResult['total'] ?? 0);
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | 6. VOUCHERS (ORDER + SHIPPING)
                 |--------------------------------------------------------------------------
                 */
 
-                $voucher =
-                    null;
+                $orderVoucher = null;
+                $discountAmount = 0.0;
+                $orderVoucherCode =
+                    session('checkout.order_voucher_code')
+                    ?: session('checkout.voucher_code');
 
-
-                $discountAmount =
-                    0;
-
-
-                $voucherCode =
-                    session(
-                        'checkout.voucher_code'
-                    );
-
-
-                if ($voucherCode) {
-
-                    /*
-                     * Lock Voucher để tránh
-                     * vượt usage_limit.
-                     */
-                    $voucher =
+                if ($orderVoucherCode) {
+                    $orderVoucher =
                         Voucher::query()
                             ->whereRaw(
                                 'UPPER(code) = ?',
                                 [
                                     strtoupper(
-                                        trim(
-                                            $voucherCode
-                                        )
+                                        trim($orderVoucherCode)
                                     ),
                                 ]
                             )
                             ->lockForUpdate()
                             ->first();
 
-
-                    if (!$voucher) {
-
+                    if (!$orderVoucher) {
                         throw ValidationException::withMessages([
                             'voucher' =>
-                                'Voucher không còn tồn tại.',
+                                'Voucher giảm giá đơn hàng không còn tồn tại.',
                         ]);
                     }
-
 
                     $discountAmount =
                         $this->validateAndCalculateVoucher(
                             $user,
-                            $voucher,
-                            $subtotal
+                            $orderVoucher,
+                            $subtotal,
+                            $shippingFee,
+                            Voucher::SCOPE_ORDER
                         );
                 }
 
+                $shippingVoucher = null;
+                $shippingDiscountAmount = 0.0;
+                $shippingVoucherCode =
+                    session('checkout.shipping_voucher_code');
 
-                /*
-|--------------------------------------------------------------------------
-| 6. SHIPPING FEE - GHN
-|--------------------------------------------------------------------------
-|
-| Tính lại phí vận chuyển từ GHN tại thời điểm
-| tạo Order, không tin dữ liệu từ Browser.
-|
-*/
+                if ($shippingVoucherCode) {
+                    $shippingVoucher =
+                        Voucher::query()
+                            ->whereRaw(
+                                'UPPER(code) = ?',
+                                [
+                                    strtoupper(
+                                        trim($shippingVoucherCode)
+                                    ),
+                                ]
+                            )
+                            ->lockForUpdate()
+                            ->first();
 
-if (
-    !$address->ghn_district_id ||
-    !$address->ghn_ward_code
-) {
-    throw ValidationException::withMessages([
-        'address' =>
-            'Địa chỉ chưa được cấu hình mã GHN. Vui lòng cập nhật lại địa chỉ.',
-    ]);
-}
+                    if (!$shippingVoucher) {
+                        throw ValidationException::withMessages([
+                            'voucher' =>
+                                'Voucher giảm phí vận chuyển không còn tồn tại.',
+                        ]);
+                    }
 
-/*
- * Tính tổng trọng lượng đơn hàng.
- * GHN sử dụng đơn vị gram.
- */
-$weight = 0;
-
-foreach ($orderItems as $item) {
-    $weight +=
-        (int) ($item['weight'] ?? 500);
-}
-
-$weight = max(1, $weight);
-
-/*
- * Thông tin kho/shop MiniGrove trên GHN.
- */
-$shippingData = [
-    'service_type_id' => 2,
-
-    'from_district_id' => 3440,
-    'from_ward_code' => '13005',
-
-    'to_district_id' =>
-        (int) $address->ghn_district_id,
-
-    'to_ward_code' =>
-        $address->ghn_ward_code,
-
-    'weight' => $weight,
-];
-
-/*
- * Gọi GHN để lấy phí vận chuyển.
- */
-$shippingResult =
-    $this->ghnService
-        ->calculateFee($shippingData);
-
-$shippingFee =
-    (float) ($shippingResult['total'] ?? 0);
+                    $shippingDiscountAmount =
+                        $this->validateAndCalculateVoucher(
+                            $user,
+                            $shippingVoucher,
+                            $subtotal,
+                            $shippingFee,
+                            Voucher::SCOPE_SHIPPING
+                        );
+                }
 
 
                 /*
@@ -597,7 +612,11 @@ $shippingFee =
                         0,
                         $subtotal
                         - $discountAmount
-                        + $shippingFee
+                    )
+                    + max(
+                        0,
+                        $shippingFee
+                        - $shippingDiscountAmount
                     );
 
 
@@ -659,6 +678,9 @@ $shippingFee =
 
                             'shipping_fee' =>
                                 $shippingFee,
+
+                            'shipping_discount_amount' =>
+                                $shippingDiscountAmount,
 
                             'total_amount' =>
                                 $totalAmount,
@@ -1024,22 +1046,25 @@ Payment::create(
 
                 /*
                 |--------------------------------------------------------------------------
-                | 13. VOUCHER USAGE
+                | 13. VOUCHER USAGE (ORDER & SHIPPING)
                 |--------------------------------------------------------------------------
                 */
 
-                if ($voucher) {
+                if ($orderVoucher) {
 
                     VoucherUsage::create(
                         [
                             'voucher_id' =>
-                                $voucher->id,
+                                $orderVoucher->id,
 
                             'user_id' =>
                                 $user->id,
 
                             'order_id' =>
                                 $order->id,
+
+                            'voucher_scope' =>
+                                Voucher::SCOPE_ORDER,
 
                             'discount_amount' =>
                                 $discountAmount,
@@ -1055,18 +1080,52 @@ Payment::create(
                         ]
                     );
 
+                    /*
+                     * Tăng số lượt đã dùng của Order Voucher.
+                     */
+                    $orderVoucher->usage_count =
+                        (int) $orderVoucher->usage_count + 1;
+
+                    $orderVoucher->save();
+                }
+
+                if ($shippingVoucher) {
+
+                    VoucherUsage::create(
+                        [
+                            'voucher_id' =>
+                                $shippingVoucher->id,
+
+                            'user_id' =>
+                                $user->id,
+
+                            'order_id' =>
+                                $order->id,
+
+                            'voucher_scope' =>
+                                Voucher::SCOPE_SHIPPING,
+
+                            'discount_amount' =>
+                                $shippingDiscountAmount,
+
+                            'status' =>
+                                'used',
+
+                            'used_at' =>
+                                now(),
+
+                            'released_at' =>
+                                null,
+                        ]
+                    );
 
                     /*
-                     * Tăng số lượt đã dùng.
+                     * Tăng số lượt đã dùng của Shipping Voucher.
                      */
-                    $voucher
-                        ->usage_count =
-                            $voucher
-                                ->usage_count
-                            + 1;
+                    $shippingVoucher->usage_count =
+                        (int) $shippingVoucher->usage_count + 1;
 
-
-                    $voucher->save();
+                    $shippingVoucher->save();
                 }
 
 
@@ -1209,7 +1268,9 @@ Payment::create(
     private function validateAndCalculateVoucher(
         User $user,
         Voucher $voucher,
-        float $subtotal
+        float $subtotal,
+        float $shippingFee = 0.0,
+        string $expectedScope = Voucher::SCOPE_ORDER
     ): float {
 
         if (!$voucher->is_active) {
@@ -1270,7 +1331,23 @@ Payment::create(
 
 
         /*
-         * Giá trị đơn tối thiểu.
+         * Kiểm tra phạm vi voucher.
+         */
+        $scope =
+            $voucher->voucher_scope
+            ?? Voucher::SCOPE_ORDER;
+
+        if ($scope !== $expectedScope) {
+
+            throw ValidationException::withMessages([
+                'voucher' =>
+                    'Phạm vi áp dụng của Voucher không hợp lệ.',
+            ]);
+        }
+
+
+        /*
+         * Giá trị đơn tối thiểu (luôn kiểm tra theo subtotal).
          */
         if (
             $subtotal <
@@ -1327,6 +1404,17 @@ Payment::create(
 
 
         /*
+         * Căn cứ giảm:
+         * - shipping: phí vận chuyển
+         * - order: tiền hàng
+         */
+        $baseAmount =
+            $scope === Voucher::SCOPE_SHIPPING
+                ? $shippingFee
+                : $subtotal;
+
+
+        /*
          * Tính Discount.
          */
         if (
@@ -1336,7 +1424,7 @@ Payment::create(
         ) {
 
             $discount =
-                $subtotal
+                $baseAmount
                 * (
                     (float)
                     $voucher
@@ -1386,17 +1474,17 @@ Payment::create(
 
 
         /*
-         * Không để tổng tiền âm.
+         * Không để vượt quá căn cứ giảm.
          */
         $discount =
             min(
                 $discount,
-                $subtotal
+                $baseAmount
             );
 
 
         return max(
-            0,
+            0.0,
             $discount
         );
     }

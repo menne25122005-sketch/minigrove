@@ -390,6 +390,17 @@ class VoucherController extends Controller
                 $voucher
                     ? (int) $voucher->is_active
                     : 1,
+
+            'voucher_scope' =>
+                $request->input(
+                    'voucher_scope',
+                    $voucher?->voucher_scope ?? 'order'
+                ),
+
+            'is_public' =>
+                $request->has('is_public')
+                    ? (bool) $request->input('is_public')
+                    : ($voucher ? (bool) $voucher->is_public : true),
         ]);
 
 
@@ -403,6 +414,19 @@ class VoucherController extends Controller
                     'vouchers',
                     'code'
                 )->ignore($voucherId),
+            ],
+
+            'voucher_scope' => [
+                'required',
+                Rule::in([
+                    'order',
+                    'shipping',
+                ]),
+            ],
+
+            'is_public' => [
+                'required',
+                'boolean',
             ],
 
             'discount_type' => [
@@ -455,27 +479,38 @@ class VoucherController extends Controller
             ],
 
             'is_active' => [
-    'required',
-    'boolean',
-],
+                'required',
+                'boolean',
+            ],
 
-], [
+        ], [
 
-    'code.required' =>
-        'Vui lòng nhập mã Voucher.',
+            'code.required' =>
+                'Vui lòng nhập mã Voucher.',
 
-    'code.max' =>
-        'Mã Voucher không được vượt quá 50 ký tự.',
+            'code.max' =>
+                'Mã Voucher không được vượt quá 50 ký tự.',
 
-    'code.unique' =>
-        'Mã Voucher đã tồn tại.',
+            'code.unique' =>
+                'Mã Voucher đã tồn tại.',
 
+            'voucher_scope.required' =>
+                'Vui lòng chọn phạm vi áp dụng của Voucher.',
 
-    'discount_type.required' =>
-        'Vui lòng chọn loại giảm giá.',
+            'voucher_scope.in' =>
+                'Phạm vi áp dụng của Voucher không hợp lệ.',
 
-    'discount_type.in' =>
-        'Loại giảm giá không hợp lệ.',
+            'is_public.required' =>
+                'Vui lòng chọn trạng thái hiển thị công khai.',
+
+            'is_public.boolean' =>
+                'Trạng thái hiển thị công khai không hợp lệ.',
+
+            'discount_type.required' =>
+                'Vui lòng chọn loại giảm giá.',
+
+            'discount_type.in' =>
+                'Loại giảm giá không hợp lệ.',
 
 
     'discount_value.required' =>

@@ -166,6 +166,16 @@
                                 <strong class="admin-text-mono" style="font-size: 13.5px;">
                                     {{ $voucher->code }}
                                 </strong>
+                                <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
+                                    <span class="badge {{ $voucher->isShippingScope() ? 'badge-warning' : 'badge-primary' }}" style="font-size: 10px; padding: 1px 6px;">
+                                        {{ $voucher->isShippingScope() ? 'Vận chuyển' : 'Đơn hàng' }}
+                                    </span>
+                                    @if (!$voucher->isPublic())
+                                        <span class="badge badge-muted" style="font-size: 10px; padding: 1px 6px;">
+                                            Riêng tư
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
 
                             <td>
